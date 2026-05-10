@@ -1,118 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+   
+    const savedUI = localStorage.getItem("Zobbly_UI");
+    const isCurrentIndex1 = window.location.pathname.includes("index1.html");
+    if (savedUI === "index1.html" && !isCurrentIndex1) {
+        window.location.replace("index1.html");
+    } 
+   
+    else if (savedUI === "index.html" && isCurrentIndex1) {
+        window.location.replace("index.html");
+    }
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zobbly - The Zebra Network (Crayon Theme)</title>
+    <title>Zobbly - The Zebra Network</title>
     <link rel="preload" as="image" href="https://i.ibb.co/z1jXcZX/Screenshot-2025-11-22-at-2-45-03-PM-removebg-preview.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- CRAYON THEME FONT INCLUDED HERE -->
-    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
-    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        /* ========================================================
-           CRAYON / HAND-DRAWN THEME OVERRIDES (ADDED)
-           ======================================================== */
-        
-        /* [FIX 1]: Ignore FontAwesome icons so symbols appear properly */
-        *:not(i):not([class*="fa-"]) {
-            font-family: 'Patrick Hand', cursive !important;
-        }
-
-        body, html, #app-screen, .main-scroll-container, body.theme-dark, body.theme-pink, body.theme-red {
-            background-color: #fffcf9 !important;
-            background-image: none !important;
-        }
-
-        /* Hand-drawn Cards */
-        .glass-card, .login-card, .modal-box, #side-panel, .custom-dropdown-menu, .auth-container > div {
-            background: #ffffff !important;
-            border: 3px dashed #d6a3ff !important;
-            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
-            box-shadow: 4px 4px 0px rgba(214, 163, 255, 0.3) !important;
-            backdrop-filter: none !important;
-        }
-
-        /* Hand-drawn Buttons */
-        .btn-zobbly, .btn-auth, .btn-follow, button.bg-purple-600 {
-            background: #ffe6f2 !important;
-            border: 2px dashed #ff99cc !important;
-            color: #cc3366 !important;
-            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
-            box-shadow: 3px 3px 0px rgba(255, 153, 204, 0.3) !important;
-            transition: 0.2s !important;
-        }
-        
-        .btn-zobbly:hover, .btn-auth:hover {
-            transform: scale(1.05) rotate(-2deg) !important;
-        }
-
-        /* Hand-drawn Inputs */
-        input, select, textarea, .modern-input, .input-wrapper input {
-            background: #f0f8ff !important;
-            border: 2px dashed #66b3ff !important;
-            color: #005cbf !important;
-            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
-        }
-
-        /* Hand-drawn Profile Pics & Media */
-        img, video {
-            border: 3px dashed #ffcc66 !important;
-            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
-        }
-
-        img.rounded-full {
-            border-color: #ff99cc !important;
-        }
-
-        /* Headers and Navbars */
-        .glass-header-top {
-            background: #fffcf9 !important;
-            border-bottom: 3px dashed #d6a3ff !important;
-            backdrop-filter: none !important;
-        }
-        .glass-nav-bottom {
-            background: #fffcf9 !important;
-            border-top: 3px dashed #d6a3ff !important;
-            backdrop-filter: none !important;
-        }
-
-        /* Nav Highlights */
-        .nav-active {
-            color: #ff6699 !important;
-        }
-        .nav-active::after {
-            background: #ff6699 !important;
-            border-radius: 255px !important;
-        }
-
-        /* Chat Bubbles */
-        .chat-bubble-user {
-            border: 2px dashed #6699ff !important;
-            background: #e6f0ff !important;
-            color: #3366cc !important;
-            border-radius: 255px 15px 225px 15px/15px 225px 15px 255px !important;
-        }
-        .chat-bubble-other {
-            border: 2px dashed #ffb366 !important;
-            background: #fff5e6 !important;
-            color: #cc6600 !important;
-            border-radius: 15px 255px 15px 225px/225px 15px 255px 15px !important;
-        }
-        /* ======================================================== */
-
-        /* ORIGINAL STYLES BELOW */
         html, body
 {
+    font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 0;
+    background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #a18cd1, #fbc2eb, #84fab0, #8fd3f4);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+   
     height: 100%; 
-    overflow-x: hidden; 
+    overflow-x: hidden;
     overflow-y: auto; 
     position: relative; 
     -webkit-tap-highlight-color: transparent;
@@ -121,7 +44,7 @@
 #app-screen {
     height: 100vh;
     width: 100%;
-    overflow-y: auto; 
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch; 
     position: relative;
 }
@@ -275,21 +198,18 @@
         #ptr-container {
             transition: transform 0s; 
          }
-         
-        /* [FIX 2 & 3]: Reels scrolling & UI fixes */
         .reels-wrapper {
-            height: calc(100vh - 64px) !important; 
-            scroll-snap-type: y mandatory !important;
-            overflow-y: scroll !important;
+            height: calc(100vh - 64px); 
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
             background: #000;
             scrollbar-width: none;
          }
         .reels-wrapper::-webkit-scrollbar { display: none; }
 
         .reel-card {
-            height: calc(100vh - 64px) !important;
-            scroll-snap-align: start !important;
-            scroll-snap-stop: always !important; /* Force stopping at 1 reel */
+            height: calc(100vh - 64px);
+            scroll-snap-align: start;
             position: relative;
             width: 100%;
             max-width: 500px; 
@@ -309,7 +229,7 @@
         .reel-actions-overlay {
             position: absolute;
             right: 12px;
-            bottom: 90px; /* Shifted up */
+            bottom: 80px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -320,7 +240,7 @@
 
         .reel-info-overlay {
             position: absolute;
-            bottom: 30px; /* Shifted up to avoid nav overlap */
+            bottom: 20px;
             left: 15px;
             right: 70px;
             z-index: 20;
@@ -333,9 +253,9 @@
             display: none; flex-direction: column; align-items: center; justify-content: center;
          }
         .progress-ring { width: 100px; height: 100px; border: 5px solid #f3f3f3; border-top: 5px solid #a18cd1; border-radius: 50%;  animation: spin 1s linear infinite; }
-         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }
 
-            
+           
 .feed-mode {
     overflow-y: scroll;
     scroll-snap-type: none;
@@ -344,19 +264,35 @@
 
 
 .reels-mode {
-    overflow-y: hidden !important; /* Fixed double scroll */
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory; 
+    height: 100vh !important;
     background: #000; 
+.reels-wrapper {
+    height: 100vh; 
+    width: 100%;
 }
 
 
-/* Sending state ke liye style */
+.reel-card {
+    height: 100vh; 
+    width: 100%;
+    scroll-snap-align: start; 
+    scroll-snap-stop: always; 
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
 .sending-msg {
     opacity: 0.6;
     filter: grayscale(0.5);
     position: relative;
 }
 
-/* Chota spinner message ke sath dikhane ke liye */
+
 .msg-loader {
     width: 12px;
     height: 12px;
@@ -370,55 +306,49 @@
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-
-/* --- 1. DARK MODE FEED (Kaala) --- */
 body.theme-dark {
-    background-color: #000000 !important; /* Poori body black */
+    background-color: #000000 !important; 
 }
 
-/* Feed ke piche ka background */
 body.theme-dark #main-content, 
 body.theme-dark .main-scroll-container {
     background-color: #000000 !important; 
 }
 
-/* Post Cards (Jo white box hote hain) unko Dark Grey karo */
 body.theme-dark .glass-card,
 body.theme-dark .bg-white,
 body.theme-dark .bg-slate-50 {
-    background-color: #1a1a1a !important; /* Dark Grey Card */
-    color: #ffffff !important;             /* White Text */
-    border: 1px solid #333 !important;     /* Halka border */
+    background-color: #1a1a1a !important; 
+    color: #ffffff !important;             
+    border: 1px solid #333 !important;    
 }
 
-/* Dark mode me text dikhe */
+
 body.theme-dark h1, body.theme-dark h2, body.theme-dark h3, 
 body.theme-dark p, body.theme-dark span, body.theme-dark div {
     color: #e5e5e5 !important;
 }
 
 
-/* --- 2. PINK MODE FEED (Gulabi) --- */
+
 body.theme-pink {
-    background-color: #ffe4e1 !important; /* Misty Rose */
+    background-color: #ffe4e1 !important;
 }
 
-/* Feed Container */
+
 body.theme-pink #main-content,
 body.theme-pink .main-scroll-container {
     background-color: #ffe4e1 !important;
 }
 
-/* Post Cards in Pink Mode */
 body.theme-pink .glass-card,
 body.theme-pink .bg-white {
-    background-color: #fff0f5 !important; /* Lavender Blush */
-    color: #4a002c !important;             /* Dark Red Text */
+    background-color: #fff0f5 !important; 
+    color: #4a002c !important;            
     border: 1px solid #ffc0cb !important;
 }
 
 
-/* --- 3. RED MODE FEED (Laal) --- */
 body.theme-red {
     background-color: #fff5f5 !important;
 }
@@ -430,15 +360,14 @@ body.theme-red #main-content {
 body.theme-red .glass-card,
 body.theme-red .bg-white {
     background-color: #ffffff !important;
-    border: 1px solid #feb2b2 !important; /* Red Border */
+    border: 1px solid #feb2b2 !important; 
 }
 
-/* Isko apne style tag me check kar lein */
 body.theme-dark, body.theme-dark h1, body.theme-dark h2, body.theme-dark p, body.theme-dark span, body.theme-dark div {
     color: #ffffff !important;
 }
 body.theme-dark .glass-card, body.theme-dark .bg-white {
-    background-color: #1a1a1a !important; /* Dark Grey Card */
+    background-color: #1a1a1a !important; 
     border: 1px solid #333 !important;
 }
 
@@ -565,12 +494,12 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
          <i class="fas fa-globe"></i>
          <select id="regCountry" class="cursor-pointer">
 
-                       <option value="India" selected>India</option>
-                       <option value="USA">United States</option>
-                       <option value="UK">United Kingdom</option>
-                       <option value="Canada">Canada</option>
-                       <option value="Other">Other</option>
-                     </select>
+                      <option value="India" selected>India</option>
+                      <option value="USA">United States</option>
+                      <option value="UK">United Kingdom</option>
+                      <option value="Canada">Canada</option>
+                      <option value="Other">Other</option>
+                    </select>
             </div>
         </div>
    <button class="btn-auth btn-signup-style" onclick="APIService.auth.initiateRegister()">Get Verification Code</button>
@@ -613,7 +542,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
 </div>
 
 <div id="app-screen" class="hidden-screen h-full w-full">
-            <header id="main-app-header" class="glass-header-top fixed top-0 w-full z-40 h-14 flex items-center justify-between px-4 transition-transform duration-300">
+            <header class="glass-header-top fixed top-0 w-full z-40 h-14 flex items-center justify-between px-4">
             <div class="text-2xl font-black tracking-tighter cursor-pointer text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600" onclick="renderView('feed')">
         Zobbly
     </div>
@@ -667,7 +596,22 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
         <div class="space-y-4">
            <button onclick="openEditProfile()" class="w-full text-left p-4 hover:bg-white/50 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-pen-to-square text-purple-500"></i> <span id="lbl-edit-profile">Edit Profile</span></button>
         
-
+<script>
+   
+    function badalDoUI() {
+        const isCurrentIndex1 = window.location.pathname.includes("index1.html");
+        
+        if (isCurrentIndex1) {
+          
+            localStorage.setItem("Zobbly_UI", "index.html");
+            window.location.href = "index.html";
+        } else {
+          
+            localStorage.setItem("Zobbly_UI", "index1.html");
+            window.location.href = "index1.html";
+        }
+    }
+</script>
             
 
             <div onclick="toggleThemeMenu()" class="w-full text-left p-4 hover:bg-white/50 rounded-xl flex items-center gap-4 transition cursor-pointer">
@@ -700,6 +644,10 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
             <button onclick="deleteAccount()" class="w-full text-left p-4 text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-trash"></i> <span id="lbl-delete">Delete Account</span></button>
             <button onclick="APIService.auth.logout()" class="w-full text-left p-4 text-gray-600 hover:bg-gray-100 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-right-from-bracket"></i> <span id="lbl-logout">Logout</span></button>
             <button onclick="window.open('https://doc-hosting.flycricket.io/zobbly-terms-of-use/d1ee1b3a-65d2-4457-8036-ba6a90e58bbb/terms', '_blank')" class="w-full text-left p-4 text-gray-600 hover:bg-gray-100 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-file-contract"></i> <span>Privacy Policy</span></button>
+            <button onclick="badalDoUI()" class="w-full text-left p-4 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl flex items-center gap-4 transition font-bold border border-purple-200 shadow-sm">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i> <span>Change UI Version</span>
+            </button>
+                                                                                                                                                                                                                                                                                                                                            
         </div>
     </div>
 </div>

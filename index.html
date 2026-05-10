@@ -1109,7 +1109,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
             window.open(url, '_blank');
         }
     }
-// --- 🟢 MASTER SCROLL CODE START 🟢 ---
+
     const ptrContainer = document.getElementById('ptr-container');
     const ptrIcon = document.getElementById('ptr-icon');
     const appScreen = document.getElementById('app-screen');
@@ -1118,40 +1118,40 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
     let ptrEnabled = false;
     let isRefreshing = false;
 appScreen.addEventListener('touchstart', (e) => {
-    // अगर Reels Mode एक्टिव है, तो PTR कोड को रोक दो
+    
     if (appScreen.classList.contains('reels-mode')) {
         ptrEnabled = false;
         return; 
     }
     
-    // ... बाकी PTR कोड ...
+    
 });
 
         
 
-    // 2. TOUCH MOVE (Smoothness + Auto-Scroll Fix)
+   
     appScreen.addEventListener('touchmove', (e) => {
         if (!ptrEnabled) return;
 
         const currentY = e.touches[0].clientY;
         const diff = currentY - ptrStartY;
 
-        // FIX: 10px se zyada kheechna padega tabhi hilega (Jitter Fix)
+        
         if (diff > 10) {
-            const resistance = 0.4; // Bhari/Smooth feel ke liye
+            const resistance = 0.4; 
             const translateVal = Math.min((diff - 10) * resistance, 120);
             
             ptrContainer.style.transform = `translateY(${translateVal - 120}px)`;
-            ptrIcon.style.transform = `rotate(${translateVal}deg)`; // Gudiya ghoomegi
+            ptrIcon.style.transform = `rotate(${translateVal}deg)`; 
         } else {
-            // FIX: Agar galti se haath upar gaya, to turant reset karo
+            
             ptrContainer.style.transform = `translateY(-120px)`;
             ptrIcon.style.transform = `rotate(0deg)`;
-            ptrEnabled = false; // Logic band kar do
+            ptrEnabled = false;
         }
     }, { passive: true });
 
-    // 3. TOUCH END (Refresh Action)
+    
     appScreen.addEventListener('touchend', async (e) => {
         if (!ptrEnabled) return;
 
@@ -1160,14 +1160,14 @@ appScreen.addEventListener('touchstart', (e) => {
 
         ptrContainer.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
 
-        // Agar 150px se zyada kheecha hai, tabhi Refresh karo
+       
         if (diff > 150) {
             isRefreshing = true;
             ptrContainer.style.transform = `translateY(20px)`;
             ptrIcon.classList.add('doll-anim');
 
             try {
-                // Jo page khula hai use refresh karo
+                
                 if (document.getElementById('nav-feed').classList.contains('nav-active')) {
                     await renderFeed(document.getElementById('main-content'));
                 } else if (document.getElementById('nav-jobs').classList.contains('nav-active')) {
@@ -1185,13 +1185,13 @@ appScreen.addEventListener('touchstart', (e) => {
                 isRefreshing = false;
             }, 800);
         } else {
-            // Agar kam kheecha tha, to wapas upar bhej do
+           
             ptrContainer.style.transform = `translateY(-120px)`;
         }
         ptrEnabled = false;
         ptrStartY = 0;
     });
-    // --- 🔴 MASTER SCROLL CODE END 🔴 ---
+ 
 
     async function checkLoginStatus() {
         const token = localStorage.getItem("token");
@@ -1278,39 +1278,35 @@ function renderView(view) {
     const contentContainer = document.getElementById('main-content');
     const scrollContainer = document.querySelector('.main-scroll-container');
 
-    // 1. Theme Check & Force Apply (Ye naya logic hai)
+   
     const savedTheme = localStorage.getItem('selectedTheme') || 'default';
     
-    // Purani classes saaf karein
-    body.classList.remove('theme-dark', 'theme-pink', 'theme-red', 'reels-mode', 'feed-mode');
     
-    // Inline Styles Reset karein (Taaki default theme wapas aa sake)
+    body.classList.remove('theme-dark', 'theme-pink', 'theme-red', 'reels-mode', 'feed-mode');
     body.style.background = ''; 
     body.style.backgroundImage = '';
     if(contentContainer) contentContainer.style.background = '';
 
-    // Theme ke hisaab se Zabardasti Color lagayein
+   
     if (savedTheme === 'dark') {
         body.classList.add('theme-dark');
-        body.style.background = '#000000'; // Pure Black
-        body.style.backgroundImage = 'none'; // Gradient hatane ke liye
+        body.style.background = '#000000'; 
+        body.style.backgroundImage = 'none';
         if(contentContainer) contentContainer.style.background = '#000000';
     } 
     else if (savedTheme === 'pink') {
         body.classList.add('theme-pink');
-        body.style.background = '#ffe4e1'; // Misty Rose
+        body.style.background = '#ffe4e1'; 
         body.style.backgroundImage = 'none';
         if(contentContainer) contentContainer.style.background = '#ffe4e1';
     } 
     else if (savedTheme === 'red') {
         body.classList.add('theme-red');
-        body.style.background = '#fff5f5'; // Light Red
+        body.style.background = '#fff5f5'; 
         body.style.backgroundImage = 'none';
         if(contentContainer) contentContainer.style.background = '#fff5f5';
     }
-    // Note: 'default' theme me hum kuch nahi karte, wo CSS se automatic lega
-
-    // 2. View Mode Settings
+    
     if (view === 'reels') {
         body.classList.add('reels-mode');
         if(scrollContainer) scrollContainer.style.padding = "0";
@@ -1322,13 +1318,13 @@ function renderView(view) {
         }
     }
 
-    // 3. Navigation Buttons Highlight
+    
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active', 'text-purple-600'));
     let btnId = (view === 'notifications') ? 'nav-notifs' : `nav-${view}`;
     let activeBtn = document.getElementById(btnId);
     if(activeBtn) activeBtn.classList.add('nav-active', 'text-purple-600');
 
-    // 4. Content Load Karein
+   
     if(view === 'feed') renderFeed(contentContainer);
     else if(view === 'reels') renderReels(contentContainer);
     else if(view === 'jobs') renderJobs(contentContainer);
@@ -1505,7 +1501,7 @@ function renderView(view) {
             const isLongText = p.content.length > 200 || (p.content.match(/\n/g) || []).length > 4;
             const contentId = `post-content-${p._id}`;
             
-            // --- 1. NEW LINK LOGIC (Feed Jaisa) ---
+           
             let linkHtml = '';
             if (p.link) {
                  const displayLink = p.link.length > 40 ? p.link.substring(0, 40) + '...' : p.link;
@@ -1519,7 +1515,7 @@ function renderView(view) {
                 }
             }
 
-            // --- 2. NEW VIDEO/MEDIA LOGIC ---
+           
             const mediaUrl = p.video || p.image;
             const isVideo = p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i));
             let mediaHtml = '';
@@ -1666,14 +1662,14 @@ async function renderFeed(c) {
                     const isLongText = p.content.length > 200 || (p.content.match(/\n/g) || []).length > 4;
                     const contentId = `post-content-${p._id}`;
                     
-                    // --- UPDATED LINK LOGIC START ---
+                  
                     let linkHtml = '';
-                    // Check explicit link field first
+                   
                     if (p.link) {
                          const displayLink = p.link.length > 40 ? p.link.substring(0, 40) + '...' : p.link;
                          linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${displayLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
                     } else {
-                        // Fallback: Check inside content text
+                    
                         const urlRegex = /(https?:\/\/[^\s]+)/g;
                         const detectedLinks = p.content.match(urlRegex);
                         if(detectedLinks && detectedLinks.length > 0) {
@@ -1681,12 +1677,9 @@ async function renderFeed(c) {
                              linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${firstLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
                         }
                     }
-                    // --- UPDATED LINK LOGIC END ---
-
+               
                     const userHandle = p.userId.username ? `@${p.userId.username}` : '';
                     const userCountry = p.userId.country ? `<span class="ml-1 text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500"><i class="fa-solid fa-earth-americas"></i> ${p.userId.country}</span>` : '';
-
-                    // --- VIDEO LOGIC START ---
                     const mediaUrl = p.video || p.image;
                     const isVideo = p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i));
                     let mediaHtml = '';
@@ -1747,20 +1740,27 @@ async function renderFeed(c) {
                         </div>
                         <div id="comments-${p._id}" class="hidden mt-3 pt-3 border-t border-gray-200/50">
                             <div class="max-h-48 overflow-y-auto mb-2 space-y-3 px-1" id="cmt-list-${p._id}">
-                                ${p.comments.map(cm => {
-                                    const canDelete = isMe || (cm.userId && cm.userId._id === myId);
-                                    return `
-                                    <div class="flex gap-2 items-start group" id="comment-item-${cm._id}">
-                                        <img src="${cm.userId?.photo || 'https://placehold.co/30'}" class="w-8 h-8 rounded-full border border-gray-200 mt-1 object-cover cursor-pointer" onclick="${cm.userId ? `viewUserProfile('${cm.userId._id}')` : ''}">
-                                        <div class="bg-gray-100 p-2.5 rounded-2xl rounded-tl-none relative w-full max-w-[85%]">
-                                            <div class="flex justify-between items-center mb-0.5">
-                                                <span class="font-bold text-xs text-gray-900 cursor-pointer hover:underline" onclick="${cm.userId ? `viewUserProfile('${cm.userId._id}')` : ''}">${cm.userName}</span>
-                                                ${canDelete ? `<button onclick="deleteComment('${p._id}', '${cm._id}')" class="text-gray-400 hover:text-red-500 text-[10px]"><i class="fa-solid fa-trash"></i></button>` : ''}
-                                            </div>
-                                            <p class="text-xs text-gray-700 leading-snug">${cm.text}</p>
-                                        </div>
-                                    </div>
-                                `}).join('')}
+                               ${p.comments.map(cm => {
+    
+                               const myId = localStorage.getItem("userId");
+                               const isPostOwner = p.userId && (p.userId._id === myId || p.userId === myId);
+                               const isCommentOwner = cm.userId && (cm.userId._id === myId || cm.userId === myId);
+                               const canDelete = isPostOwner || isCommentOwner;
+
+                               return `
+                                 <div class="flex gap-3 text-xs group" id="comment-item-${cm._id}">
+                                    <img src="${cm.userId?.photo || 'https://placehold.co/20'}" class="w-8 h-8 rounded-full object-cover">
+                                        <div class="flex-1 bg-gray-50 p-2 rounded-lg relative">
+                                             <div class="flex justify-between items-center mb-1">
+                                          <span class="font-bold">${cm.userName || 'User'}</span>
+                
+                                  ${canDelete ? `<button onclick="deleteComment('${p._id}', '${cm._id}')" class="text-red-400 hover:text-red-600 transition p-1"><i class="fa-solid fa-trash"></i></button>` : ''}
+            
+                                      </div>
+                                   <p class="text-gray-600">${cm.text}</p>
+                                  </div>
+                                </div>`;
+                             }).join('')}
                             </div>
                             <div class="flex gap-2 items-center bg-gray-50 p-1.5 rounded-full border">
                                 <input id="inp-${p._id}" type="text" class="w-full p-2 text-sm bg-transparent outline-none" placeholder="Write a comment...">
@@ -1814,31 +1814,25 @@ async function renderFeed(c) {
     }
 
    
-
     async function submitPost() {
     const fd = new FormData();
     
-    // 1. Text aur Link ko Jod dein (Taaki Database me save ho jaye)
+    
     let content = document.getElementById('postContent').value;
     const linkVal = document.getElementById('postLink').value;
     
-    // Link ko content ke aage add kar diya
+   
     if(linkVal) {
         content += " " + linkVal; 
     }
     
     fd.append('content', content);
 
-    // 2. Image ka logic same rahega
     const f = document.getElementById('postImage').files[0];
     if(f) {
         fd.append('postImage', f);
     }
-
-    // 3. Server ko bhejein
     await APIService.feed.create(fd);
-
-    // 4. Safai (Cleanup)
     document.getElementById('postModal').classList.add('hidden');
     document.getElementById('postContent').value = "";
     document.getElementById('postLink').value = "";
@@ -1884,7 +1878,6 @@ async function renderFeed(c) {
     }
 
     async function toggleFollow(id, btn) { const res = await APIService.user.follow(id); if(res.status === 'followed') { btn.innerText = txt("unfollow"); btn.className = "btn-follow btn-following"; myFollowing.push(id); showToast("Following!"); } else { btn.innerText = txt("follow"); btn.className = "btn-follow btn-not-following"; myFollowing = myFollowing.filter(uid => uid !== id); showToast("Unfollowed"); } updateMyStats(); }
-
     function openConfirmModal(title, message, actionCallback) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = message; pendingConfirmAction = actionCallback; document.getElementById('universalConfirmModal').style.display = 'flex'; }
     function openAlertModal(title, message) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = message; document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'none'; document.getElementById('modalConfirmBtn').innerText = "OK"; pendingConfirmAction = null; document.getElementById('universalConfirmModal').style.display = 'flex'; }
     function closeConfirmModal() { document.getElementById('universalConfirmModal').style.display = 'none'; pendingConfirmAction = null; document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'block'; document.getElementById('modalConfirmBtn').innerText = "Yes, Proceed"; }
@@ -2019,68 +2012,93 @@ function togglePostMenu(postId, event) {
             <h2 class="text-md font-bold mb-3 text-gray-800 border-b border-gray-200/50 pb-2">${txt('activity')}</h2>
             
             <div class="grid grid-cols-3 gap-1">
-                ${posts.length === 0 ? '<p class="col-span-3 text-center text-gray-400 text-sm py-10">No posts yet.</p>' : posts.map(p => {
+               ${posts.length === 0 ? '<p class="col-span-3 text-center text-gray-400 text-sm py-10">No posts yet.</p>' : posts.map(p => {
                     const mediaUrl = p.video || p.image;
                     const isVideo = (p.video) || (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext)));
-                    
-                    return `
-                    <div class="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer group" onclick="toggleComment('${p._id}')">
-                        
-                        ${isMe ? `<button onclick="event.stopPropagation(); deletePost('${p._id}')" class="absolute top-2 right-2 z-20 bg-black/40 hover:bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center transition shadow-md backdrop-blur-sm"><i class="fa-solid fa-trash text-[10px]"></i></button>` : ''}
-                        ${mediaUrl ? 
-                            (isVideo ? 
-                                `<video src="${mediaUrl}" class="w-full h-full object-cover block" preload="metadata" muted playsinline></video>
-                                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><i class="fa-solid fa-play text-white/80 text-xl shadow-sm"></i></div>` : 
-                                `<img src="${mediaUrl}" class="w-full h-full object-cover block">`) 
-                            : `<div class="w-full h-full flex items-center justify-center p-2 bg-purple-100 text-[10px] text-gray-700 font-bold text-center break-words">${p.content.substring(0, 50)}</div>`
+                    let linkHtml = '';
+                    if (p.link) {
+                         const displayLink = p.link.length > 40 ? p.link.substring(0, 40) + '...' : p.link;
+                         linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${displayLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
+                    } else {
+                        const urlRegex = /(https?:\/\/[^\s]+)/g;
+                        const detectedLinks = p.content.match(urlRegex);
+                        if(detectedLinks && detectedLinks.length > 0) {
+                              const firstLink = detectedLinks[0];
+                              linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${firstLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
                         }
-                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3 text-white font-bold text-xs pointer-events-none">
-                            <span><i class="fa-solid fa-heart"></i> ${p.likes.length}</span>
-                            <span><i class="fa-solid fa-comment"></i> ${p.comments.length}</span>
-                        </div>
-                    </div>
+                    }
 
-                    <div id="comments-${p._id}" class="hidden col-span-3 bg-white border border-gray-100 mt-1 mb-4 rounded-xl shadow-2xl overflow-hidden">
-                        <div class="p-3 border-b flex justify-between items-center bg-white">
-                            <div class="flex items-center gap-2">
-                                <img src="${u.photo||'https://placehold.co/30'}" class="w-8 h-8 rounded-full object-cover">
-                                <span class="text-sm font-bold text-gray-800">${u.username || u.name}</span>
-                            </div>
-                            <button onclick="toggleComment('${p._id}')" class="text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-xl"></i></button>
-                        </div>
-
-                        <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative">
-                            ${isVideo ? 
-                                `<video src="${mediaUrl}" id="vid-prof-${p._id}" controls loop class="w-full max-h-[500px] block" playsinline></video>` : 
-                                (mediaUrl ? `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block">` : '')
-                            }
-                        </div>
-
-                        <div class="p-4 bg-white">
-                            <p class="text-sm text-gray-700 mb-4 whitespace-pre-line">${p.content}</p>
+                    return `
+                    <div id="post-wrapper-${p._id}" class="contents">
+                        <div class="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer group" onclick="toggleComment('${p._id}')">
                             
-                            <div class="flex items-center gap-6 border-y border-gray-50 py-3 mb-4">
-                                <button onclick="toggleLike('${p._id}')" class="flex items-center gap-2 text-sm">
-                                    <i class="fa-solid fa-heart ${p.likes.includes(myId)?'text-red-500 font-bold':'text-gray-300'}" id="like-icon-${p._id}"></i>
-                                    <span id="like-cnt-${p._id}" class="font-bold text-gray-800">${p.likes.length}</span>
-                                </button>
-                                <span class="text-sm text-gray-500 font-medium"><i class="fa-solid fa-comment mr-1 text-gray-300"></i> ${p.comments.length}</span>
+                            ${isMe ? `<button onclick="event.stopPropagation(); deletePost('${p._id}')" class="absolute top-2 right-2 z-20 bg-black/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition shadow-md backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+                            ${mediaUrl ? 
+                                (isVideo ? 
+                                    `<video src="${mediaUrl}" class="w-full h-full object-cover block" preload="metadata" muted playsinline></video>
+                                     <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><i class="fa-solid fa-play text-white/80 text-xl shadow-sm"></i></div>` : 
+                                    `<img src="${mediaUrl}" class="w-full h-full object-cover block">`) 
+                                : `<div class="w-full h-full flex items-center justify-center p-2 bg-purple-100 text-[10px] text-gray-700 font-bold text-center break-words">${p.content.substring(0, 50)}</div>`
+                            }
+                            <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3 text-white font-bold text-xs pointer-events-none">
+                                <span><i class="fa-solid fa-heart"></i> ${p.likes.length}</span>
+                                <span><i class="fa-solid fa-comment"></i> ${p.comments.length}</span>
+                            </div>
+                        </div>
+
+                        <div id="comments-${p._id}" class="hidden col-span-3 bg-white border border-gray-100 mt-1 mb-4 rounded-xl shadow-2xl overflow-hidden">
+                            <div class="p-3 border-b flex justify-between items-center bg-white">
+                                <div class="flex items-center gap-2">
+                                    <img src="${u.photo||'https://placehold.co/30'}" class="w-8 h-8 rounded-full object-cover">
+                                    <span class="text-sm font-bold text-gray-800">${u.username || u.name}</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    ${isMe ? `<button onclick="deletePost('${p._id}')" class="bg-red-50 text-red-500 hover:bg-red-100 px-3 py-1 rounded-lg text-xs font-bold transition"><i class="fa-solid fa-trash mr-1"></i>Delete Post</button>` : ''}
+                                    <button onclick="toggleComment('${p._id}')" class="text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-xl"></i></button>
+                                </div>
                             </div>
 
-                            <div class="max-h-60 overflow-y-auto space-y-4 mb-4" id="cmt-list-${p._id}">
+                            <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative">
+                                ${isVideo ? 
+                                    `<video src="${mediaUrl}" id="vid-prof-${p._id}" controls loop class="w-full max-h-[500px] block" playsinline></video>` : 
+                                    (mediaUrl ? `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block">` : '')
+                                }
+                            </div>
+
+                            <div class="p-4 bg-white">
+                                <p class="text-sm text-gray-700 mb-2 whitespace-pre-line">${p.content}</p>
+                                
+                                ${linkHtml}
+                                
+                                <div class="flex items-center gap-6 border-y border-gray-50 py-3 mb-4">
+                                    <button onclick="toggleLike('${p._id}')" class="flex items-center gap-2 text-sm">
+                                        <i class="fa-solid fa-heart ${p.likes.includes(myId)?'text-red-500 font-bold':'text-gray-300'}" id="like-icon-${p._id}"></i>
+                                        <span id="like-cnt-${p._id}" class="font-bold text-gray-800">${p.likes.length}</span>
+                                    </button>
+                                    <span class="text-sm text-gray-500 font-medium"><i class="fa-solid fa-comment mr-1 text-gray-300"></i> ${p.comments.length}</span>
+                                </div>
+
+                                <div class="max-h-60 overflow-y-auto space-y-4 mb-4" id="cmt-list-${p._id}">
                                 ${p.comments.map(cm => {
-                                    const canDelete = isMe || (cm.userId && (typeof cm.userId === 'object' ? cm.userId._id === myId : cm.userId === myId));
-                                    return `
-                                    <div class="flex gap-3 text-xs">
-                                        <img src="${cm.userId?.photo || 'https://placehold.co/20'}" class="w-8 h-8 rounded-full object-cover">
-                                        <div class="flex-1 bg-gray-50 p-2 rounded-lg">
-                                            <div class="flex justify-between items-center mb-1">
-                                                <span class="font-bold">${cm.userName}</span>
-                                                ${canDelete ? `<button onclick="deleteComment('${p._id}', '${cm._id}')" class="text-red-400"><i class="fa-solid fa-trash"></i></button>` : ''}
-                                            </div>
+   
+                                  const myId = localStorage.getItem("userId");
+                                  const isPostOwner = p.userId && (p.userId._id === myId || p.userId === myId);
+                                  const isCommentOwner = cm.userId && (cm.userId._id === myId || cm.userId === myId);
+                                  const canDelete = isPostOwner || isCommentOwner;
+
+                                 return `
+                                    <div class="flex gap-3 text-xs group" id="comment-item-${cm._id}">
+                                       <img src="${cm.userId?.photo || 'https://placehold.co/20'}" class="w-8 h-8 rounded-full object-cover">
+                                          <div class="flex-1 bg-gray-50 p-2 rounded-lg relative">
+                                               <div class="flex justify-between items-center mb-1">
+                                                      <span class="font-bold">${cm.userName || 'User'}</span>
+                
+                                              ${canDelete ? `<button onclick="deleteComment('${p._id}', '${cm._id}')" class="text-red-400 hover:text-red-600 transition p-1"><i class="fa-solid fa-trash"></i></button>` : ''}
+            
+                                              </div>
                                             <p class="text-gray-600">${cm.text}</p>
-                                        </div>
-                                    </div>`;
+                                           </div>
+                                      </div>`;
                                 }).join('')}
                             </div>
 
@@ -2259,7 +2277,7 @@ async function renderNotifications(c) {
     applyTranslations();
 }
 
-// 3. Helper Text
+
 function getNotifText(type) { 
     if(type === 'like') return 'liked your post.'; 
     if(type === 'comment') return 'commented on your post.'; 
@@ -2268,7 +2286,7 @@ function getNotifText(type) {
     return 'interacted with you.'; 
 }
 
-// 4. Handle Click (Redirect)
+
 function handleNotifClick(type, relatedId, actorId) {
     if(type === 'message') {
         if(actorId) {
@@ -2282,7 +2300,7 @@ function handleNotifClick(type, relatedId, actorId) {
     else { renderView('feed'); }
 }
 
-// 5. Delete Action
+
 async function deleteNotification(e, id) { 
     e.stopPropagation(); 
     openConfirmModal("Delete Notification?", "Remove this notification?", async () => { 
@@ -2337,7 +2355,6 @@ async function searchChatUsers(q) {
     ).join(''); 
 }
 
-// --- CHAT FUNCTIONS START ---
 
 async function startChat(id, name, photo) {
     activeChatUser = id;
@@ -2391,7 +2408,7 @@ async function sendMsg() {
     const tempId = 'temp-' + Date.now();
     const themeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
 
-    // WhatsApp style preview
+   
     const html = `
         <div class="flex justify-end mb-2" id="${tempId}">
             <div class="chat-bubble-user ${themeBtn} text-white px-4 py-2 text-sm max-w-[80%] shadow-md opacity-70">
@@ -2409,7 +2426,6 @@ async function sendMsg() {
 
     try {
         await APIService.chat.send(activeChatUser, txt);
-        // Server pe message pahunchte hi temp nishani hatao aur asli chat refresh karo
         const tempEl = document.getElementById(tempId);
         if(tempEl) tempEl.remove();
         loadMsgs();
@@ -2471,18 +2487,14 @@ async function loadMsgs() {
         return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 group">${isMe ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}<div class="${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md">${content}<div class="text-[9px] opacity-70 text-right mt-1 font-mono">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div></div></div>`;
     }).join('');
     
-    // Auto scroll logic strictly for new messages
+    
     const chatMsgs = document.getElementById('fc-messages');
     if(!chatMsgs.hasAttribute('data-scrolled')) {
         chatMsgs.scrollTop = chatMsgs.scrollHeight;
     }
 }
 
-// --- CHAT FUNCTIONS END ---
 
-
-
- 
 
 async function clearChat() { openConfirmModal("Clear Chat?", "Are you sure?", async () => { await APIService.chat.clearChat(activeChatUser); loadMsgs(); }); }
 async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message?", async () => { await APIService.chat.deleteMsg(id); loadMsgs(); }); }
@@ -2627,15 +2639,27 @@ async function loadReelComments(postId) {
             list.innerHTML = `<p class="text-center text-gray-400 py-10">No comments yet.</p>`;
             return;
         }
-        list.innerHTML = p.comments.map(c => `
-            <div class="flex gap-3">
+
+        const myId = localStorage.getItem("userId");
+       
+        const isMePost = p.userId?._id === myId || p.userId === myId; 
+
+        list.innerHTML = p.comments.map(c => {
+           
+            const canDelete = isMePost || (c.userId && (c.userId._id === myId || c.userId === myId));
+
+            return `
+            <div class="flex gap-3 group" id="comment-item-${c._id}">
                 <img src="${c.userId?.photo || 'https://placehold.co/30'}" class="w-8 h-8 rounded-full object-cover">
-                <div class="flex-1">
-                    <p class="text-xs font-bold text-gray-800">@${c.userId?.username || c.userName || 'user'}</p>
+                <div class="flex-1 border-b border-gray-100 pb-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <p class="text-xs font-bold text-gray-800">@${c.userId?.username || c.userName || 'user'}</p>
+                        ${canDelete ? `<button onclick="deleteComment('${postId}', '${c._id}')" class="text-gray-400 hover:text-red-500 text-[10px] bg-red-50 px-2 py-1 rounded-full"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </div>
                     <p class="text-sm text-gray-600">${c.text}</p>
                 </div>
-            </div>
-        `).reverse().join('');
+            </div>`;
+        }).reverse().join('');
     } catch(e) { list.innerHTML = "Error loading."; }
 }
 
@@ -2945,7 +2969,7 @@ function resetPostForm() {
 }
 
 
-// 1. मेनू खोलने/बंद करने का फ़ंक्शन (यह वही रहेगा)
+
 function toggleThemeMenu() {
     const menu = document.getElementById('theme-options');
     if (menu) {
@@ -2955,19 +2979,15 @@ function toggleThemeMenu() {
     }
 }
 
-// 2. थीम बदलने का मुख्य फ़ंक्शन (इसे पूरी तरह बदल दिया है)
+
 function changeTheme(themeName) {
     const body = document.body;
-    // 'html' टैग को भी पकड़ें ताकि पूरा पेज कवर हो सके
+  
     const html = document.documentElement; 
     const content = document.getElementById('main-content');
 
-    // --- STEP A: पूरा रीसेट (Hard Reset) ---
-    // पुरानी थीम क्लास हटाएं
+  
     body.classList.remove('theme-dark', 'theme-pink', 'theme-red');
-    
-    // बॉडी और HTML से सभी इनलाइन स्टाइल हटाएं
-    // यह 'Default' थीम पर वापस जाने के लिए बहुत ज़रूरी है
     body.style.background = '';
     body.style.backgroundColor = '';
     body.style.backgroundImage = '';
@@ -2981,26 +3001,24 @@ function changeTheme(themeName) {
         content.style.backgroundColor = '';
     }
 
-    // --- STEP B: नई थीम लागू करें ---
+    
     if (themeName === 'default') {
-        // सब कुछ रीसेट हो गया है, अब CSS का ओरिजिनल ग्रेडिएंट अपने आप वापस आ जाएगा।
+       
         console.log("Applied Default Theme (Gradient)");
     } 
     else {
-        // नई क्लास जोड़ें
+       
         body.classList.add(`theme-${themeName}`);
-        
-        // 🔥 सबसे महत्वपूर्ण: ग्रेडिएंट को जबरदस्ती 'none' करना 🔥
         body.style.backgroundImage = 'none';
         html.style.backgroundImage = 'none';
         
-        // थीम के अनुसार सॉलिड कलर तय करें
+       
         let newColor = '';
-        if (themeName === 'dark') newColor = '#000000'; // पूरा काला
-        else if (themeName === 'pink') newColor = '#ffe4e1'; // पूरा पिंक
-        else if (themeName === 'red') newColor = '#fff5f5'; // पूरा लाल
+        if (themeName === 'dark') newColor = '#000000'; 
+        else if (themeName === 'pink') newColor = '#ffe4e1';
+        else if (themeName === 'red') newColor = '#fff5f5';
 
-        // नए कलर को बॉडी और HTML दोनों पर लगाएं
+      
         if (newColor) {
             body.style.backgroundColor = newColor;
             html.style.backgroundColor = newColor;
@@ -3008,11 +3026,11 @@ function changeTheme(themeName) {
         }
     }
 
-    // --- STEP C: सेव करें ---
+   
     localStorage.setItem('selectedTheme', themeName);
 }
 
-// 3. पेज लोड होने पर थीम लगाना (यह वही रहेगा)
+
 function applySavedTheme() {
     const saved = localStorage.getItem('selectedTheme');
     if (saved) {
@@ -3020,21 +3038,21 @@ function applySavedTheme() {
     }
 }
 
-// 4. इवेंट लिसनर
+
 document.addEventListener('DOMContentLoaded', () => {
     applySavedTheme();
 });
 
 
-// --- CONFIG & HELPERS ---
-const SECRET_KEY = "Zobbly_Secure_Lock_99"; // Data secure rakhne ke liye
 
-// Data ko lock karne ke liye
+const SECRET_KEY = "Zobbly_Secure_Lock_99"; 
+
+
 function encrypt(data) {
     return CryptoJS.AES.encrypt(JSON.stringify(data), SECRET_KEY).toString();
 }
 
-// Data ko unlock karne ke liye
+
 function decrypt(cipher) {
     try {
         const bytes = CryptoJS.AES.decrypt(cipher, SECRET_KEY);
@@ -3042,7 +3060,6 @@ function decrypt(cipher) {
     } catch (e) { return null; }
 }
 
-// File ko text (Base64) mein badalne ke liye
 function fileToBase64(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -3051,11 +3068,21 @@ function fileToBase64(file) {
     });
 }
 
-// --- 1. RENDER FUNCTION ---
-// --- 1. RENDER FUNCTION ---
+async function getLocalVaultData(email) {
+    try {
+        const rawData = await localforage.getItem(`vault_data_${email}`);
+        if (!rawData) return {};
+       
+        return decrypt(rawData) || JSON.parse(rawData);
+    } catch (e) {
+        console.error("Error loading local vault:", e);
+        return {};
+    }
+}
+
 async function renderDocuments() {
     const c = document.getElementById('main-content');
-    c.innerHTML = '<div class="text-center mt-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-purple-600"></i></div>';
+    c.innerHTML = '<div class="text-center mt-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-purple-600"></i><p class="mt-2 text-sm text-gray-500">Unlocking Local Vault...</p></div>';
 
     try {
         const loggedInEmail = localStorage.getItem('userEmail'); 
@@ -3064,8 +3091,8 @@ async function renderDocuments() {
             return;
         }
 
-        const localData = localStorage.getItem(`vault_data_${loggedInEmail}`);
-        let savedData = localData ? (decrypt(localData) || JSON.parse(localData)) : {};
+     
+        const savedData = await getLocalVaultData(loggedInEmail);
 
         const html = `
         <div class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between">
@@ -3079,6 +3106,8 @@ async function renderDocuments() {
         <div style="height: 70px;"></div>
 
         <div class="p-4 pb-24">
+            <p class="text-xs text-center text-green-600 mb-4 font-bold"><i class="fa-solid fa-shield-halved"></i> Data is stored offline on this device.</p>
+            
             <div class="glass-card p-5 mb-6 shadow-sm border border-gray-100 rounded-2xl bg-white">
                 <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                     <i class="fa-solid fa-user-gear text-purple-600"></i> Identity Details
@@ -3121,15 +3150,18 @@ async function renderDocuments() {
             </div>
 
             <button onclick="saveVaultLocally()" id="save-btn" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition flex justify-center items-center gap-2">
-                <i class="fa-solid fa-shield-check"></i> Encrypt & Save Everything
+                <i class="fa-solid fa-hard-drive"></i> Save Securely to Phone
             </button>
         </div>`;
 
         c.innerHTML = html;
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+        c.innerHTML = '<div class="text-center mt-20 text-red-500 font-bold">Error loading vault data.</div>';
+    }
 }
 
-// --- DOCUMENT ITEM UI (With Download & Delete) ---
+
 function renderDocumentItem(label, id, base64) {
     return `
     <div class="relative">
@@ -3140,7 +3172,7 @@ function renderDocumentItem(label, id, base64) {
                     ${base64 ? `<img src="${base64}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-image text-gray-300"></i>'}
                 </div>
                 <div>
-                    <input type="file" id="${id}" accept="image/*" class="hidden" onchange="previewSelectedFile(this, '${id}-preview')">
+                    <input type="file" id="${id}" accept="image/*" class="hidden" onchange="previewLocalFile(this, '${id}-preview')">
                     <button onclick="document.getElementById('${id}').click()" class="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg">
                         ${base64 ? 'Change File' : 'Choose File'}
                     </button>
@@ -3158,74 +3190,102 @@ function renderDocumentItem(label, id, base64) {
                 ` : ''}
             </div>
         </div>
-        <div id="${id}-preview" class="hidden mt-2 text-center text-[10px] text-green-600">File Selected ✅</div>
+        <div id="${id}-preview" class="hidden mt-2 text-center text-[10px] text-green-600">File Selected (Click Save) ✅</div>
     </div>`;
 }
 
-// --- LOGIC: DOWNLOAD FILE ---
+
+function previewLocalFile(input, previewId) {
+    if (input.files && input.files[0]) {
+        document.getElementById(previewId).classList.remove('hidden');
+    }
+}
+
 function downloadVaultFile(base64, name) {
     const link = document.createElement('a');
     link.href = base64;
     link.download = `Zobbly_${name.replace(/\s+/g, '_')}.png`;
     link.click();
-    Toastify({text: "Downloading started...", style: {background: "green"}}).showToast();
 }
 
-// --- LOGIC: DELETE FILE ---
 function deleteVaultFile(keyId) {
-    if(confirm("Are you sure you want to delete this document?")) {
-        // Hum sirf file select ko reset nahi karenge, save call karke storage se bhi udayenge
-        // Iske liye hum hidden state maintain karenge ya UI refresh karenge
-        alert("File removed from list. Click 'Save' to confirm deletion.");
-        renderDocuments(); 
+    if(confirm("Delete this document from phone memory? Remember to click 'Save' below.")) {
+        alert("File flagged for removal. Click 'Save' to finalize.");
+        document.getElementById(keyId).value = "";
+       
     }
 }
 
-// --- LOGIC: SAVE EVERYTHING ---
-async function saveVaultLocally() {
+    async function saveVaultLocally() {
     const loggedInEmail = localStorage.getItem('userEmail');
+    if(!loggedInEmail) return;
+
     const btn = document.getElementById('save-btn');
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Securing...';
+    const originalBtnText = btn.innerHTML; 
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Securing to Device...';
 
-    const oldRaw = localStorage.getItem(`vault_data_${loggedInEmail}`);
-    const oldData = oldRaw ? (decrypt(oldRaw) || JSON.parse(oldRaw)) : {};
+    try {
+       
+        if (typeof localforage === 'undefined') {
+            throw new Error("localforage library load nahi hui! Kripya <head> mein script tag check karein.");
+        }
 
-    const getImg = async (id, oldImg) => {
-        const file = document.getElementById(id).files[0];
-        // Agar naya file hai to wo lo, warna purana rehne do
-        return file ? await fileToBase64(file) : oldImg;
-    };
+        const oldData = await getLocalVaultData(loggedInEmail);
 
-    const dataToSave = {
-        fullName: document.getElementById('vault-name').value,
-        dob: document.getElementById('vault-dob').value,
-        gender: document.getElementById('vault-gender').value,
-        panNo: document.getElementById('vault-pan').value,
-        aadharNo: document.getElementById('vault-aadhar').value,
-        birthMark: document.getElementById('vault-mark').value,
-        address: document.getElementById('vault-address').value,
-        // Images
-        photoImg: await getImg('doc-photo', oldData.photoImg || ''),
-        aadharImg: await getImg('doc-aadhar', oldData.aadharImg || ''),
-        panImg: await getImg('doc-pan', oldData.panImg || ''),
-        mark10Img: await getImg('doc-10th', oldData.mark10Img || ''),
-        mark12Img: await getImg('doc-12th', oldData.mark12Img || ''),
-        casteImg: await getImg('doc-caste', oldData.casteImg || ''),
-        lastUpdated: new Date().toLocaleString()
-    };
+        const getImg = async (id, oldImg) => {
+            const el = document.getElementById(id);
+          
+            if(el && el.files && el.files[0]) {
+                return await fileToBase64(el.files[0]);
+            }
+            return oldImg;
+        };
 
-    const encryptedData = encrypt(dataToSave);
-    localStorage.setItem(`vault_data_${loggedInEmail}`, encryptedData);
+        const dataToSave = {
+            fullName: document.getElementById('vault-name')?.value || "",
+            dob: document.getElementById('vault-dob')?.value || "",
+            gender: document.getElementById('vault-gender')?.value || "",
+            panNo: document.getElementById('vault-pan')?.value || "",
+            aadharNo: document.getElementById('vault-aadhar')?.value || "",
+            birthMark: document.getElementById('vault-mark')?.value || "",
+            address: document.getElementById('vault-address')?.value || "",
+            
+         
+            photoImg: await getImg('doc-photo', oldData.photoImg || ''),
+            aadharImg: await getImg('doc-aadhar', oldData.aadharImg || ''),
+            panImg: await getImg('doc-pan', oldData.panImg || ''),
+            mark10Img: await getImg('doc-10th', oldData.mark10Img || ''),
+            mark12Img: await getImg('doc-12th', oldData.mark12Img || ''),
+            casteImg: await getImg('doc-caste', oldData.casteImg || ''),
+            lastUpdated: new Date().toLocaleString()
+        };
 
-    if(window.AndroidBridge) window.AndroidBridge.saveToAndroid(encryptedData);
+       
+        const encryptedData = encrypt(dataToSave);
+        
+      
+        await localforage.setItem(`vault_data_${loggedInEmail}`, encryptedData);
 
-    alert("✅ Vault Updated & Encrypted!");
-    renderDocuments();
+       
+        if(window.AndroidBridge && typeof window.AndroidBridge.saveToAndroid === 'function') {
+            try {
+                window.AndroidBridge.saveToAndroid(encryptedData);
+            } catch (bridgeErr) {
+                console.log("Android Bridge Error (Ignore if testing in browser):", bridgeErr);
+            }
+        }
+
+        alert("✅ Vault Saved 100% Offline to your Phone!");
+        renderDocuments(); 
+        
+    } catch (error) {
+       
+        console.error("Save Error:", error);
+        alert("❌ Data save karne mein error aayi: " + error.message);
+        btn.innerHTML = originalBtnText; 
+    }
 }
 
-// ==========================================
-// [FIX 4] Auto-hide Header Logic added here
-// ==========================================
 let lastScrollY = 0;
 document.getElementById('app-screen').addEventListener('scroll', (e) => {
     if (!document.body.classList.contains('feed-mode')) return;
@@ -3234,16 +3294,84 @@ document.getElementById('app-screen').addEventListener('scroll', (e) => {
     const feedTopBar = document.getElementById('feed-top-bar');
     
     if (currentScrollY > 60 && currentScrollY > lastScrollY) {
-        // Scrolling Down - Hide Header
+       
         if (mainHeader) mainHeader.style.transform = 'translateY(-100%)';
         if (feedTopBar) feedTopBar.style.transform = 'translateY(-150%)';
     } else {
-        // Scrolling Up - Show Header
+      
         if (mainHeader) mainHeader.style.transform = 'translateY(0)';
         if (feedTopBar) feedTopBar.style.transform = 'translateY(0)';
     }
     lastScrollY = currentScrollY;
 }, { passive: true });
+
+
+
+let backPressCount = 0;
+
+
+window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
+window.addEventListener('popstate', function (event) {
+   
+    const fullChat = document.getElementById('full-chat-view');
+    if (fullChat && fullChat.classList.contains('active')) {
+        closeFullChat();
+        window.history.pushState({ page: 'zobbly-main' }, null, window.location.href); 
+        return;
+    }
+
+    const modals = [
+        document.getElementById('genericModal'),
+        document.getElementById('postModal'),
+        document.getElementById('editProfileModal'),
+        document.getElementById('postEditorModal'),
+        document.getElementById('universalConfirmModal')
+    ];
+    
+    let modalClosed = false;
+    for (let modal of modals) {
+        if (modal && !modal.classList.contains('hidden') && modal.style.display !== 'none') {
+            modal.classList.add('hidden');
+            modal.style.display = '';
+            modalClosed = true;
+        }
+    }
+    
+    if (modalClosed) {
+        window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
+        return;
+    }
+
+    
+    const sidePanel = document.getElementById('side-panel');
+    if (sidePanel && sidePanel.classList.contains('open')) {
+        toggleSidePanel();
+        window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
+        return;
+    }
+
+   
+    const feedBtn = document.getElementById('nav-feed');
+    if (feedBtn && !feedBtn.classList.contains('nav-active')) {
+        renderView('feed');
+        window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
+        return;
+    }
+
+    if (backPressCount === 0) {
+        showToast("Press back again to exit");
+        backPressCount++;
+         window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
+        
+      
+        setTimeout(() => {
+            backPressCount = 0; 
+        }, 2000);
+    } else {
+      
+        window.history.back();
+    }
+});
 
 </script>
 </body>

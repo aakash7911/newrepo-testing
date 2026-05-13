@@ -1581,15 +1581,38 @@ async function renderFeed(c) {
                         <button onclick="searchUsersFromFeed()" class="w-10 h-10 bg-gray-100 text-purple-600 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm hover:bg-purple-100 transition"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
                     <div style="height: 80px;"></div>`;
-    c.innerHTML = topBar;
+                    
+    // 🔥 LOADER TEXT CHANGED TO ENGLISH
+    c.innerHTML = topBar + `
+        <div id="feed-loader" class="flex flex-col justify-center items-center py-16 w-full">
+            <lottie-player 
+                src="https://aakash7911.github.io/cat_animation.json" 
+                background="transparent" 
+                speed="1" 
+                style="width: 150px; height: 150px;" 
+                loop 
+                autoplay>
+            </lottie-player>
+            <p class="text-sm text-gray-400 font-medium mt-2 animate-pulse">Loading your feed...</p>
+        </div>
+    `;
+
     try {
         let posts = await APIService.feed.getAll();
+        
+        // Data aate hi loader ko hata do
+        const loader = document.getElementById('feed-loader');
+        if (loader) loader.remove();
+
         const myId = localStorage.getItem("userId");
         const myCountry = localStorage.getItem("userCountry") || "India";
         const safeBlockedList = (myBlockedUsers || []).map(u => (typeof u === 'object' && u._id) ? u._id : u);
 
         if(posts && posts.length > 0) {
-            let validPosts = posts.filter(p => { if(!p.userId) return false; const pUserId = p.userId._id || p.userId; return !safeBlockedList.includes(pUserId); });
+            
+            let feedOnlyPosts = posts.filter(p => p.category !== 'reel' && p.category !== 'youtube_reel');
+
+            let validPosts = feedOnlyPosts.filter(p => { if(!p.userId) return false; const pUserId = p.userId._id || p.userId; return !safeBlockedList.includes(pUserId); });
             let localPosts = validPosts.filter(p => p.userId.country === myCountry);
             let globalPosts = validPosts.filter(p => p.userId.country !== myCountry);
             localPosts = shuffleArray(localPosts);
@@ -1625,7 +1648,7 @@ async function renderFeed(c) {
                              linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${firstLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
                         }
                     }
-               
+                
                     const userHandle = p.userId.username ? `@${p.userId.username}` : '';
                     const userCountry = p.userId.country ? `<span class="ml-1 text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500"><i class="fa-solid fa-earth-americas"></i> ${p.userId.country}</span>` : '';
                     const mediaUrl = p.video || p.image;
@@ -1722,7 +1745,11 @@ async function renderFeed(c) {
                 c.innerHTML += `<div class="h-24 w-full"></div>`;
             }
         } else { c.innerHTML += `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`; }
-    } catch(e) { c.innerHTML += '<p class="text-center text-red-500 text-sm mt-4">Error loading feed.</p>'; }
+    } catch(e) { 
+        const errLoader = document.getElementById('feed-loader');
+        if (errLoader) errLoader.remove();
+        c.innerHTML += '<p class="text-center text-red-500 text-sm mt-4">Error loading feed.</p>'; 
+    }
     applyTranslations();
 }
 

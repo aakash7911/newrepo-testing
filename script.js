@@ -1,504 +1,490 @@
+const API_BASE = "https://zobbly.onrender.com";
+let activeChatUser = null;
+let myFollowers = [];
+let myFollowing = [];
+let myBlockedUsers = [];
+let authContext = "";
+let pendingConfirmAction = null;
+let activeDropdownId = null;
+let isChatOpen = false; 
+let statusInterval = null; 
+const chatThemes = [
+    { id: 'default', name: 'Default', bg: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', text: 'text-gray-800', btn: 'bg-purple-600', barColor: 'rgba(255, 255, 255, 0.9)' },
+    { id: 'love', name: '❤️ Love', bg: 'url(https://i.ibb.co/spDGj2Q2/Gemini-Generated-Image-izx0sxizx0sxizx0.png)', text: 'text-white', btn: 'bg-pink-600', barColor: 'rgba(255, 230, 240, 0.95)' },
+    { id: 'sad', name: '🌧️ Sad / Rain', bg: 'url(https://i.ibb.co/ZsvvCcw/Gemini-Generated-Image-4c7xnb4c7xnb4c7x.png)', text: 'text-white', btn: 'bg-gray-600', barColor: 'rgba(230, 235, 240, 0.95)' },
+    { id: 'angry', name: '🔥 Angry / Fire', bg: 'url(https://i.ibb.co/JWWHxzkb/Gemini-Generated-Image-1e28ts1e28ts1e28.png)', text: 'text-white', btn: 'bg-red-700', barColor: 'rgba(255, 230, 230, 0.95)' },
+    { id: 'nature', name: '🌿 Nature', bg: 'url(https://i.ibb.co/2YgfZVY6/Gemini-Generated-Image-9djvzu9djvzu9djv.png)', text: 'text-white', btn: 'bg-green-600', barColor: 'rgba(230, 250, 230, 0.95)' },
+    { id: 'galaxy', name: '🌌 Galaxy', bg: 'url(https://i.ibb.co/JFSC8Dbx/Gemini-Generated-Image-1dmtnl1dmtnl1dmt.png)', text: 'text-white', btn: 'bg-indigo-600', barColor: 'rgba(230, 230, 250, 0.95)' },
+    { id: 'happy', name: '☀️ Happy', bg: 'url(https://i.ibb.co/1GFRhMBr/Gemini-Generated-Image-6encea6encea6enc.png)', text: 'text-gray-800', btn: 'bg-yellow-500', barColor: 'rgba(255, 250, 230, 0.95)' },
+    { id: 'night', name: '🌑 Night City', bg: 'url(https://i.ibb.co/wGS6vMf/Gemini-Generated-Image-a27g02a27g02a27g.png)', text: 'text-white', btn: 'bg-blue-900', barColor: 'rgba(200, 210, 230, 0.95)' },
+    { id: 'ocean', name: '🌊 Ocean', bg: 'url(https://images.unsplash.com/photo-1505118380757-91f5f5632de0?q=80&w=600)', text: 'text-white', btn: 'bg-cyan-600', barColor: 'rgba(220, 245, 255, 0.95)' },
+    { id: 'sunset', name: '🌅 Sunset', bg: 'url(https://i.ibb.co/W4XXhLX8/Gemini-Generated-Image-xo6dpexo6dpexo6d.png)', text: 'text-white', btn: 'bg-orange-600', barColor: 'rgba(255, 240, 230, 0.95)' },
+    { id: 'tech', name: '💻 Cyber', bg: 'url(https://i.ibb.co/KMvTGKm/Gemini-Generated-Image-hhy4sohhy4sohhy4.png)', text: 'text-white', btn: 'bg-blue-600', barColor: 'rgba(220, 230, 255, 0.95)' },
+    { id: 'abstract', name: '🎨 Abstract', bg: 'url(https://i.ibb.co/Lzy1Yfhf/Gemini-Generated-Image-o7z6c6o7z6c6o7z6.png)', text: 'text-white', btn: 'bg-pink-500', barColor: 'rgba(255, 235, 255, 0.95)' }
+];
 
-    const API_BASE = "https://zobbly.onrender.com";
-    let activeChatUser = null;
-    let myFollowers = [];
-    let myFollowing = [];
-    let myBlockedUsers = [];
-    let authContext = "";
-    let pendingConfirmAction = null;
-    let activeDropdownId = null;
-    let isChatOpen = false; 
-    let statusInterval = null; 
-    const chatThemes = [
-        { id: 'default', name: 'Default', bg: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', text: 'text-gray-800', btn: 'bg-purple-600', barColor: 'rgba(255, 255, 255, 0.9)' },
-        { id: 'love', name: '❤️ Love', bg: 'url(https://i.ibb.co/spDGj2Q2/Gemini-Generated-Image-izx0sxizx0sxizx0.png)', text: 'text-white', btn: 'bg-pink-600', barColor: 'rgba(255, 230, 240, 0.95)' },
-        { id: 'sad', name: '🌧️ Sad / Rain', bg: 'url(https://i.ibb.co/ZsvvCcw/Gemini-Generated-Image-4c7xnb4c7xnb4c7x.png)', text: 'text-white', btn: 'bg-gray-600', barColor: 'rgba(230, 235, 240, 0.95)' },
-        { id: 'angry', name: '🔥 Angry / Fire', bg: 'url(https://i.ibb.co/JWWHxzkb/Gemini-Generated-Image-1e28ts1e28ts1e28.png)', text: 'text-white', btn: 'bg-red-700', barColor: 'rgba(255, 230, 230, 0.95)' },
-        { id: 'nature', name: '🌿 Nature', bg: 'url(https://i.ibb.co/2YgfZVY6/Gemini-Generated-Image-9djvzu9djvzu9djv.png)', text: 'text-white', btn: 'bg-green-600', barColor: 'rgba(230, 250, 230, 0.95)' },
-        { id: 'galaxy', name: '🌌 Galaxy', bg: 'url(https://i.ibb.co/JFSC8Dbx/Gemini-Generated-Image-1dmtnl1dmtnl1dmt.png)', text: 'text-white', btn: 'bg-indigo-600', barColor: 'rgba(230, 230, 250, 0.95)' },
-        { id: 'happy', name: '☀️ Happy', bg: 'url(https://i.ibb.co/1GFRhMBr/Gemini-Generated-Image-6encea6encea6enc.png)', text: 'text-gray-800', btn: 'bg-yellow-500', barColor: 'rgba(255, 250, 230, 0.95)' },
-        { id: 'night', name: '🌑 Night City', bg: 'url(https://i.ibb.co/wGS6vMf/Gemini-Generated-Image-a27g02a27g02a27g.png)', text: 'text-white', btn: 'bg-blue-900', barColor: 'rgba(200, 210, 230, 0.95)' },
-        { id: 'ocean', name: '🌊 Ocean', bg: 'url(https://images.unsplash.com/photo-1505118380757-91f5f5632de0?q=80&w=600)', text: 'text-white', btn: 'bg-cyan-600', barColor: 'rgba(220, 245, 255, 0.95)' },
-        { id: 'sunset', name: '🌅 Sunset', bg: 'url(https://i.ibb.co/W4XXhLX8/Gemini-Generated-Image-xo6dpexo6dpexo6d.png)', text: 'text-white', btn: 'bg-orange-600', barColor: 'rgba(255, 240, 230, 0.95)' },
-        { id: 'tech', name: '💻 Cyber', bg: 'url(https://i.ibb.co/KMvTGKm/Gemini-Generated-Image-hhy4sohhy4sohhy4.png)', text: 'text-white', btn: 'bg-blue-600', barColor: 'rgba(220, 230, 255, 0.95)' },
-        { id: 'abstract', name: '🎨 Abstract', bg: 'url(https://i.ibb.co/Lzy1Yfhf/Gemini-Generated-Image-o7z6c6o7z6c6o7z6.png)', text: 'text-white', btn: 'bg-pink-500', barColor: 'rgba(255, 235, 255, 0.95)' }
-    ];
-   function receiveFcmToken(token) {
-        localStorage.setItem("fcmToken", token);
-        if (localStorage.getItem("token")) APIService.user.updateFcm(token);
+function receiveFcmToken(token) {
+    localStorage.setItem("fcmToken", token);
+    if (localStorage.getItem("token")) APIService.user.updateFcm(token);
+}
+
+const translations = {
+    en: { settings: "Settings", editProfile: "Edit Profile", backup: "Backup Data", delete: "Delete Account", logout: "Logout", createPost: "Create Post", post: "Post", save: "Save Changes", experience: "Experience", activity: "Activity", followers: "Followers", following: "Following", follow: "Follow", unfollow: "Following", block: "Block", unblock: "Unblock", report: "Report", jobs: "Find Jobs", search: "Search", notifications: "Notifications", noPosts: "No posts yet.", back: "Back", message: "Message", clear: "Clear" },
+    hi: { settings: "ਸੈਟਿੰਗਾਂ", editProfile: "ਪ੍ਰੋਫਾਈਲ ਬਦਲੋ", backup: "ਬੈਕਅੱਪ", delete: "ਖਾਤਾ ਹਟਾਓ", logout: "ਲੌਗ ਆਉਟ", createPost: "ਪੋਸਟ ਬਣਾਓ", post: "ਪੋਸٹ", save: "ਸੰਭਾਲੋ", experience: "ਤਜਰਬਾ", activity: "ਸਰਗਰਮੀ", followers: "ਫਾਲੋਅਰਜ਼", following: "ਫਾਲੋਇੰਗ", follow: "ਫਾਲੋ", unfollow: "ਫਾਲੋਇੰਗ", block: "ਬਲੌਕ", unblock: "ਅਣਬਲੌਕ", report: "ਰਿਪੋਰਟ", jobs: "ਨੌਕਰੀ ਲੱਭੋ", search: "ਖੋਜ", notifications: "ਸੂਚਨਾਵਾਂ", noPosts: "ਕੋਈ ਪੋਸਟ ਨਹੀਂ", back: "ਵਾਪਸ", message: "ਸੁਨੇਹਾ", clear: "ਸਾਫ਼ ਕਰੋ" },
+    es: { settings: "Ajustes", editProfile: "Editar Perfil", backup: "Copia de seguridad", delete: "Eliminar cuenta", logout: "Cerrar sesión", createPost: "Crear publicación", post: "Publicar", save: "Guardar", experience: "Experiencia", activity: "Actividad", followers: "Seguidores", following: "Siguiendo", follow: "Seguir", unfollow: "Siguiendo", block: "Bloquear", unblock: "Desbloquear", report: "Reportar", jobs: "Buscar Empleo", search: "Buscar", notifications: "Notificaciones", noPosts: "Aún no hay posts", back: "Atrás", message: "Mensaje", clear: "Limpiar" },
+    fr: { settings: "Paramètres", editProfile: "Modifier profil", backup: "Sauvegarde", delete: "Supprimer compte", logout: "Déconnexion", createPost: "Créer un post", post: "Publier", save: "Enregistrer", experience: "Expérience", activity: "Activité", followers: "Abonnés", following: "Abonnements", follow: "Suivre", unfollow: "Abonné", block: "Bloquear", unblock: "Débloquer", report: "Signaler", jobs: "Emplois", search: "Rechercher", notifications: "Notifications", noPosts: "Pas de posts", back: "Retour", message: "Message", clear: "Effacer" },
+    de: { settings: "Einstellungen", editProfile: "Profil bearbeiten", backup: "Backup", delete: "Konto löschen", logout: "Abmelden", createPost: "Beitrag erstellen", post: "Posten", save: "Speichern", experience: "Erfahrung", activity: "Aktivität", followers: "Follower", following: "Gefolgt", follow: "Folgen", unfollow: "Gefolgt", block: "Blockieren", unblock: "Entblocken", report: "Melden", jobs: "Jobs finden", search: "Suchen", notifications: "Benachrichtigungen", noPosts: "Keine Beiträge", back: "Zurück", message: "Nachricht", clear: "Löschen" },
+    zh: { settings: "设置", editProfile: "编辑资料", backup: "备份数据", delete: "删除帐户", logout: "退出", createPost: "发帖", post: "发布", save: "保存", experience: "经历", activity: "动态", followers: "粉丝", following: "关注", follow: "关注", unfollow: "已关注", block: "拉黑", unblock: "解除拉黑", report: "举报", jobs: "找工作", search: "搜索", notifications: "通知", noPosts: "暂无帖子", back: "返回", message: "发消息", clear: "清除" },
+    ja: { settings: "設定", editProfile: "プロフィール編集", backup: "バックアップ", delete: "アカウント削除", logout: "ログアウト", createPost: "投稿作成", post: "投稿", save: "保存", experience: "経験", activity: "アクティビティ", followers: "フォロワー", following: "フォロー中", follow: "フォロー", unfollow: "フォロー中", block: "ブロック", unblock: "解除", report: "通報", jobs: "仕事検索", search: "検索", notifications: "通知", noPosts: "投稿なし", back: "戻る", message: "メッセージ", clear: "クリア" },
+    ru: { settings: "Настройки", editProfile: "Ред. профиль", backup: "Резервная копия", delete: "Удалить аккаунт", logout: "Выйти", createPost: "Создать пост", post: "Опубликовать", save: "Сохранить", experience: "Опыт", activity: "Активность", followers: "Подписчики", following: "Подписки", follow: "Подписаться", unfollow: "Вы подписаны", block: "Блок", unblock: "Разблок", report: "Жалоба", jobs: "Вакансии", search: "Поиск", notifications: "Уведомления", noPosts: "Нет постов", back: "Назад", message: "Сообщение", clear: "Очистить" },
+    pt: { settings: "Configurações", editProfile: "Editar Perfil", backup: "Backup", delete: "Excluir Conta", logout: "Sair", createPost: "Criar Post", post: "Postar", save: "Salvar", experience: "Experiência", activity: "Atividade", followers: "Seguidores", following: "Seguindo", follow: "Seguir", unfollow: "Seguindo", block: "Bloquear", unblock: "Desbloquear", report: "Denunciar", jobs: "Vagas", search: "Buscar", notifications: "Notificações", noPosts: "Sem posts", back: "Voltar", message: "Mensagem", clear: "Limpar" },
+    ar: { settings: "الإعدادات", editProfile: "تعديل الملف", backup: "نسخ احتياطي", delete: "حذف الحساب", logout: "خروج", createPost: "إنشاء منشور", post: "نشر", save: "حفظ", experience: "الخبرة", activity: "النشاط", followers: "المتابعون", following: "المتابَعون", follow: "متابعة", unfollow: "تتابع", block: "حظر", unblock: "إلغاء الحظر", report: "إبلاغ", jobs: "وظائف", search: "بحث", notifications: "إشعارات", noPosts: "لا منشورات", back: "عودة", message: "رسالة", clear: "مسح" },
+    it: { settings: "Impostazioni", editProfile: "Modifica profilo", backup: "Backup", delete: "Elimina account", logout: "Esci", createPost: "Crea post", post: "Pubblica", save: "Salva", experience: "Esperienza", activity: "Attività", followers: "Follower", following: "Seguiti", follow: "Segui", unfollow: "Segui già", block: "Blocca", unblock: "Sblocca", report: "Segnala", jobs: "Lavoro", search: "Cerca", notifications: "Notifiche", noPosts: "Nessun post", back: "Indietro", message: "Messaggio", clear: "Pulisci" },
+    ko: { settings: "설정", editProfile: "프로필 편집", backup: "백업", delete: "계정 삭제", logout: "로그아웃", createPost: "게시물 작성", post: "게시", save: "저장", experience: "경력", activity: "활동", followers: "팔로워", following: "팔로잉", follow: "팔로우", unfollow: "팔로잉", block: "차단", unblock: "해제", report: "신고", jobs: "구직", search: "검색", notifications: "알림", noPosts: "게시물 없음", back: "뒤로", message: "메시지", clear: "지우기" },
+    tr: { settings: "Ayarlar", editProfile: "Profili Düzenle", backup: "Yedekle", delete: "Hesabı Sil", logout: "Çıkış", createPost: "Gönderi Yap", post: "Paylaş", save: "Kaydet", experience: "Deneyim", activity: "Aktivite", followers: "Takipçiler", following: "Takip", follow: "Takip Et", unfollow: "Takipte", block: "Engelle", unblock: "Aç", report: "Bildir", jobs: "İş Bul", search: "Ara", notifications: "Bildirimler", noPosts: "Gönderi yok", back: "Geri", message: "Mesaj", clear: "Temizle" },
+    nl: { settings: "Instellingen", editProfile: "Profiel bewerken", backup: "Back-up", delete: "Account verwijderen", logout: "Uitloggen", createPost: "Post maken", post: "Plaatsen", save: "Opslaan", experience: "Ervaring", activity: "Activiteit", followers: "Volgers", following: "Volgend", follow: "Volgen", unfollow: "Volgend", block: "Blokkeren", unblock: "Deblokkeren", report: "Rapporteren", jobs: "Vacatures", search: "Zoeken", notifications: "Meldingen", noPosts: "Geen posts", back: "Terug", message: "Bericht", clear: "Wissen" },
+    pl: { settings: "Ustawienia", editProfile: "Edytuj profil", backup: "Kopia zapasowa", delete: "Usuń konto", logout: "Wyloguj", createPost: "Utwórz wpis", post: "Opublikuj", save: "Zapisz", experience: "Doświadczenie", activity: "Aktywność", followers: "Obserwujący", following: "Obserwowani", follow: "Obserwuj", unfollow: "Obserwujesz", block: "Zablokuj", unblock: "Odblokuj", report: "Zgłoś", jobs: "Praca", search: "Szukaj", notifications: "Powiadomienia", noPosts: "Brak wpisów", back: "Wstecz", message: "Wiadomość", clear: "Wyczyść" },
+    id: { settings: "Pengaturan", editProfile: "Edit Profil", backup: "Cadangkan", delete: "Hapus Akun", logout: "Keluar", createPost: "Buat Post", post: "Posting", save: "Simpan", experience: "Pengalaman", activity: "Aktivitas", followers: "Pengikut", following: "Mengikuti", follow: "Ikuti", unfollow: "Mengikuti", block: "Blokir", unblock: "Buka Blokir", report: "Lapor", jobs: "Cari Kerja", search: "Cari", notifications: "Notifikasi", noPosts: "Tidak ada post", back: "Kembali", message: "Pesan", clear: "Hapus" },
+    vi: { settings: "Cài đặt", editProfile: "Sửa hồ sơ", backup: "Sao lưu", delete: "Xóa tài khoản", logout: "Đăng xuất", createPost: "Tạo bài viết", post: "Đăng", save: "Lưu", experience: "Kinh nghiệm", activity: "Hoạt động", followers: "Người theo dõi", following: "Đang theo dõi", follow: "Theo dõi", unfollow: "Đang theo dõi", block: "Chặn", unblock: "Bỏ chặn", report: "Báo cáo", jobs: "Tìm việc", search: "Tìm kiếm", notifications: "Thông báo", noPosts: "Chưa có bài", back: "Quay lại", message: "Tin nhắn", clear: "Xóa" },
+    th: { settings: "การตั้งค่า", editProfile: "แก้ไขโปรไฟล์", backup: "สำรองข้อมูล", delete: "ลบบัญชี", logout: "ออก", createPost: "สร้างโพสต์", post: "โพสต์", save: "บันทึก", experience: "ประสบการณ์", activity: "กิจกรรม", followers: "ผู้ติดตาม", following: "กำลังติดตาม", follow: "ติดตาม", unfollow: "กำลังติดตาม", block: "บล็อก", unblock: "ปลดบล็อก", report: "รายงาน", jobs: "หางาน", search: "ค้นหา", notifications: "การแจ้งเตือน", noPosts: "ไม่มีโพสต์", back: "กลับ", message: "ข้อความ", clear: "ล้าง" },
+    bn: { settings: "সেটিংস", editProfile: "প্রোফাইল এডিট", backup: "ব্যাকআপ", delete: "অ্যাকাউন্ট মুছুন", logout: "লগআউট", createPost: "পোস্ট করুন", post: "পোস্ট", save: "সেভ", experience: "অভিজ্ঞতা", activity: "কার্যকলাপ", followers: "ফলোয়ার", following: "ফলোইং", follow: "ফলো", unfollow: "ফলোইং", block: "ব্লক", unblock: "আনব্লক", report: "রিপোর্ট", jobs: "চাকরি", search: "খুঁজুন", notifications: "নোটিফিকেশন", noPosts: "কোনো পোস্ট নেই", back: "পেছনে", message: "মেসেজ", clear: "মুছুন" },
+    pa: { settings: "ਸੈਟਿੰਗਾਂ", editProfile: "ਪ੍ਰੋਫਾਈਲ ਬਦਲੋ", backup: "ਬੈਕਅੱਪ", delete: "ਖਾਤਾ ਹਟਾਓ", logout: "ਲੌਗ ਆਉਟ", createPost: "ਪੋਸਟ ਬਣਾਓ", post: "ਪੋਸਟ", save: "ਸੰਭਾਲੋ", experience: "ਤਜਰਬਾ", activity: "ਸਰਗਰਮੀ", followers: "ਫਾਲੋਅਰਜ਼", following: "ਫਾਲੋਇੰਗ", follow: "ਫਾਲੋ", unfollow: "ਫਾਲੋਇੰਗ", block: "ਬਲੌਕ", unblock: "ਅਣਬਲੌਕ", report: "ਰਿਪੋਰਟ", jobs: "ਨੌਕਰੀ ਲੱਭੋ", search: "ਖੋਜ", notifications: "ਸੂਚਨਾਵਾਂ", noPosts: "ਕੋਈ ਪੋਸਟ ਨਹੀਂ", back: "ਵਾਪਸ", message: "ਸੁਨੇਹਾ", clear: "ਸਾਫ਼ ਕਰੋ" },
+    ur: { settings: "ترتیبات", editProfile: "پروفائل تبدیل", backup: "بیک اپ", delete: "اکاؤنٹ ڈیلیٹ", logout: "لاگ آؤٹ", createPost: "ਪੋਸਟ ਬਣਾਓ", post: "ਪੋਸਟ", save: "محفوظ", experience: "تجربہ", activity: "سرگرمی", followers: "فالوورز", following: "فالونگ", follow: "فالو", unfollow: "فالونگ", block: "بلاک", unblock: "ان بلاک", report: "رپورٹ", jobs: "نوکری", search: "تلاش", notifications: "اطلاعات", noPosts: "کوئی ਪੋਸਟ ਨਹੀਂ", back: "ਵਾਪਸ", message: "پیغام", clear: "صاف" }
+};
+
+function txt(key) {
+    const lang = localStorage.getItem('appLang') || 'en';
+    const t = translations[lang] || translations['en'];
+    return t[key] || translations['en'][key];
+}
+
+function applyTranslations() {
+    if(document.getElementById('lbl-settings')) document.getElementById('lbl-settings').innerText = txt('settings');
+    if(document.getElementById('lbl-edit-profile')) document.getElementById('lbl-edit-profile').innerText = txt('editProfile');
+    if(document.getElementById('lbl-backup')) document.getElementById('lbl-backup').innerText = txt('backup');
+    if(document.getElementById('lbl-delete')) document.getElementById('lbl-delete').innerText = txt('delete');
+    if(document.getElementById('lbl-logout')) document.getElementById('lbl-logout').innerText = txt('logout');
+    if(document.getElementById('lbl-create-post')) document.getElementById('lbl-create-post').innerText = txt('createPost');
+    if(document.getElementById('lbl-btn-post')) document.getElementById('lbl-btn-post').innerText = txt('post');
+    if(document.getElementById('lbl-save-changes')) document.getElementById('lbl-save-changes').innerText = txt('save');
+    if(document.getElementById('lbl-edit-header')) document.getElementById('lbl-edit-header').innerText = txt('editProfile');
+    if(document.getElementById('postContent')) document.getElementById('postContent').placeholder = txt('createPost') + "...";
+}
+
+function formatTimeAgo(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
     }
-   
-     const translations = {
-        en: { settings: "Settings", editProfile: "Edit Profile", backup: "Backup Data", delete: "Delete Account", logout: "Logout", createPost: "Create Post", post: "Post", save: "Save Changes", experience: "Experience", activity: "Activity", followers: "Followers", following: "Following", follow: "Follow", unfollow: "Following", block: "Block", unblock: "Unblock", report: "Report", jobs: "Find Jobs", search: "Search", notifications: "Notifications", noPosts: "No posts yet.", back: "Back", message: "Message", clear: "Clear" },
-        hi: { settings: "सेटिंग्स", editProfile: "प्रोफाइल बदलें", backup: "डाटा बैकअप", delete: "अकाउंट हटाएं", logout: "लॉग आउट", createPost: "पोस्ट बनाएं", post: "पोस्ट करें", save: "बदलाव सेव करें", experience: "अनुभव", activity: "गतिविधि", followers: "फॉलोअर्स", following: "फॉलोइंग", follow: "फॉलो करें", unfollow: "फॉलोइंग", block: "ब्लॉक करें", unblock: "अनब्लॉक", report: "रिपोर्ट", jobs: "नौकरी खोजें", search: "खोजें", notifications: "सूचनाएं", noPosts: "कोई पोस्ट नहीं", back: "वापस", message: "मैसेज", clear: "साफ़ करें" },
-        es: { settings: "Ajustes", editProfile: "Editar Perfil", backup: "Copia de seguridad", delete: "Eliminar cuenta", logout: "Cerrar sesión", createPost: "Crear publicación", post: "Publicar", save: "Guardar", experience: "Experiencia", activity: "Actividad", followers: "Seguidores", following: "Siguiendo", follow: "Seguir", unfollow: "Siguiendo", block: "Bloquear", unblock: "Desbloquear", report: "Reportar", jobs: "Buscar Empleo", search: "Buscar", notifications: "Notificaciones", noPosts: "Aún no hay posts", back: "Atrás", message: "Mensaje", clear: "Limpiar" },
-        fr: { settings: "Paramètres", editProfile: "Modifier profil", backup: "Sauvegarde", delete: "Supprimer compte", logout: "Déconnexion", createPost: "Créer un post", post: "Publier", save: "Enregistrer", experience: "Expérience", activity: "Activité", followers: "Abonnés", following: "Abonnements", follow: "Suivre", unfollow: "Abonné", block: "Bloquear", unblock: "Débloquer", report: "Signaler", jobs: "Emplois", search: "Rechercher", notifications: "Notifications", noPosts: "Pas de posts", back: "Retour", message: "Message", clear: "Effacer" },
-        de: { settings: "Einstellungen", editProfile: "Profil bearbeiten", backup: "Backup", delete: "Konto löschen", logout: "Abmelden", createPost: "Beitrag erstellen", post: "Posten", save: "Speichern", experience: "Erfahrung", activity: "Aktivität", followers: "Follower", following: "Gefolgt", follow: "Folgen", unfollow: "Gefolgt", block: "Blockieren", unblock: "Entblocken", report: "Melden", jobs: "Jobs finden", search: "Suchen", notifications: "Benachrichtigungen", noPosts: "Keine Beiträge", back: "Zurück", message: "Nachricht", clear: "Löschen" },
-        zh: { settings: "设置", editProfile: "编辑资料", backup: "备份数据", delete: "删除帐户", logout: "退出", createPost: "发帖", post: "发布", save: "保存", experience: "经历", activity: "动态", followers: "粉丝", following: "关注", follow: "关注", unfollow: "已关注", block: "拉黑", unblock: "解除拉黑", report: "举报", jobs: "找工作", search: "搜索", notifications: "通知", noPosts: "暂无帖子", back: "返回", message: "发消息", clear: "清除" },
-        ja: { settings: "設定", editProfile: "プロフィール編集", backup: "バックアップ", delete: "アカウント削除", logout: "ログアウト", createPost: "投稿作成", post: "投稿", save: "保存", experience: "経験", activity: "アクティビティ", followers: "フォロワー", following: "フォロー中", follow: "フォロー", unfollow: "フォロー中", block: "ブロック", unblock: "解除", report: "通報", jobs: "仕事検索", search: "検索", notifications: "通知", noPosts: "投稿なし", back: "戻る", message: "メッセージ", clear: "クリア" },
-        ru: { settings: "Настройки", editProfile: "Ред. профиль", backup: "Резервная копия", delete: "Удалить аккаунт", logout: "Выйти", createPost: "Создать пост", post: "Опубликовать", save: "Сохранить", experience: "Опыт", activity: "Активность", followers: "Подписчики", following: "Подписки", follow: "Подписаться", unfollow: "Вы подписаны", block: "Блок", unblock: "Разблок", report: "Жалоба", jobs: "Вакансии", search: "Поиск", notifications: "Уведомления", noPosts: "Нет постов", back: "Назад", message: "Сообщение", clear: "Очистить" },
-        pt: { settings: "Configurações", editProfile: "Editar Perfil", backup: "Backup", delete: "Excluir Conta", logout: "Sair", createPost: "Criar Post", post: "Postar", save: "Salvar", experience: "Experiência", activity: "Atividade", followers: "Seguidores", following: "Seguindo", follow: "Seguir", unfollow: "Seguindo", block: "Bloquear", unblock: "Desbloquear", report: "Denunciar", jobs: "Vagas", search: "Buscar", notifications: "Notificações", noPosts: "Sem posts", back: "Voltar", message: "Mensagem", clear: "Limpar" },
-        ar: { settings: "الإعدادات", editProfile: "تعديل الملف", backup: "نسخ احتياطي", delete: "حذف الحساب", logout: "خروج", createPost: "إنشاء منشور", post: "نشر", save: "حفظ", experience: "الخبرة", activity: "النشاط", followers: "المتابعون", following: "المتابَعون", follow: "متابعة", unfollow: "تتابع", block: "حظر", unblock: "إلغاء الحظر", report: "إبلاغ", jobs: "وظائف", search: "بحث", notifications: "إشعارات", noPosts: "لا منشورات", back: "عودة", message: "رسالة", clear: "مسح" },
-        it: { settings: "Impostazioni", editProfile: "Modifica profilo", backup: "Backup", delete: "Elimina account", logout: "Esci", createPost: "Crea post", post: "Pubblica", save: "Salva", experience: "Esperienza", activity: "Attività", followers: "Follower", following: "Seguiti", follow: "Segui", unfollow: "Segui già", block: "Blocca", unblock: "Sblocca", report: "Segnala", jobs: "Lavoro", search: "Cerca", notifications: "Notifiche", noPosts: "Nessun post", back: "Indietro", message: "Messaggio", clear: "Pulisci" },
-        ko: { settings: "설정", editProfile: "프로필 편집", backup: "백업", delete: "계정 삭제", logout: "로그아웃", createPost: "게시물 작성", post: "게시", save: "저장", experience: "경력", activity: "활동", followers: "팔로워", following: "팔로잉", follow: "팔로우", unfollow: "팔로잉", block: "차단", unblock: "해제", report: "신고", jobs: "구직", search: "검색", notifications: "알림", noPosts: "게시물 없음", back: "뒤로", message: "메시지", clear: "지우기" },
-        tr: { settings: "Ayarlar", editProfile: "Profili Düzenle", backup: "Yedekle", delete: "Hesabı Sil", logout: "Çıkış", createPost: "Gönderi Yap", post: "Paylaş", save: "Kaydet", experience: "Deneyim", activity: "Aktivite", followers: "Takipçiler", following: "Takip", follow: "Takip Et", unfollow: "Takipte", block: "Engelle", unblock: "Aç", report: "Bildir", jobs: "İş Bul", search: "Ara", notifications: "Bildirimler", noPosts: "Gönderi yok", back: "Geri", message: "Mesaj", clear: "Temizle" },
-        nl: { settings: "Instellingen", editProfile: "Profiel bewerken", backup: "Back-up", delete: "Account verwijderen", logout: "Uitloggen", createPost: "Post maken", post: "Plaatsen", save: "Opslaan", experience: "Ervaring", activity: "Activiteit", followers: "Volgers", following: "Volgend", follow: "Volgen", unfollow: "Volgend", block: "Blokkeren", unblock: "Deblokkeren", report: "Rapporteren", jobs: "Vacatures", search: "Zoeken", notifications: "Meldingen", noPosts: "Geen posts", back: "Terug", message: "Bericht", clear: "Wissen" },
-        pl: { settings: "Ustawienia", editProfile: "Edytuj profil", backup: "Kopia zapasowa", delete: "Usuń konto", logout: "Wyloguj", createPost: "Utwórz wpis", post: "Opublikuj", save: "Zapisz", experience: "Doświadczenie", activity: "Aktywność", followers: "Obserwujący", following: "Obserwowani", follow: "Obserwuj", unfollow: "Obserwujesz", block: "Zablokuj", unblock: "Odblokuj", report: "Zgłoś", jobs: "Praca", search: "Szukaj", notifications: "Powiadomienia", noPosts: "Brak wpisów", back: "Wstecz", message: "Wiadomość", clear: "Wyczyść" },
-        id: { settings: "Pengaturan", editProfile: "Edit Profil", backup: "Cadangkan", delete: "Hapus Akun", logout: "Keluar", createPost: "Buat Post", post: "Posting", save: "Simpan", experience: "Pengalaman", activity: "Aktivitas", followers: "Pengikut", following: "Mengikuti", follow: "Ikuti", unfollow: "Mengikuti", block: "Blokir", unblock: "Buka Blokir", report: "Lapor", jobs: "Cari Kerja", search: "Cari", notifications: "Notifikasi", noPosts: "Tidak ada post", back: "Kembali", message: "Pesan", clear: "Hapus" },
-        vi: { settings: "Cài đặt", editProfile: "Sửa hồ sơ", backup: "Sao lưu", delete: "Xóa tài khoản", logout: "Đăng xuất", createPost: "Tạo bài viết", post: "Đăng", save: "Lưu", experience: "Kinh nghiệm", activity: "Hoạt động", followers: "Người theo dõi", following: "Đang theo dõi", follow: "Theo dõi", unfollow: "Đang theo dõi", block: "Chặn", unblock: "Bỏ chặn", report: "Báo cáo", jobs: "Tìm việc", search: "Tìm kiếm", notifications: "Thông báo", noPosts: "Chưa có bài", back: "Quay lại", message: "Tin nhắn", clear: "Xóa" },
-        th: { settings: "การตั้งค่า", editProfile: "แก้ไขโปรไฟล์", backup: "สำรองข้อมูล", delete: "ลบบัญชี", logout: "ออก", createPost: "สร้างโพสต์", post: "โพสต์", save: "บันทึก", experience: "ประสบการณ์", activity: "กิจกรรม", followers: "ผู้ติดตาม", following: "กำลังติดตาม", follow: "ติดตาม", unfollow: "กำลังติดตาม", block: "บล็อก", unblock: "ปลดบล็อก", report: "รายงาน", jobs: "หางาน", search: "ค้นหา", notifications: "การแจ้งเตือน", noPosts: "ไม่มีโพสต์", back: "กลับ", message: "ข้อความ", clear: "ล้าง" },
-        bn: { settings: "সেটিংস", editProfile: "প্রোফাইল এডিট", backup: "ব্যাকআপ", delete: "অ্যাকাউন্ট মুছুন", logout: "লগআউট", createPost: "পোস্ট করুন", post: "পোস্ট", save: "সেভ", experience: "অভিজ্ঞতা", activity: "কার্যকলাপ", followers: "ফলোয়ার", following: "ফলোইং", follow: "ফলো", unfollow: "ফলোইং", block: "ব্লক", unblock: "আনব্লক", report: "রিপোর্ট", jobs: "চাকরি", search: "খুঁজুন", notifications: "নোটিফিকেশন", noPosts: "কোনো পোস্ট নেই", back: "পেছনে", message: "মেসেজ", clear: "মুছুন" },
-        pa: { settings: "ਸੈਟਿੰਗਾਂ", editProfile: "ਪ੍ਰੋਫਾਈਲ ਬਦਲੋ", backup: "ਬੈਕਅੱਪ", delete: "ਖਾਤਾ ਹਟਾਓ", logout: "ਲੌਗ ਆਉਟ", createPost: "ਪੋਸਟ ਬਣਾਓ", post: "ਪੋਸਟ", save: "ਸੰਭਾਲੋ", experience: "ਤਜਰਬਾ", activity: "ਸਰਗਰਮੀ", followers: "ਫਾਲੋਅਰਜ਼", following: "ਫਾਲੋਇੰਗ", follow: "ਫਾਲੋ", unfollow: "ਫਾਲੋਇੰਗ", block: "ਬਲੌਕ", unblock: "ਅਣਬਲੌਕ", report: "ਰਿਪੋਰਟ", jobs: "ਨੌਕਰੀ ਲੱਭੋ", search: "ਖੋਜ", notifications: "ਸੂਚਨਾਵਾਂ", noPosts: "ਕੋਈ ਪੋਸਟ ਨਹੀਂ", back: "ਵਾਪਸ", message: "ਸੁਨੇਹਾ", clear: "ਸਾਫ਼ ਕਰੋ" },
-        ur: { settings: "ترتیبات", editProfile: "پروفائل تبدیل", backup: "بیک اپ", delete: "اکاؤنٹ ڈیلیٹ", logout: "لاگ آؤٹ", createPost: "پوسٹ بنائیں", post: "پوسٹ", save: "محفوظ", experience: "تجربہ", activity: "سرگرمی", followers: "فالوورز", following: "فالونگ", follow: "فالو", unfollow: "فالونگ", block: "بلاک", unblock: "ان بلاک", report: "رپورٹ", jobs: "نوکری", search: "تلاش", notifications: "اطلاعات", noPosts: "کوئی پوسٹ نہیں", back: "واپس", message: "پیغام", clear: "صاف" }
-    };
+    return array;
+}
 
-    function txt(key) {
-        const lang = localStorage.getItem('appLang') || 'en';
-        const t = translations[lang] || translations['en'];
-        return t[key] || translations['en'][key];
-    }
-    function applyTranslations() {
-        if(document.getElementById('lbl-settings')) document.getElementById('lbl-settings').innerText = txt('settings');
-        if(document.getElementById('lbl-edit-profile')) document.getElementById('lbl-edit-profile').innerText = txt('editProfile');
-        if(document.getElementById('lbl-backup')) document.getElementById('lbl-backup').innerText = txt('backup');
-        if(document.getElementById('lbl-delete')) document.getElementById('lbl-delete').innerText = txt('delete');
-        if(document.getElementById('lbl-logout')) document.getElementById('lbl-logout').innerText = txt('logout');
-        if(document.getElementById('lbl-create-post')) document.getElementById('lbl-create-post').innerText = txt('createPost');
-        if(document.getElementById('lbl-btn-post')) document.getElementById('lbl-btn-post').innerText = txt('post');
-        if(document.getElementById('lbl-save-changes')) document.getElementById('lbl-save-changes').innerText = txt('save');
-        if(document.getElementById('lbl-edit-header')) document.getElementById('lbl-edit-header').innerText = txt('editProfile');
-        document.getElementById('postContent').placeholder = txt('createPost') + "...";
-    }
+const getHeaders = (isFormData = false) => {
+    const token = localStorage.getItem("token");
+    const headers = { "x-auth-token": token };
+    if (!isFormData) headers["Content-Type"] = "application/json";
+    return headers;
+};
 
-
-
-    function formatTimeAgo(dateString) {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        const now = new Date();
-        const seconds = Math.floor((now - date) / 1000);
-        if (seconds < 60) return 'Just now';
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes}m ago`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours}h ago`;
-        const days = Math.floor(hours / 24);
-        if (days < 7) return `${days}d ago`;
-        return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-    }
-
-    function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-        return array;
-    }
-
-    const getHeaders = (isFormData = false) => {
-        const token = localStorage.getItem("token");
-        const headers = { "x-auth-token": token };
-        if (!isFormData) headers["Content-Type"] = "application/json";
-        return headers;
-    };
-
-    const APIService = {
-      auth: {
-            login: async () => {
-                const email = document.getElementById('loginEmail').value;
-                const password = document.getElementById('loginPass').value;
-                if(!email || !password) return showToast("Enter credentials");
-                try {
-                    const res = await fetch(`${API_BASE}/api/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
-                    const data = await res.json();
-                    if(res.ok) {
-                        localStorage.setItem("token", data.token);
-                        localStorage.setItem("userId", data.user._id);
-                        localStorage.setItem("userName", data.user.name);
-                        localStorage.setItem("userEmail", data.user.email);
-                        if(data.user.photo) localStorage.setItem("userPhoto", data.user.photo);
-                        localStorage.setItem("userCountry", data.user.country || "India");
-                        myBlockedUsers = data.user.blockedUsers || [];
-                        const savedToken = localStorage.getItem("fcmToken");
-                        if(savedToken) APIService.user.updateFcm(savedToken);
-                        checkLoginStatus();
-                    } else openAlertModal("Login Failed", data.error);
-                } catch(e) { alert("Server connection failed. Is server.js running?"); }
-            },
-         
-         initiateRegister: async () => {
-                const name = document.getElementById('regName').value;
-                const email = document.getElementById('regEmail').value;
-                const password = document.getElementById('regPass').value;
-                const username = document.getElementById('regUsername').value;
-                
-                if(!name || !email || !password || !username) return showToast("Fill all fields");
-                try {
-                const res = await fetch(`${API_BASE}/api/send-otp`, { 
-                        method: "POST", 
-                        headers: { "Content-Type": "application/json" }, 
-                        body: JSON.stringify({ email, type: 'register' }) 
-                    });
-                   const data = await res.json();
-                   if(res.ok) {
-                        showToast("OTP Sent to Email!");
-                        document.getElementById('reg-step-1').classList.add('hidden');
-                        document.getElementById('reg-step-2').classList.remove('hidden');
-                    } else {
-                        if (data.error && (data.error.includes("already registered") || data.error.includes("Exists"))) {
-                            openAlertModal("Account Exists", data.error);
-                            switchAuth('form-login'); 
-                        } else {
-                            showToast(data.error || "Failed to send OTP");
-                        }
-                    }
-                } catch(e) { showToast("Server Error"); }
-            },
-            completeRegister: async () => {
-                const name = document.getElementById('regName').value;
-                const email = document.getElementById('regEmail').value;
-                const password = document.getElementById('regPass').value;
-                const username = document.getElementById('regUsername').value;
-                const country = document.getElementById('regCountry').value;
-                const otp = document.getElementById('regOtpInput').value;
-                if(!otp) return showToast("Please enter OTP");
-                try {
-                    const res = await fetch(`${API_BASE}/api/register`, { 
-                        method: "POST", 
-                        headers: { "Content-Type": "application/json" }, 
-                        body: JSON.stringify({ name, email, password, username, country, otp }) 
-                    });
-                    const data = await res.json();
-
-                    if(res.ok) {
-                        openAlertModal("Success", "Account Created! Please Login.");
-                        switchAuth('form-login');
-                        document.getElementById('reg-step-1').classList.remove('hidden');
-                        document.getElementById('reg-step-2').classList.add('hidden');
-                        document.getElementById('regOtpInput').value = "";
-                    } else {
-                        if (data.error && (data.error.includes("Exists") || data.error.includes("registered"))) {
-                             openAlertModal("Registration Failed", "This Username or Email is already taken.");
-                        } else {
-                             openAlertModal("Registration Failed", data.error || "Error");
-                        }
-                    }
-                } catch(e) { showToast("Server Error"); }
-            },
-            sendOtp: async (context, emailParam) => {
-                const email = emailParam || document.getElementById('forgotEmail').value;
-                const type = context || 'forgot';
-                authContext = type;
-                try {
-                    const res = await fetch(`${API_BASE}/api/send-otp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, type }) });
-                    if(res.ok) {
-                        localStorage.setItem("tempEmail", email);
-                        document.getElementById('displayEmail').innerText = email;
-                        switchAuth('form-otp');
-                        showToast("OTP Sent!");
-                    } else alert("Error sending OTP");
-                } catch(e) { showToast("Server Error"); }
-            },
-            verifyOtp: async () => {
-                const otp = document.getElementById('otpCode').value;
-                const email = localStorage.getItem("tempEmail");
-                try {
-                    const res = await fetch(`${API_BASE}/api/verify-otp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, otp }) });
-                    if(res.ok) {
-                        showToast("Verified!");
-                        if(authContext === 'forgot') {
-                            switchAuth('form-reset');
-                        } else {
-                            switchAuth('form-login');
-                            openAlertModal("Success", "Account Verified! Please Login.");
-                        }
-                    } else showToast("Invalid OTP");
-                } catch(e) { showToast("Error"); }
-            },
-            resetPassword: async () => {
-                const newPassword = document.getElementById('newPassInput').value;
-                const email = localStorage.getItem("tempEmail");
-                try {
-                    const res = await fetch(`${API_BASE}/api/reset-password`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, newPassword }) });
-                    if(res.ok) {
-                        showToast("Password Updated!");
-                        switchAuth('form-login');
-                    }
-                } catch(e) { showToast("Error"); }
-            },
-            logout: () => { localStorage.clear(); location.reload(); }
-        },
-        user: {
-            getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}`)).json(),
-            getFollowers: async (id) => (await fetch(`${API_BASE}/api/user/followers/${id}`, { headers: getHeaders() })).json(),
-            getFollowing: async (id) => (await fetch(`${API_BASE}/api/user/following/${id}`, { headers: getHeaders() })).json(),
-            follow: async (id) => (await fetch(`${API_BASE}/api/user/follow/${id}`, { method: "PUT", headers: getHeaders() })).json(),
-            update: async (name, headline) => { await fetch(`${API_BASE}/api/user/update`, { method: "PUT", headers: getHeaders(), body: JSON.stringify({name, headline}) }); },
-            delete: async () => { await fetch(`${API_BASE}/api/user/delete`, { method: "DELETE", headers: getHeaders() }); },
-            uploadPhoto: async (file) => {
-                if(!file) return;
-                const fd = new FormData();
-                fd.append("photo", file);
-                showToast("Uploading...");
-                const res = await fetch(`${API_BASE}/api/user/upload-photo`, { method: "POST", headers: { "x-auth-token": localStorage.getItem("token") }, body: fd });
+const APIService = {
+    auth: {
+        login: async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPass').value;
+            if(!email || !password) return showToast("Enter credentials");
+            try {
+                const res = await fetch(`${API_BASE}/api/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+                const data = await res.json();
                 if(res.ok) {
-                    showToast("Photo Updated!");
-                    setTimeout(() => location.reload(), 1000);
+                    localStorage.setItem("token", data.token);
+                    localStorage.setItem("userId", data.user._id);
+                    localStorage.setItem("userName", data.user.name);
+                    localStorage.setItem("userEmail", data.user.email);
+                    if(data.user.photo) localStorage.setItem("userPhoto", data.user.photo);
+                    localStorage.setItem("userCountry", data.user.country || "India");
+                    myBlockedUsers = data.user.blockedUsers || [];
+                    const savedToken = localStorage.getItem("fcmToken");
+                    if(savedToken) APIService.user.updateFcm(savedToken);
+                    checkLoginStatus();
+                } else openAlertModal("Login Failed", data.error);
+            } catch(e) { alert("Server connection failed. Is server.js running?"); }
+        },
+        initiateRegister: async () => {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPass').value;
+            const username = document.getElementById('regUsername').value;
+            if(!name || !email || !password || !username) return showToast("Fill all fields");
+            try {
+                const res = await fetch(`${API_BASE}/api/send-otp`, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ email, type: 'register' }) 
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    showToast("OTP Sent to Email!");
+                    document.getElementById('reg-step-1').classList.add('hidden');
+                    document.getElementById('reg-step-2').classList.remove('hidden');
                 } else {
-                    showToast("Upload Failed");
+                    if (data.error && (data.error.includes("already registered") || data.error.includes("Exists"))) {
+                        openAlertModal("Account Exists", data.error);
+                        switchAuth('form-login'); 
+                    } else {
+                        showToast(data.error || "Failed to send OTP");
+                    }
                 }
-            },
-            updateFcm: async (token) => {
-                try {
-                    await fetch(`${API_BASE}/api/user/fcm-token`, {
-                        method: "PUT",
-                        headers: getHeaders(),
-                        body: JSON.stringify({ fcmToken: token })
-                    });
-                } catch(e) { console.error("FCM Sync Error", e); }
-            },
-            backup: async () => { const res = await fetch(`${API_BASE}/api/user/backup`, { headers: getHeaders() }); const data = await res.json(); const blob = new Blob([JSON.stringify(data)], {type:"application/json"}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="backup.json"; a.click(); },
-            block: async (id) => { const res = await fetch(`${API_BASE}/api/user/block/${id}`, { method: "PUT", headers: getHeaders() }); return await res.json(); },
-            addExperience: async (expData) => { await fetch(`${API_BASE}/api/user/add-experience`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ userId: localStorage.getItem("userId"), experienceData: expData }) }); },
-            editExperience: async (id, expData) => { await fetch(`${API_BASE}/api/user/experience/${id}`, { method: "PUT", headers: getHeaders(), body: JSON.stringify(expData) }); },
-            deleteExperience: async (id) => { await fetch(`${API_BASE}/api/user/experience/${id}`, { method: "DELETE", headers: getHeaders() }); },
+            } catch(e) { showToast("Server Error"); }
         },
-        feed: {
-            create: async(fd) => fetch(`${API_BASE}/api/posts/create`, {method:"POST", headers: { "x-auth-token": localStorage.getItem("token") }, body:fd}),
-            getAll: async() => {
-                const res = await fetch(`${API_BASE}/api/posts?t=${new Date().getTime()}`, {headers: getHeaders()});
-                if(!res.ok) throw new Error("Feed Error");
-                return res.json();
-            },
-            getMyPosts: async() => (await fetch(`${API_BASE}/api/my-posts`, {headers:getHeaders()})).json(),
-            like: async(id) => fetch(`${API_BASE}/api/posts/like/${id}`, {method:"PUT", headers:getHeaders()}),
-            comment: async(id, text) => fetch(`${API_BASE}/api/posts/comment/${id}`, {method:"POST", headers:getHeaders(), body:JSON.stringify({text})}),
-            delete: async(id) => fetch(`${API_BASE}/api/posts/${id}`, {method:"DELETE", headers:getHeaders()}),
-            deleteComment: async(postId, commentId) => fetch(`${API_BASE}/api/posts/comment/${postId}/${commentId}`, { method: "DELETE", headers: getHeaders() })
+        completeRegister: async () => {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPass').value;
+            const username = document.getElementById('regUsername').value;
+            const country = document.getElementById('regCountry').value;
+            const otp = document.getElementById('regOtpInput').value;
+            if(!otp) return showToast("Please enter OTP");
+            try {
+                const res = await fetch(`${API_BASE}/api/register`, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ name, email, password, username, country, otp }) 
+                });
+                const data = await res.json();
+                if(res.ok) {
+                    openAlertModal("Success", "Account Created! Please Login.");
+                    switchAuth('form-login');
+                    document.getElementById('reg-step-1').classList.remove('hidden');
+                    document.getElementById('reg-step-2').classList.add('hidden');
+                    document.getElementById('regOtpInput').value = "";
+                } else {
+                    if (data.error && (data.error.includes("Exists") || data.error.includes("registered"))) {
+                         openAlertModal("Registration Failed", "This Username or Email is already taken.");
+                    } else {
+                         openAlertModal("Registration Failed", data.error || "Error");
+                    }
+                }
+            } catch(e) { showToast("Server Error"); }
         },
-        chat: {
-            search: async (q) => (await fetch(`${API_BASE}/api/search?q=${q}`, { headers: getHeaders() })).json(),
-            send: async (rid, txt) => fetch(`${API_BASE}/api/messages`, { method:"POST", headers:getHeaders(), body:JSON.stringify({receiverId:rid, content:txt}) }),
-            upload: async (fd) => fetch(`${API_BASE}/api/messages/upload`, { method: "POST", headers: { "x-auth-token": localStorage.getItem("token") }, body: fd }),
-            getHistory: async(id) => (await fetch(`${API_BASE}/api/messages/${id}`, { headers: getHeaders() })).json(),
-            deleteMsg: async (id) => { await fetch(`${API_BASE}/api/messages/${id}`, { method: "DELETE", headers: getHeaders() }); },
-            clearChat: async (id) => { await fetch(`${API_BASE}/api/messages/clear/${id}`, { method: "DELETE", headers: getHeaders() }); },
-            getConversations: async() => (await fetch(`${API_BASE}/api/chat/conversations`, { headers: getHeaders() })).json()
+        sendOtp: async (context, emailParam) => {
+            const email = emailParam || document.getElementById('forgotEmail').value;
+            const type = context || 'forgot';
+            authContext = type;
+            try {
+                const res = await fetch(`${API_BASE}/api/send-otp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, type }) });
+                if(res.ok) {
+                    localStorage.setItem("tempEmail", email);
+                    document.getElementById('displayEmail').innerText = email;
+                    switchAuth('form-otp');
+                    showToast("OTP Sent!");
+                } else alert("Error sending OTP");
+            } catch(e) { showToast("Server Error"); }
         },
-        notifications: {
-            getAll: async () => (await fetch(`${API_BASE}/api/notifications`, { headers: getHeaders() })).json(),
-            delete: async (id) => {
-                const res = await fetch(`${API_BASE}/api/notifications/${id}`, { method: "DELETE", headers: getHeaders() });
-                if (!res.ok) throw new Error("Delete failed");
-                return res.json();
+        verifyOtp: async () => {
+            const otp = document.getElementById('otpCode').value;
+            const email = localStorage.getItem("tempEmail");
+            try {
+                const res = await fetch(`${API_BASE}/api/verify-otp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, otp }) });
+                if(res.ok) {
+                    showToast("Verified!");
+                    if(authContext === 'forgot') {
+                        switchAuth('form-reset');
+                    } else {
+                        switchAuth('form-login');
+                        openAlertModal("Success", "Account Verified! Please Login.");
+                    }
+                } else showToast("Invalid OTP");
+            } catch(e) { showToast("Error"); }
+        },
+        resetPassword: async () => {
+            const newPassword = document.getElementById('newPassInput').value;
+            const email = localStorage.getItem("tempEmail");
+            try {
+                const res = await fetch(`${API_BASE}/api/reset-password`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, newPassword }) });
+                if(res.ok) {
+                    showToast("Password Updated!");
+                    switchAuth('form-login');
+                }
+            } catch(e) { showToast("Error"); }
+        },
+        logout: () => { localStorage.clear(); location.reload(); }
+    },
+    user: {
+        getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}`)).json(),
+        getFollowers: async (id) => (await fetch(`${API_BASE}/api/user/followers/${id}`, { headers: getHeaders() })).json(),
+        getFollowing: async (id) => (await fetch(`${API_BASE}/api/user/following/${id}`, { headers: getHeaders() })).json(),
+        follow: async (id) => (await fetch(`${API_BASE}/api/user/follow/${id}`, { method: "PUT", headers: getHeaders() })).json(),
+        update: async (name, headline) => { await fetch(`${API_BASE}/api/user/update`, { method: "PUT", headers: getHeaders(), body: JSON.stringify({name, headline}) }); },
+        delete: async () => { await fetch(`${API_BASE}/api/user/delete`, { method: "DELETE", headers: getHeaders() }); },
+        uploadPhoto: async (file) => {
+            if(!file) return;
+            const fd = new FormData();
+            fd.append("photo", file);
+            showToast("Uploading...");
+            const res = await fetch(`${API_BASE}/api/user/upload-photo`, { method: "POST", headers: { "x-auth-token": localStorage.getItem("token") }, body: fd });
+            if(res.ok) {
+                showToast("Photo Updated!");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast("Upload Failed");
             }
         },
-        jobs: {
-            search: async (endpoint) => (await fetch(`${API_BASE}/api${endpoint}`)).json()
+        updateFcm: async (token) => {
+            try {
+                await fetch(`${API_BASE}/api/user/fcm-token`, {
+                    method: "PUT",
+                    headers: getHeaders(),
+                    body: JSON.stringify({ fcmToken: token })
+                });
+            } catch(e) { console.error("FCM Sync Error", e); }
+        },
+        backup: async () => { const res = await fetch(`${API_BASE}/api/user/backup`, { headers: getHeaders() }); const data = await res.json(); const blob = new Blob([JSON.stringify(data)], {type:"application/json"}); const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="backup.json"; a.click(); },
+        block: async (id) => { const res = await fetch(`${API_BASE}/api/user/block/${id}`, { method: "PUT", headers: getHeaders() }); return await res.json(); },
+        addExperience: async (expData) => { await fetch(`${API_BASE}/api/user/add-experience`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ userId: localStorage.getItem("userId"), experienceData: expData }) }); },
+        editExperience: async (id, expData) => { await fetch(`${API_BASE}/api/user/experience/${id}`, { method: "PUT", headers: getHeaders(), body: JSON.stringify(expData) }); },
+        deleteExperience: async (id) => { await fetch(`${API_BASE}/api/user/experience/${id}`, { method: "DELETE", headers: getHeaders() }); }
+    },
+    feed: {
+        create: async(fd) => fetch(`${API_BASE}/api/posts/create`, {method:"POST", headers: { "x-auth-token": localStorage.getItem("token") }, body:fd}),
+        getAll: async() => {
+            const res = await fetch(`${API_BASE}/api/posts?t=${new Date().getTime()}`, {headers: getHeaders()});
+            if(!res.ok) throw new Error("Feed Error");
+            return res.json();
+        },
+        getMyPosts: async() => (await fetch(`${API_BASE}/api/my-posts`, {headers:getHeaders()})).json(),
+        like: async(id) => fetch(`${API_BASE}/api/posts/like/${id}`, {method:"PUT", headers:getHeaders()}),
+        comment: async(id, text) => fetch(`${API_BASE}/api/posts/comment/${id}`, {method:"POST", headers:getHeaders(), body:JSON.stringify({text})}),
+        delete: async(id) => fetch(`${API_BASE}/api/posts/${id}`, {method:"DELETE", headers:getHeaders()}),
+        deleteComment: async(postId, commentId) => fetch(`${API_BASE}/api/posts/comment/${postId}/${commentId}`, { method: "DELETE", headers: getHeaders() })
+    },
+    chat: {
+        search: async (q) => (await fetch(`${API_BASE}/api/search?q=${q}`, { headers: getHeaders() })).json(),
+        send: async (rid, txt) => fetch(`${API_BASE}/api/messages`, { method:"POST", headers:getHeaders(), body:JSON.stringify({receiverId:rid, content:txt}) }),
+        upload: async (fd) => fetch(`${API_BASE}/api/messages/upload`, { method: "POST", headers: { "x-auth-token": localStorage.getItem("token") }, body: fd }),
+        getHistory: async(id) => (await fetch(`${API_BASE}/api/messages/${id}`, { headers: getHeaders() })).json(),
+        deleteMsg: async (id) => { await fetch(`${API_BASE}/api/messages/${id}`, { method: "DELETE", headers: getHeaders() }); },
+        clearChat: async (id) => { await fetch(`${API_BASE}/api/messages/clear/${id}`, { method: "DELETE", headers: getHeaders() }); },
+        getConversations: async() => (await fetch(`${API_BASE}/api/chat/conversations`, { headers: getHeaders() })).json()
+    },
+    notifications: {
+        getAll: async () => (await fetch(`${API_BASE}/api/notifications`, { headers: getHeaders() })).json(),
+        delete: async (id) => {
+            const res = await fetch(`${API_BASE}/api/notifications/${id}`, { method: "DELETE", headers: getHeaders() });
+            if (!res.ok) throw new Error("Delete failed");
+            return res.json();
         }
-    };
+    },
+    jobs: {
+        search: async (endpoint) => (await fetch(`${API_BASE}/api${endpoint}`)).json()
+    }
+};
 
-    async function downloadImage(url) {
-        try {
-            showToast("Saving...");
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const reader = new FileReader();
-            reader.onloadend = function() {
-                const base64data = reader.result;
-                const link = document.createElement('a');
-                link.href = base64data;
-                link.download = `zobbly_${Date.now()}.jpg`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-            reader.readAsDataURL(blob);
-        } catch (e) {
-            console.error("Download failed", e);
-            showToast("Error saving image");
-            window.open(url, '_blank');
+async function downloadImage(url) {
+    try {
+        showToast("Saving...");
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = function() {
+            const base64data = reader.result;
+            const link = document.createElement('a');
+            link.href = base64data;
+            link.download = `zobbly_${Date.now()}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
+        reader.readAsDataURL(blob);
+    } catch (e) {
+        console.error("Download failed", e);
+        showToast("Error saving image");
+        window.open(url, '_blank');
     }
+}
 
-    const ptrContainer = document.getElementById('ptr-container');
-    const ptrIcon = document.getElementById('ptr-icon');
-    const appScreen = document.getElementById('app-screen');
-    
-    let ptrStartY = 0;
-    let ptrEnabled = false;
-    let isRefreshing = false;
-appScreen.addEventListener('touchstart', (e) => {
-    
-    if (appScreen.classList.contains('reels-mode')) {
-        ptrEnabled = false;
-        return; 
-    }
-    
-    
-});
+const ptrContainer = document.getElementById('ptr-container');
+const ptrIcon = document.getElementById('ptr-icon');
+const appScreen = document.getElementById('app-screen');
 
-        
+let ptrStartY = 0;
+let ptrEnabled = false;
+let isRefreshing = false;
 
-   
+if (appScreen) {
+    appScreen.addEventListener('touchstart', (e) => {
+        if (appScreen.classList.contains('reels-mode')) {
+            ptrEnabled = false;
+            return; 
+        }
+        ptrStartY = e.touches[0].clientY;
+        ptrEnabled = (appScreen.scrollTop === 0);
+    }, { passive: true });
+
     appScreen.addEventListener('touchmove', (e) => {
         if (!ptrEnabled) return;
-
         const currentY = e.touches[0].clientY;
         const diff = currentY - ptrStartY;
-
-        
         if (diff > 10) {
             const resistance = 0.4; 
             const translateVal = Math.min((diff - 10) * resistance, 120);
-            
-            ptrContainer.style.transform = `translateY(${translateVal - 120}px)`;
-            ptrIcon.style.transform = `rotate(${translateVal}deg)`; 
+            if(ptrContainer) ptrContainer.style.transform = `translateY(${translateVal - 120}px)`;
+            if(ptrIcon) ptrIcon.style.transform = `rotate(${translateVal}deg)`; 
         } else {
-            
-            ptrContainer.style.transform = `translateY(-120px)`;
-            ptrIcon.style.transform = `rotate(0deg)`;
+            if(ptrContainer) ptrContainer.style.transform = `translateY(-120px)`;
+            if(ptrIcon) ptrIcon.style.transform = `rotate(0deg)`;
             ptrEnabled = false;
         }
     }, { passive: true });
 
-    
     appScreen.addEventListener('touchend', async (e) => {
         if (!ptrEnabled) return;
-
         const currentY = e.changedTouches[0].clientY;
         const diff = currentY - ptrStartY;
+        if(ptrContainer) ptrContainer.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
 
-        ptrContainer.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-
-       
         if (diff > 150) {
             isRefreshing = true;
-            ptrContainer.style.transform = `translateY(20px)`;
-            ptrIcon.classList.add('doll-anim');
-
+            if(ptrContainer) ptrContainer.style.transform = `translateY(20px)`;
+            if(ptrIcon) ptrIcon.classList.add('doll-anim');
             try {
-                
-                if (document.getElementById('nav-feed').classList.contains('nav-active')) {
+                if (document.getElementById('nav-feed') && document.getElementById('nav-feed').classList.contains('nav-active')) {
                     await renderFeed(document.getElementById('main-content'));
-                } else if (document.getElementById('nav-jobs').classList.contains('nav-active')) {
+                } else if (document.getElementById('nav-jobs') && document.getElementById('nav-jobs').classList.contains('nav-active')) {
                     renderView('jobs');
-                } else if (document.getElementById('nav-profile').classList.contains('nav-active')) {
+                } else if (document.getElementById('nav-profile') && document.getElementById('nav-profile').classList.contains('nav-active')) {
                     viewUserProfile(localStorage.getItem("userId"));
-                } else if (document.getElementById('nav-notifs').classList.contains('nav-active')) {
+                } else if (document.getElementById('nav-notifs') && document.getElementById('nav-notifs').classList.contains('nav-active')) {
                     renderView('notifications');
                 }
             } catch (err) { console.log(err); }
-
             setTimeout(() => {
-                ptrContainer.style.transform = `translateY(-120px)`;
-                ptrIcon.classList.remove('doll-anim');
+                if(ptrContainer) ptrContainer.style.transform = `translateY(-120px)`;
+                if(ptrIcon) ptrIcon.classList.remove('doll-anim');
                 isRefreshing = false;
             }, 800);
         } else {
-           
-            ptrContainer.style.transform = `translateY(-120px)`;
+            if(ptrContainer) ptrContainer.style.transform = `translateY(-120px)`;
         }
         ptrEnabled = false;
         ptrStartY = 0;
-    });
- 
+    }, { passive: true });
+}
 
-    async function checkLoginStatus() {
-        const token = localStorage.getItem("token");
-        const splash = document.getElementById('splash-screen');
-        if(token) {
-            document.getElementById('auth-screen').classList.add('hidden-screen');
-            document.getElementById('app-screen').classList.remove('hidden-screen');
-            applyTranslations(); 
-            await updateMyStats();
-            renderView('feed');
-            setInterval(checkNotifs, 10000);
-            setTimeout(() => { if(splash) splash.classList.add('hidden-screen'); }, 1500);
-        } else {
-            document.getElementById('auth-screen').classList.remove('hidden-screen');
-            document.getElementById('app-screen').classList.add('hidden-screen');
-            if(splash) splash.classList.add('hidden-screen');
+async function checkLoginStatus() {
+    const token = localStorage.getItem("token");
+    const splash = document.getElementById('splash-screen');
+    if(token) {
+        if(document.getElementById('auth-screen')) document.getElementById('auth-screen').classList.add('hidden-screen');
+        if(document.getElementById('app-screen')) document.getElementById('app-screen').classList.remove('hidden-screen');
+        applyTranslations(); 
+        await updateMyStats();
+        renderView('feed');
+        setInterval(checkNotifs, 10000);
+        setTimeout(() => { if(splash) splash.classList.add('hidden-screen'); }, 1500);
+    } else {
+        if(document.getElementById('auth-screen')) document.getElementById('auth-screen').classList.remove('hidden-screen');
+        if(document.getElementById('app-screen')) document.getElementById('app-screen').classList.add('hidden-screen');
+        if(splash) splash.classList.add('hidden-screen');
+    }
+}
+
+async function updateMyStats() {
+    try {
+        const data = await APIService.user.getProfile(localStorage.getItem("userId"));
+        myFollowing = data.user.following || [];
+        if(data.user.blockedUsers) { myBlockedUsers = data.user.blockedUsers.map(u => (typeof u === 'object' && u._id) ? u._id : u); } else { myBlockedUsers = []; }
+    } catch(e) { console.log("Stats update error"); }
+}
+
+async function checkNotifs() {
+    try {
+        const notifs = await APIService.notifications.getAll();
+        const unread = notifs.filter(n => !n.isRead).length;
+        const badge = document.getElementById('notif-badge');
+        const badgeStatic = document.getElementById('notif-badge-static');
+        if(unread > 0) { 
+            if(badge) badge.classList.remove('hidden'); 
+            if(badgeStatic) badgeStatic.classList.remove('hidden'); 
+        } else { 
+            if(badge) badge.classList.add('hidden'); 
+            if(badgeStatic) badgeStatic.classList.add('hidden'); 
+        }
+    } catch(e){}
+}
+
+function switchAuth(id) { document.querySelectorAll('.auth-form').forEach(e=>e.classList.add('hidden-screen')); if(document.getElementById(id)) document.getElementById(id).classList.remove('hidden-screen'); }
+function toggleSidePanel() { if(document.getElementById('side-panel')) document.getElementById('side-panel').classList.toggle('open'); }
+
+function toggleCustomDropdown(menuId, triggerBtn) {
+    const menu = document.getElementById(menuId);
+    if (activeDropdownId && activeDropdownId !== menuId) {
+        if(document.getElementById(activeDropdownId)) document.getElementById(activeDropdownId).classList.remove('show');
+        const prevTrigger = document.querySelector(`[onclick*="${activeDropdownId}"]`);
+        if(prevTrigger) prevTrigger.classList.remove('active');
+    }
+    if(menu) menu.classList.toggle('show');
+    if(triggerBtn) triggerBtn.classList.toggle('active');
+    activeDropdownId = (menu && menu.classList.contains('show')) ? menuId : null;
+    if(window.event) window.event.stopPropagation();
+}
+
+function selectCustomOption(value, text, icon, type) {
+    const hiddenInp = document.getElementById(type === 'lang' ? 'editLang' : 'api-source');
+    if(hiddenInp) hiddenInp.value = value;
+    const textSpan = document.getElementById(type === 'lang' ? 'lang-selected-text' : 'source-selected-text');
+    let iconHtml = '';
+    if(type === 'lang') iconHtml = `<img src="https://flagcdn.com/w20/${icon}.png" class="w-5 h-5 rounded-full shadow-sm">`;
+    else if(type === 'source') iconHtml = `<i class="fa-solid ${icon} text-purple-500"></i>`;
+    if(textSpan) textSpan.innerHTML = `${iconHtml} ${text}`;
+    const menuId = type === 'lang' ? 'lang-dropdown-menu' : 'source-dropdown-menu';
+    document.querySelectorAll(`#${menuId} .dropdown-option`).forEach(el => el.classList.remove('selected'));
+    if(window.event && window.event.currentTarget) window.event.currentTarget.classList.add('selected');
+    const menuBtn = document.querySelector(`[onclick*="${menuId}"]`);
+    toggleCustomDropdown(menuId, menuBtn);
+    if(type === 'source') toggleInputs(value);
+}
+
+document.addEventListener('click', function(e) {
+    if (activeDropdownId) {
+        const menu = document.getElementById(activeDropdownId);
+        const trigger = document.querySelector(`[onclick*="${activeDropdownId}"]`);
+        if (menu && trigger && !menu.contains(e.target) && !trigger.contains(e.target)) {
+             menu.classList.remove('show');
+             trigger.classList.remove('active');
+             activeDropdownId = null;
         }
     }
-
-    async function updateMyStats() {
-        try {
-            const data = await APIService.user.getProfile(localStorage.getItem("userId"));
-            myFollowing = data.user.following || [];
-            if(data.user.blockedUsers) { myBlockedUsers = data.user.blockedUsers.map(u => (typeof u === 'object' && u._id) ? u._id : u); } else { myBlockedUsers = []; }
-        } catch(e) { console.log("Stats update error"); }
+    if(document.getElementById('chat-theme-menu') && !e.target.closest('#chat-theme-menu') && !e.target.closest('button[onclick="toggleChatThemeMenu()"]')) {
+        document.getElementById('chat-theme-menu').classList.remove('open');
     }
-
-    async function checkNotifs() {
-        try {
-            const notifs = await APIService.notifications.getAll();
-            const unread = notifs.filter(n => !n.isRead).length;
-            if(unread > 0) { document.getElementById('notif-badge').classList.remove('hidden'); document.getElementById('notif-badge-static').classList.remove('hidden'); } else { document.getElementById('notif-badge').classList.add('hidden'); document.getElementById('notif-badge-static').classList.add('hidden'); }
-        } catch(e){}
-    }
-
-    function switchAuth(id) { document.querySelectorAll('.auth-form').forEach(e=>e.classList.add('hidden-screen')); document.getElementById(id).classList.remove('hidden-screen'); }
-    function toggleSidePanel() { document.getElementById('side-panel').classList.toggle('open'); }
-
-    function toggleCustomDropdown(menuId, triggerBtn) {
-        const menu = document.getElementById(menuId);
-        if (activeDropdownId && activeDropdownId !== menuId) {
-            document.getElementById(activeDropdownId).classList.remove('show');
-            const prevTrigger = document.querySelector(`[onclick*="${activeDropdownId}"]`);
-            if(prevTrigger) prevTrigger.classList.remove('active');
-        }
-        menu.classList.toggle('show');
-        triggerBtn.classList.toggle('active');
-        activeDropdownId = menu.classList.contains('show') ? menuId : null;
-        event.stopPropagation();
-    }
-
-    function selectCustomOption(value, text, icon, type) {
-        document.getElementById(type === 'lang' ? 'editLang' : 'api-source').value = value;
-        const textSpan = document.getElementById(type === 'lang' ? 'lang-selected-text' : 'source-selected-text');
-        let iconHtml = '';
-        if(type === 'lang') iconHtml = `<img src="https://flagcdn.com/w20/${icon}.png" class="w-5 h-5 rounded-full shadow-sm">`;
-        else if(type === 'source') iconHtml = `<i class="fa-solid ${icon} text-purple-500"></i>`;
-        textSpan.innerHTML = `${iconHtml} ${text}`;
-        const menuId = type === 'lang' ? 'lang-dropdown-menu' : 'source-dropdown-menu';
-        document.querySelectorAll(`#${menuId} .dropdown-option`).forEach(el => el.classList.remove('selected'));
-        event.currentTarget.classList.add('selected');
-        toggleCustomDropdown(menuId, document.querySelector(`[onclick*="${menuId}"]`));
-        if(type === 'source') toggleInputs(value);
-    }
-
-    document.addEventListener('click', function(e) {
-        if (activeDropdownId) {
-            const menu = document.getElementById(activeDropdownId);
-            const trigger = document.querySelector(`[onclick*="${activeDropdownId}"]`);
-            if (menu && !menu.contains(e.target) && !trigger.contains(e.target)) {
-                 menu.classList.remove('show');
-                 trigger.classList.remove('active');
-                 activeDropdownId = null;
-            }
-        }
-        if(!e.target.closest('#chat-theme-menu') && !e.target.closest('button[onclick="toggleChatThemeMenu()"]')) {
-            document.getElementById('chat-theme-menu').classList.remove('open');
-        }
-    });
-
+});
 
 function renderView(view) {
     const body = document.body;
     const contentContainer = document.getElementById('main-content');
     const scrollContainer = document.querySelector('.main-scroll-container');
-
-   
     const savedTheme = localStorage.getItem('selectedTheme') || 'default';
-    
     
     body.classList.remove('theme-dark', 'theme-pink', 'theme-red', 'reels-mode', 'feed-mode');
     body.style.background = ''; 
     body.style.backgroundImage = '';
     if(contentContainer) contentContainer.style.background = '';
 
-   
     if (savedTheme === 'dark') {
         body.classList.add('theme-dark');
         body.style.background = '#000000'; 
@@ -529,13 +515,11 @@ function renderView(view) {
         }
     }
 
-    
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active', 'text-purple-600'));
     let btnId = (view === 'notifications') ? 'nav-notifs' : `nav-${view}`;
     let activeBtn = document.getElementById(btnId);
     if(activeBtn) activeBtn.classList.add('nav-active', 'text-purple-600');
 
-   
     if(view === 'feed') renderFeed(contentContainer);
     else if(view === 'reels') renderReels(contentContainer);
     else if(view === 'jobs') renderJobs(contentContainer);
@@ -544,21 +528,22 @@ function renderView(view) {
     else if(view === 'profile') viewUserProfile(localStorage.getItem("userId"));
 }
 
-   async function startChat(id, name, photo) {
-        activeChatUser = id;
-        document.getElementById('fc-user-name').innerText = name;
-        document.getElementById('fc-user-img').src = photo || 'https://placehold.co/30';
+async function startChat(id, name, photo) {
+    activeChatUser = id;
+    if(document.getElementById('fc-user-name')) document.getElementById('fc-user-name').innerText = name;
+    if(document.getElementById('fc-user-img')) document.getElementById('fc-user-img').src = photo || 'https://placehold.co/30';
 
-        if(statusInterval) clearInterval(statusInterval);
+    if(statusInterval) clearInterval(statusInterval);
 
-        const updateStatus = async () => {
-             try {
-                const data = await APIService.user.getProfile(id);
-                const lastActive = new Date(data.user.lastActive || Date.now());
-                const now = new Date();
-                const diffMins = (now - lastActive) / 1000 / 60;
-                const statusEl = document.getElementById('fc-user-status');
+    const updateStatus = async () => {
+         try {
+            const data = await APIService.user.getProfile(id);
+            const lastActive = new Date(data.user.lastActive || Date.now());
+            const now = new Date();
+            const diffMins = (now - lastActive) / 1000 / 60;
+            const statusEl = document.getElementById('fc-user-status');
 
+            if(statusEl) {
                 if(diffMins < 5) { 
                     statusEl.innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full inline-block mr-1"></span>Online`;
                     statusEl.className = "text-[10px] text-green-600 font-bold flex items-center";
@@ -567,133 +552,135 @@ function renderView(view) {
                     statusEl.innerText = `Last seen: ${timeStr}`;
                     statusEl.className = "text-[10px] text-gray-500 font-medium";
                 }
-            } catch(e) { console.log(e); }
-        };
+            }
+        } catch(e) { console.log(e); }
+    };
 
-        updateStatus();
-        statusInterval = setInterval(updateStatus, 2000);
-
-        
-        const themeMenu = document.getElementById('chat-theme-menu');
+    updateStatus();
+    statusInterval = setInterval(updateStatus, 2000);
+    
+    const themeMenu = document.getElementById('chat-theme-menu');
+    if(themeMenu) {
         themeMenu.innerHTML = chatThemes.map(t =>
             `<div class="theme-item" onclick="setChatTheme('${t.id}')">
                 <div class="theme-preview" style="background: ${t.bg}"></div>
                 <span class="text-sm font-medium text-gray-700">${t.name}</span>
             </div>`
         ).join('');
-
-        loadMsgs();
-
-        document.getElementById('full-chat-view').classList.add('active');
-        isChatOpen = true; 
-
-        if(window.chatInterval) clearInterval(window.chatInterval);
-        window.chatInterval = setInterval(loadMsgs, 3000);
     }
 
-    function closeFullChat() {
-        document.getElementById('full-chat-view').classList.remove('active');
-        isChatOpen = false; 
-        if(window.chatInterval) clearInterval(window.chatInterval);
-        if(statusInterval) clearInterval(statusInterval);
-    }
+    loadMsgs();
+    if(document.getElementById('full-chat-view')) document.getElementById('full-chat-view').classList.add('active');
+    isChatOpen = true; 
 
-    function toggleChatThemeMenu() {
-        document.getElementById('chat-theme-menu').classList.toggle('open');
-    }
+    if(window.chatInterval) clearInterval(window.chatInterval);
+    window.chatInterval = setInterval(loadMsgs, 3000);
+}
 
-    function setChatTheme(themeId) {
-        currentTheme = chatThemes.find(t => t.id === themeId) || chatThemes[0];
-        document.getElementById('chat-theme-menu').classList.remove('open');
+function closeFullChat() {
+    if(document.getElementById('full-chat-view')) document.getElementById('full-chat-view').classList.remove('active');
+    isChatOpen = false; 
+    if(window.chatInterval) clearInterval(window.chatInterval);
+    if(statusInterval) clearInterval(statusInterval);
+}
 
-        
-        const container = document.getElementById('fc-messages');
+function toggleChatThemeMenu() {
+    if(document.getElementById('chat-theme-menu')) document.getElementById('chat-theme-menu').classList.toggle('open');
+}
+
+function setChatTheme(themeId) {
+    let currentTheme = chatThemes.find(t => t.id === themeId) || chatThemes[0];
+    if(document.getElementById('chat-theme-menu')) document.getElementById('chat-theme-menu').classList.remove('open');
+
+    const container = document.getElementById('fc-messages');
+    if(container) {
         container.style.background = currentTheme.bg;
         container.style.backgroundSize = "cover";
-
-        
-        const header = document.getElementById('fc-header');
-        const footer = document.getElementById('fc-footer');
-        if(header && footer && currentTheme.barColor) {
-            header.style.backgroundColor = currentTheme.barColor;
-            footer.style.backgroundColor = currentTheme.barColor;
-        }
-
-        loadMsgs(); 
-        const btn = document.getElementById('fc-send-btn');
-        btn.className = `w-10 h-10 rounded-full text-white flex items-center justify-center shadow-lg hover:scale-105 transition ${currentTheme.btn || 'bg-purple-600'}`;
+    }
+    
+    const header = document.getElementById('fc-header');
+    const footer = document.getElementById('fc-footer');
+    if(header && footer && currentTheme.barColor) {
+        header.style.backgroundColor = currentTheme.barColor;
+        footer.style.backgroundColor = currentTheme.barColor;
     }
 
-    async function loadMsgs() {
-        if(!activeChatUser) return;
-        const msgs = await APIService.chat.getHistory(activeChatUser);
-        const myId = localStorage.getItem("userId");
-        document.getElementById('fc-messages').innerHTML = msgs.map(m => {
-            let content = m.content;
-            if(m.type==='image') { content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; }
-            if(m.type==='video') content = `<video src="${m.fileUrl}" controls class="max-w-[200px] rounded-lg shadow-sm"></video>`;
+    loadMsgs(); 
+    const btn = document.getElementById('fc-send-btn');
+    if(btn) btn.className = `w-10 h-10 rounded-full text-white flex items-center justify-center shadow-lg hover:scale-105 transition ${currentTheme.btn || 'bg-purple-600'}`;
+}
 
-            const isMe = m.senderId === myId;
-            const bubbleClass = isMe
-                ? `chat-bubble-user ${currentTheme.btn || 'bg-purple-600'} text-white self-end`
-                : 'chat-bubble-other self-start bg-white/90 backdrop-blur-sm';
-            const alignClass = isMe ? 'justify-end' : 'justify-start';
-            const date = m.createdAt ? new Date(m.createdAt) : new Date();
-            const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const dateStr = date.toLocaleDateString([], {day: 'numeric', month: 'short'}); // e.g. 24 Nov
-            const fullTime = `${dateStr}, ${timeStr}`;
-            return `
-            <div class="flex ${alignClass} mb-2 group">
-                ${isMe ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}
-                <div class="${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md">
-                    ${content}
-                    <div class="text-[9px] opacity-70 text-right mt-1 font-mono">${fullTime}</div>
-                </div>
-            </div>`;
-        }).join('');
+async function loadMsgs() {
+    if(!activeChatUser) return;
+    const msgs = await APIService.chat.getHistory(activeChatUser);
+    const myId = localStorage.getItem("userId");
+    const container = document.getElementById('fc-messages');
+    if(!container) return;
+    
+    container.innerHTML = msgs.map(m => {
+        let content = m.content;
+        if(m.type==='image') { content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; }
+        if(m.type==='video') content = `<video src="${m.fileUrl}" controls class="max-w-[200px] rounded-lg shadow-sm"></video>`;
 
-        const chatMsgs = document.getElementById('fc-messages');
-        chatMsgs.scrollTop = chatMsgs.scrollHeight;
-    }
+        const isMe = m.senderId === myId;
+        const currentThemeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
+        const bubbleClass = isMe
+            ? `chat-bubble-user ${currentThemeBtn} text-white self-end`
+            : 'chat-bubble-other self-start bg-white/90 backdrop-blur-sm';
+        const alignClass = isMe ? 'justify-end' : 'justify-start';
+        const date = m.createdAt ? new Date(m.createdAt) : new Date();
+        const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const dateStr = date.toLocaleDateString([], {day: 'numeric', month: 'short'});
+        const fullTime = `${dateStr}, ${timeStr}`;
+        return `
+        <div class="flex ${alignClass} mb-2 group">
+            ${isMe ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}
+            <div class="${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md">
+                ${content}
+                <div class="text-[9px] opacity-70 text-right mt-1 font-mono">${fullTime}</div>
+            </div>
+        </div>`;
+    }).join('');
 
-    async function sendMsg() {
-        const input = document.getElementById('fc-input');
-        const txt = input.value;
-        if(!txt) return;
+    container.scrollTop = container.scrollHeight;
+}
 
-       
-        input.value = "";
-        input.focus();
+async function sendMsg() {
+    const input = document.getElementById('fc-input');
+    const txt = input.value;
+    if(!txt) return;
+    input.value = "";
+    input.focus();
+    await APIService.chat.send(activeChatUser, txt);
+    loadMsgs();
+    input.focus();
+}
 
-        await APIService.chat.send(activeChatUser, txt);
+async function uploadChatFile(file) {
+    const fd = new FormData();
+    fd.append("chatFile", file);
+    fd.append("receiverId", activeChatUser);
+    await APIService.chat.upload(fd);
+    loadMsgs();
+}
+
+async function clearChat() {
+    openConfirmModal("Clear Chat?", "Are you sure you want to clear all messages?", async () => {
+        await APIService.chat.clearChat(activeChatUser);
         loadMsgs();
-        input.focus();
-    }
+    });
+}
 
-    async function uploadChatFile(file) {
-        const fd = new FormData();
-        fd.append("chatFile", file);
-        fd.append("receiverId", activeChatUser);
-        await APIService.chat.upload(fd);
+async function deleteSingleMsg(id) {
+    openConfirmModal("Delete Message?", "Delete this message?", async () => {
+        await APIService.chat.deleteMsg(id);
         loadMsgs();
-    }
+    });
+}
 
-    async function clearChat() {
-        openConfirmModal("Clear Chat?", "Are you sure you want to clear all messages?", async () => {
-            await APIService.chat.clearChat(activeChatUser);
-            loadMsgs();
-        });
-    }
-
-    async function deleteSingleMsg(id) {
-        openConfirmModal("Delete Message?", "Delete this message?", async () => {
-            await APIService.chat.deleteMsg(id);
-            loadMsgs();
-        });
-    }
-
-    async function viewSinglePost(postId) {
+async function viewSinglePost(postId) {
     const c = document.getElementById('main-content');
+    if(!c) return;
     c.innerHTML = '<div class="text-center mt-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-purple-600"></i></div>';
     try {
         const posts = await APIService.feed.getAll();
@@ -712,7 +699,6 @@ function renderView(view) {
             const isLongText = p.content.length > 200 || (p.content.match(/\n/g) || []).length > 4;
             const contentId = `post-content-${p._id}`;
             
-           
             let linkHtml = '';
             if (p.link) {
                  const displayLink = p.link.length > 40 ? p.link.substring(0, 40) + '...' : p.link;
@@ -726,7 +712,6 @@ function renderView(view) {
                 }
             }
 
-           
             const mediaUrl = p.video || p.image;
             const isVideo = p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i));
             let mediaHtml = '';
@@ -812,30 +797,18 @@ function renderView(view) {
     } catch(e) { console.error(e); c.innerHTML = '<div class="text-center text-red-500 mt-10">Error loading post.</div>'; }
 }
 
-    function handleNotifClick(type, relatedId, actorId) {
-        if(type === 'message') {
-            if(actorId) {
-                APIService.user.getProfile(actorId).then(data => {
-                    startChat(actorId, data.user.name, data.user.photo);
-                }).catch(() => renderView('chat'));
-            } else { renderView('chat'); }
-        }
-        else if(type === 'follow') { viewUserProfile(actorId); }
-        else if(type === 'like' || type === 'comment' || type === 'post') { viewSinglePost(relatedId); }
-        else { renderView('feed'); }
-    }
-
-    async function deleteComment(postId, commentId) {
-        openConfirmModal("Delete Comment?", "Are you sure you want to delete this comment?", async () => {
-            const commentEl = document.getElementById(`comment-item-${commentId}`);
-            if (commentEl) commentEl.remove();
-            const countSpan = document.getElementById(`cmt-cnt-${postId}`);
-            if (countSpan) { let current = parseInt(countSpan.innerText); countSpan.innerText = Math.max(0, current - 1); }
-            try { await APIService.feed.deleteComment(postId, commentId); showToast("Comment Deleted"); } catch(e) { showToast("Error deleting comment"); }
-        });
-    }
+async function deleteComment(postId, commentId) {
+    openConfirmModal("Delete Comment?", "Are you sure you want to delete this comment?", async () => {
+        const commentEl = document.getElementById(`comment-item-${commentId}`);
+        if (commentEl) commentEl.remove();
+        const countSpan = document.getElementById(`cmt-cnt-${postId}`);
+        if (countSpan) { let current = parseInt(countSpan.innerText); countSpan.innerText = Math.max(0, current - 1); }
+        try { await APIService.feed.deleteComment(postId, commentId); showToast("Comment Deleted"); } catch(e) { showToast("Error deleting comment"); }
+    });
+}
 
 async function renderFeed(c) {
+    if(!c) return;
     const topBar = `<div id="feed-top-bar" class="glass-card p-3 mb-4 flex gap-2 items-center fixed top-[56px] left-0 right-0 mx-auto max-w-md z-30 w-full border-t border-gray-100 transition-transform duration-300" style="backdrop-filter: blur(20px);">
                         <button onclick="document.getElementById('postModal').classList.remove('hidden')" class="w-10 h-10 bg-gradient-to-r from-purple-50 to-pink-500 rounded-full flex-shrink-0 flex items-center justify-center text-white shadow-md active:scale-95 transition"><i class="fa-solid fa-pen-nib"></i></button>
                         <div class="flex-1 relative">
@@ -845,7 +818,6 @@ async function renderFeed(c) {
                     </div>
                     <div style="height: 80px;"></div>`;
                     
-    // 🔥 LOADER TEXT CHANGED TO ENGLISH
     c.innerHTML = topBar + `
         <div id="feed-loader" class="flex flex-col justify-center items-center py-16 w-full">
             <lottie-player 
@@ -862,8 +834,6 @@ async function renderFeed(c) {
 
     try {
         let posts = await APIService.feed.getAll();
-        
-        // Data aate hi loader ko hata do
         const loader = document.getElementById('feed-loader');
         if (loader) loader.remove();
 
@@ -872,9 +842,7 @@ async function renderFeed(c) {
         const safeBlockedList = (myBlockedUsers || []).map(u => (typeof u === 'object' && u._id) ? u._id : u);
 
         if(posts && posts.length > 0) {
-            
             let feedOnlyPosts = posts.filter(p => p.category !== 'reel' && p.category !== 'youtube_reel');
-
             let validPosts = feedOnlyPosts.filter(p => { if(!p.userId) return false; const pUserId = p.userId._id || p.userId; return !safeBlockedList.includes(pUserId); });
             let localPosts = validPosts.filter(p => p.userId.country === myCountry);
             let globalPosts = validPosts.filter(p => p.userId.country !== myCountry);
@@ -896,14 +864,11 @@ async function renderFeed(c) {
                     const isLongText = p.content.length > 200 || (p.content.match(/\n/g) || []).length > 4;
                     const contentId = `post-content-${p._id}`;
                     
-                  
                     let linkHtml = '';
-                   
                     if (p.link) {
                          const displayLink = p.link.length > 40 ? p.link.substring(0, 40) + '...' : p.link;
                          linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${displayLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
                     } else {
-                    
                         const urlRegex = /(https?:\/\/[^\s]+)/g;
                         const detectedLinks = p.content.match(urlRegex);
                         if(detectedLinks && detectedLinks.length > 0) {
@@ -975,7 +940,6 @@ async function renderFeed(c) {
                         <div id="comments-${p._id}" class="hidden mt-3 pt-3 border-t border-gray-200/50">
                             <div class="max-h-48 overflow-y-auto mb-2 space-y-3 px-1" id="cmt-list-${p._id}">
                                ${p.comments.map(cm => {
-    
                                const myId = localStorage.getItem("userId");
                                const isPostOwner = p.userId && (p.userId._id === myId || p.userId === myId);
                                const isCommentOwner = cm.userId && (cm.userId._id === myId || cm.userId === myId);
@@ -987,14 +951,14 @@ async function renderFeed(c) {
                                         <div class="flex-1 bg-gray-50 p-2 rounded-lg relative">
                                              <div class="flex justify-between items-center mb-1">
                                           <span class="font-bold">${cm.userName || 'User'}</span>
-                
+                                        
                                   ${canDelete ? `<button onclick="deleteComment('${p._id}', '${cm._id}')" class="text-red-400 hover:text-red-600 transition p-1"><i class="fa-solid fa-trash"></i></button>` : ''}
-            
+                                            
                                       </div>
                                    <p class="text-gray-600">${cm.text}</p>
                                   </div>
                                 </div>`;
-                             }).join('')}
+                               }).join('')}
                             </div>
                             <div class="flex gap-2 items-center bg-gray-50 p-1.5 rounded-full border">
                                 <input id="inp-${p._id}" type="text" class="w-full p-2 text-sm bg-transparent outline-none" placeholder="Write a comment...">
@@ -1015,196 +979,137 @@ async function renderFeed(c) {
     }
     applyTranslations();
 }
+    
+function toggleSeeMore(elementId, btn) {
+    const el = document.getElementById(elementId);
+    if(el.classList.contains('line-clamp-custom')) { el.classList.remove('line-clamp-custom'); btn.innerText = "Show less"; } else { el.classList.add('line-clamp-custom'); btn.innerText = "See more..."; }
+}
 
-    function toggleSeeMore(elementId, btn) {
-        const el = document.getElementById(elementId);
-        if(el.classList.contains('line-clamp-custom')) { el.classList.remove('line-clamp-custom'); btn.innerText = "Show less"; } else { el.classList.add('line-clamp-custom'); btn.innerText = "See more..."; }
-    }
+async function searchUsersFromFeed() {
+    const query = document.getElementById('feedSearchInput').value;
+    if(!query) return renderView('feed');
+    const c = document.getElementById('main-content');
+    if(!c) return;
+    c.innerHTML = '<div class="text-center mt-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-purple-600"></i></div>';
+    try {
+        const users = await APIService.chat.search(query);
+        let html = `<div class="flex items-center gap-2 mb-4"><button onclick="renderView('feed')" class="text-sm text-gray-500 hover:text-black bg-white/50 px-3 py-1 rounded-full shadow-sm"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="font-bold text-lg">Search Results</h2></div>`;
+        if(users.length === 0) { html += '<div class="text-center text-gray-500 mt-10 glass-card p-4">No users found with that name.</div>'; } else {
+            html += users.map(u => `
+                <div class="glass-card p-3 mb-3 flex items-center justify-between cursor-pointer hover:scale-[1.02] transition" onclick="viewUserProfile('${u._id}')">
+                    <div class="flex items-center gap-3">
+                        <img src="${u.photo||'https://placehold.co/40'}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm">
+                        <div><h3 class="font-bold text-sm text-gray-800">${u.name}</h3><p class="text-xs text-gray-500">${u.headline||'Member'}</p></div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-400"></i>
+                </div>`).join('');
+        }
+        c.innerHTML = html;
+    } catch(e) { console.error(e); renderView('feed'); showToast("Search failed"); }
+}
 
-    async function searchUsersFromFeed() {
-        const query = document.getElementById('feedSearchInput').value;
-        if(!query) return renderView('feed');
-        const c = document.getElementById('main-content');
-        c.innerHTML = '<div class="text-center mt-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-purple-600"></i></div>';
-        try {
-            const users = await APIService.chat.search(query);
-            let html = `<div class="flex items-center gap-2 mb-4"><button onclick="renderView('feed')" class="text-sm text-gray-500 hover:text-black bg-white/50 px-3 py-1 rounded-full shadow-sm"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="font-bold text-lg">Search Results</h2></div>`;
-            if(users.length === 0) { html += '<div class="text-center text-gray-500 mt-10 glass-card p-4">No users found with that name.</div>'; } else {
-                html += users.map(u => `
-                    <div class="glass-card p-3 mb-3 flex items-center justify-between cursor-pointer hover:scale-[1.02] transition" onclick="viewUserProfile('${u._id}')">
-                        <div class="flex items-center gap-3">
-                            <img src="${u.photo||'https://placehold.co/40'}" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm">
-                            <div><h3 class="font-bold text-sm text-gray-800">${u.name}</h3><p class="text-xs text-gray-500">${u.headline||'Member'}</p></div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right text-gray-400"></i>
-                    </div>`).join('');
-            }
-            c.innerHTML = html;
-        } catch(e) { console.error(e); renderView('feed'); showToast("Search failed"); }
-    }
+function handleEnterSearch(e) { if(e.key === 'Enter') searchUsersFromFeed(); }
 
-    function handleEnterSearch(e) { if(e.key === 'Enter') searchUsersFromFeed(); }
+function openLink(url) {
+    if (!url.startsWith('http')) url = 'https://' + url;
+    if(document.getElementById('modalContent')) document.getElementById('modalContent').innerHTML = `<div class="flex flex-col h-[80vh]"><div class="flex justify-between items-center mb-2 px-1 border-b pb-2"><div class="flex flex-col w-3/4"><h3 class="font-bold text-sm truncate text-gray-800">Browser View</h3><span class="text-[10px] text-gray-400 truncate">${url}</span></div><a href="${url}" target="_blank" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold transition hover:bg-gray-800">External <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a></div><div class="flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative"><p class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400 text-xs text-center z-0"><i class="fa-solid fa-circle-notch fa-spin mb-2 text-xl"></i><br>Loading...</p><iframe src="${url}" class="w-full h-full relative z-10 bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox allow-top-navigation" onerror="this.style.display='none';"></iframe></div></div>`;
+    if(document.getElementById('genericModal')) document.getElementById('genericModal').classList.remove('hidden');
+}
 
-    function openLink(url) {
-        if (!url.startsWith('http')) url = 'https://' + url;
-        document.getElementById('modalContent').innerHTML = `<div class="flex flex-col h-[80vh]"><div class="flex justify-between items-center mb-2 px-1 border-b pb-2"><div class="flex flex-col w-3/4"><h3 class="font-bold text-sm truncate text-gray-800">Browser View</h3><span class="text-[10px] text-gray-400 truncate">${url}</span></div><a href="${url}" target="_blank" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold transition hover:bg-gray-800">External <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a></div><div class="flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative"><p class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400 text-xs text-center z-0"><i class="fa-solid fa-circle-notch fa-spin mb-2 text-xl"></i><br>Loading...</p><iframe src="${url}" class="w-full h-full relative z-10 bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox allow-top-navigation" onerror="this.style.display='none';"></iframe></div></div>`;
-        document.getElementById('genericModal').classList.remove('hidden');
-    }
-
-   
-    async function submitPost() {
+async function submitPost() {
     const fd = new FormData();
-    
-    
     let content = document.getElementById('postContent').value;
     const linkVal = document.getElementById('postLink').value;
-    
-   
-    if(linkVal) {
-        content += " " + linkVal; 
-    }
-    
+    if(linkVal) content += " " + linkVal; 
     fd.append('content', content);
-
     const f = document.getElementById('postImage').files[0];
-    if(f) {
-        fd.append('postImage', f);
-    }
+    if(f) fd.append('postImage', f);
     await APIService.feed.create(fd);
-    document.getElementById('postModal').classList.add('hidden');
+    if(document.getElementById('postModal')) document.getElementById('postModal').classList.add('hidden');
     document.getElementById('postContent').value = "";
     document.getElementById('postLink').value = "";
     document.getElementById('postImage').value = "";
-    
     renderView('feed');
 }
 
-
-    async function toggleLike(id) {
-        const icon = document.getElementById(`like-icon-${id}`);
-        const countSpan = document.getElementById(`like-cnt-${id}`);
-        if (icon && countSpan) {
-            let count = parseInt(countSpan.innerText);
-            if (icon.classList.contains('text-red-500')) { icon.classList.remove('text-red-500', 'font-bold'); icon.classList.add('text-gray-500'); countSpan.innerText = Math.max(0, count - 1); } else { icon.classList.remove('text-gray-500'); icon.classList.add('text-red-500', 'font-bold'); countSpan.innerText = count + 1; }
-        }
-        try { await APIService.feed.like(id); } catch(e) { console.error("Like failed", e); }
+async function toggleLike(id) {
+    const icon = document.getElementById(`like-icon-${id}`);
+    const countSpan = document.getElementById(`like-cnt-${id}`);
+    if (icon && countSpan) {
+        let count = parseInt(countSpan.innerText);
+        if (icon.classList.contains('text-red-500')) { icon.classList.remove('text-red-500', 'font-bold'); icon.classList.add('text-gray-500'); countSpan.innerText = Math.max(0, count - 1); } else { icon.classList.remove('text-gray-500'); icon.classList.add('text-red-500', 'font-bold'); countSpan.innerText = count + 1; }
     }
+    try { await APIService.feed.like(id); } catch(e) { console.error("Like failed", e); }
+}
 
-    function toggleComment(id) { document.getElementById(`comments-${id}`).classList.toggle('hidden'); }
+async function postComment(id) {
+    const input = document.getElementById(`inp-${id}`);
+    if(!input) return;
+    const text = input.value;
+    if(!text) return;
+    const list = document.getElementById(`cmt-list-${id}`);
+    const countSpan = document.getElementById(`cmt-cnt-${id}`);
+    const myName = localStorage.getItem("userName") || "Me";
+    const myPhoto = localStorage.getItem("userPhoto") || "https://placehold.co/30";
+    const tempId = 'temp-' + Date.now();
+    const html = `
+        <div class="flex gap-2 items-start group" id="comment-item-${tempId}">
+            <img src="${myPhoto}" class="w-8 h-8 rounded-full border border-gray-200 mt-1 object-cover">
+            <div class="bg-gray-100 p-2.5 rounded-2xl rounded-tl-none relative w-full max-w-[85%]">
+                <div class="flex justify-between items-center mb-0.5"><span class="font-bold text-xs text-gray-900">${myName}</span></div>
+                <p class="text-xs text-gray-700 leading-snug">${text}</p>
+            </div>
+        </div>`;
+    if(list) list.insertAdjacentHTML('afterbegin', html);
+    if(countSpan) countSpan.innerText = parseInt(countSpan.innerText) + 1;
+    input.value = "";
+    try { await APIService.feed.comment(id, text); } catch(e) { console.error("Comment failed"); }
+}
 
-    async function postComment(id) {
-        const input = document.getElementById(`inp-${id}`);
-        const text = input.value;
-        if(!text) return;
-        const list = document.getElementById(`cmt-list-${id}`);
-        const countSpan = document.getElementById(`cmt-cnt-${id}`);
-        const myName = localStorage.getItem("userName") || "Me";
-        const myPhoto = localStorage.getItem("userPhoto") || "https://placehold.co/30";
-        const tempId = 'temp-' + Date.now();
-        const html = `
-            <div class="flex gap-2 items-start group" id="comment-item-${tempId}">
-                <img src="${myPhoto}" class="w-8 h-8 rounded-full border border-gray-200 mt-1 object-cover">
-                <div class="bg-gray-100 p-2.5 rounded-2xl rounded-tl-none relative w-full max-w-[85%]">
-                    <div class="flex justify-between items-center mb-0.5"><span class="font-bold text-xs text-gray-900">${myName}</span></div>
-                    <p class="text-xs text-gray-700 leading-snug">${text}</p>
-                </div>
-            </div>`;
-        if(list) list.insertAdjacentHTML('afterbegin', html);
-        if(countSpan) countSpan.innerText = parseInt(countSpan.innerText) + 1;
-        input.value = "";
-        try { await APIService.feed.comment(id, text); } catch(e) { console.error("Comment failed"); }
-    }
+async function toggleFollow(id, btn) { const res = await APIService.user.follow(id); if(res.status === 'followed') { btn.innerText = txt("unfollow"); btn.className = "btn-follow btn-following"; myFollowing.push(id); showToast("Following!"); } else { btn.innerText = txt("follow"); btn.className = "btn-follow btn-not-following"; myFollowing = myFollowing.filter(uid => uid !== id); showToast("Unfollowed"); } updateMyStats(); }
+function openConfirmModal(title, message, actionCallback) { if(document.getElementById('modalTitle')) document.getElementById('modalTitle').innerText = title; if(document.getElementById('modalMessage')) document.getElementById('modalMessage').innerText = message; pendingConfirmAction = actionCallback; if(document.getElementById('universalConfirmModal')) document.getElementById('universalConfirmModal').style.display = 'flex'; }
+function openAlertModal(title, message) { if(document.getElementById('modalTitle')) document.getElementById('modalTitle').innerText = title; if(document.getElementById('modalMessage')) document.getElementById('modalMessage').innerText = message; const cancelBtn = document.querySelector('#universalConfirmModal .btn-cancel'); if(cancelBtn) cancelBtn.style.display = 'none'; if(document.getElementById('modalConfirmBtn')) document.getElementById('modalConfirmBtn').innerText = "OK"; pendingConfirmAction = null; if(document.getElementById('universalConfirmModal')) document.getElementById('universalConfirmModal').style.display = 'flex'; }
+function closeConfirmModal() { if(document.getElementById('universalConfirmModal')) document.getElementById('universalConfirmModal').style.display = 'none'; pendingConfirmAction = null; const cancelBtn = document.querySelector('#universalConfirmModal .btn-cancel'); if(cancelBtn) cancelBtn.style.display = 'block'; if(document.getElementById('modalConfirmBtn')) document.getElementById('modalConfirmBtn').innerText = "Yes, Proceed"; }
+async function executeConfirmAction() { if(pendingConfirmAction) { await pendingConfirmAction(); } closeConfirmModal(); }
 
-    async function toggleFollow(id, btn) { const res = await APIService.user.follow(id); if(res.status === 'followed') { btn.innerText = txt("unfollow"); btn.className = "btn-follow btn-following"; myFollowing.push(id); showToast("Following!"); } else { btn.innerText = txt("follow"); btn.className = "btn-follow btn-not-following"; myFollowing = myFollowing.filter(uid => uid !== id); showToast("Unfollowed"); } updateMyStats(); }
-    function openConfirmModal(title, message, actionCallback) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = message; pendingConfirmAction = actionCallback; document.getElementById('universalConfirmModal').style.display = 'flex'; }
-    function openAlertModal(title, message) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = message; document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'none'; document.getElementById('modalConfirmBtn').innerText = "OK"; pendingConfirmAction = null; document.getElementById('universalConfirmModal').style.display = 'flex'; }
-    function closeConfirmModal() { document.getElementById('universalConfirmModal').style.display = 'none'; pendingConfirmAction = null; document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'block'; document.getElementById('modalConfirmBtn').innerText = "Yes, Proceed"; }
-    async function executeConfirmAction() { if(pendingConfirmAction) { await pendingConfirmAction(); } closeConfirmModal(); }
-
-    function deletePost(id) {
-        openConfirmModal("Delete Post?", "Are you sure you want to permanently delete this post?", async () => {
-            const el = document.getElementById(`post-container-${id}`);
-            if(el) { el.style.transition = "all 0.3s"; el.style.opacity = "0"; setTimeout(() => el.remove(), 300); }
-            try { await APIService.feed.delete(id); showToast("Post Deleted"); } catch(e) { showToast("Error deleting post"); }
-        });
-    }
-
-    function reportUser(id, username) {
-        if (username && username.toLowerCase() === 'zobbly.com') { openAlertModal("⚠️ Action Restricted", "You cannot report the official zobbly.com account."); return; }
-        openConfirmModal("Report User?", "Do you want to report this user for violating community guidelines?", async () => { showToast("User Reported Successfully!"); });
-    }
-
-    async function blockUser(id, username) {
-        if (username && username.toLowerCase() === 'zobbly.com') { openAlertModal("⚠️ Action Restricted", "You cannot block the official zobbly.com account."); return; }
-        const isBlocked = myBlockedUsers.some(b => (typeof b === 'object' ? b._id === id : b === id));
-        const action = isBlocked ? "Unblock" : "Block";
-        openConfirmModal(`${action} User?`, `Are you sure you want to ${action.toLowerCase()} this user?`, async () => {
-            if (isBlocked) {
-                myBlockedUsers = myBlockedUsers.filter(uid => (typeof uid === 'object' ? uid._id !== id : uid !== id));
-                await APIService.user.block(id);
-                showToast("User Unblocked");
-                if (document.querySelector('.nav-active').id === 'nav-feed') renderView('feed'); else if (document.getElementById('profile-view')) viewUserProfile(id);
-            } else {
-                myBlockedUsers.push(id);
-                const allPosts = document.querySelectorAll(`div[data-userid="${id}"]`);
-                allPosts.forEach(post => { post.style.transition = 'all 0.3s'; post.style.opacity = '0'; setTimeout(() => post.remove(), 300); });
-                showToast("User Blocked");
-                await APIService.user.block(id);
-                if (document.getElementById('profile-view')) viewUserProfile(id);
-            }
-        });
-    }
-    
-   
-function closeAllActiveElements() {
-    document.querySelectorAll('[id^="post-menu-"], [id^="profile-menu"], .dropdown-menu').forEach(menu => {
-        menu.classList.add('hidden');
+function deletePost(id) {
+    openConfirmModal("Delete Post?", "Are you sure you want to permanently delete this post?", async () => {
+        const el = document.getElementById(`post-container-${id}`);
+        if(el) { el.style.transition = "all 0.3s"; el.style.opacity = "0"; setTimeout(() => el.remove(), 300); }
+        try { await APIService.feed.delete(id); showToast("Post Deleted"); } catch(e) { showToast("Error deleting post"); }
     });
+}
 
-    document.querySelectorAll('[id^="comments-"]').forEach(section => {
-        section.classList.add('hidden');
-        const video = section.querySelector('video');
-        if (video) {
-            video.pause();
-            video.currentTime = 0;
+function reportUser(id, username) {
+    if (username && username.toLowerCase() === 'zobbly.com') { openAlertModal("⚠️ Action Restricted", "You cannot report the official zobbly.com account."); return; }
+    openConfirmModal("Report User?", "Do you want to report this user for violating community guidelines?", async () => { showToast("User Reported Successfully!"); });
+}
+
+async function blockUser(id, username) {
+    if (username && username.toLowerCase() === 'zobbly.com') { openAlertModal("⚠️ Action Restricted", "You cannot block the official zobbly.com account."); return; }
+    const isBlocked = myBlockedUsers.some(b => (typeof b === 'object' ? b._id === id : b === id));
+    const action = isBlocked ? "Unblock" : "Block";
+    openConfirmModal(`${action} User?`, `Are you sure you want to ${action.toLowerCase()} this user?`, async () => {
+        if (isBlocked) {
+            myBlockedUsers = myBlockedUsers.filter(uid => (typeof uid === 'object' ? uid._id !== id : uid !== id));
+            await APIService.user.block(id);
+            showToast("User Unblocked");
+            const activeNav = document.querySelector('.nav-active');
+            if (activeNav && activeNav.id === 'nav-feed') renderView('feed'); else if (document.getElementById('profile-view')) viewUserProfile(id);
+        } else {
+            myBlockedUsers.push(id);
+            const allPosts = document.querySelectorAll(`div[data-userid="${id}"]`);
+            allPosts.forEach(post => { post.style.transition = 'all 0.3s'; post.style.opacity = '0'; setTimeout(() => post.remove(), 300); });
+            showToast("User Blocked");
+            await APIService.user.block(id);
+            if (document.getElementById('profile-view')) viewUserProfile(id);
         }
     });
-
-   document.querySelectorAll('[id^="repost-panel-"]').forEach(panel => {
-        panel.classList.add('hidden');
-    });
 }
 
-
-function toggleComment(postId) {
-    const targetSection = document.getElementById(`comments-${postId}`);
-    if (!targetSection) return;
-
-    const isAlreadyOpen = !targetSection.classList.contains('hidden');
-
-    closeAllActiveElements();
-
-    if (!isAlreadyOpen) {
-        targetSection.classList.remove('hidden');
-    }
-}
-
-
-function togglePostMenu(postId, event) {
-    if (event) event.stopPropagation(); 
-    
-    const targetMenu = document.getElementById(`post-menu-${postId}`);
-    const isAlreadyOpen = !targetMenu.classList.contains('hidden');
-
-    closeAllActiveElements();
-
-    if (!isAlreadyOpen) {
-        targetMenu.classList.remove('hidden');
-    }
-}
-    
-    async function viewUserProfile(id) {
+async function viewUserProfile(id) {
     const container = document.getElementById('main-content');
+    if(!container) return;
     container.innerHTML = '<div class="text-center mt-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-purple-600"></i></div>';
     
     const data = await APIService.user.getProfile(id);
@@ -1318,31 +1223,31 @@ function togglePostMenu(postId, event) {
 
                                 <div class="max-h-60 overflow-y-auto space-y-4 mb-4" id="cmt-list-${p._id}">
                                 ${p.comments.map(cm => {
-   
                                   const myId = localStorage.getItem("userId");
                                   const isPostOwner = p.userId && (p.userId._id === myId || p.userId === myId);
                                   const isCommentOwner = cm.userId && (cm.userId._id === myId || cm.userId === myId);
                                   const canDelete = isPostOwner || isCommentOwner;
 
-                                 return `
+                                  return `
                                     <div class="flex gap-3 text-xs group" id="comment-item-${cm._id}">
                                        <img src="${cm.userId?.photo || 'https://placehold.co/20'}" class="w-8 h-8 rounded-full object-cover">
                                           <div class="flex-1 bg-gray-50 p-2 rounded-lg relative">
                                                <div class="flex justify-between items-center mb-1">
                                                       <span class="font-bold">${cm.userName || 'User'}</span>
-                
+                                        
                                               ${canDelete ? `<button onclick="deleteComment('${p._id}', '${cm._id}')" class="text-red-400 hover:text-red-600 transition p-1"><i class="fa-solid fa-trash"></i></button>` : ''}
-            
+                                              
                                               </div>
                                             <p class="text-gray-600">${cm.text}</p>
                                            </div>
                                       </div>`;
                                 }).join('')}
-                            </div>
+                                </div>
 
-                            <div class="flex gap-2 items-center bg-gray-50 p-2 rounded-full border border-gray-100">
-                                <input id="inp-${p._id}" type="text" class="flex-1 p-1 text-xs bg-transparent outline-none px-2" placeholder="Write a comment...">
-                                <button onclick="postComment('${p._id}')" class="text-purple-600 font-bold text-xs px-2">Post</button>
+                                <div class="flex gap-2 items-center bg-gray-50 p-2 rounded-full border border-gray-100">
+                                    <input id="inp-${p._id}" type="text" class="flex-1 p-1 text-xs bg-transparent outline-none px-2" placeholder="Write a comment...">
+                                    <button onclick="postComment('${p._id}')" class="text-purple-600 font-bold text-xs px-2">Post</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1351,43 +1256,46 @@ function togglePostMenu(postId, event) {
             </div>
         </div>`}`;
 }
-    function openExpModal(id, c, r, y) { currentExpId = id; document.getElementById('modalContent').innerHTML = `<h2 class="text-lg font-bold mb-4 text-gray-800">${id?'Edit':'Add'} Experience</h2><input id="expCompany" value="${c||''}" placeholder="Company" class="w-full mb-3 p-3 bg-gray-50 rounded-xl border-none text-sm"><input id="expRole" value="${r||''}" placeholder="Role" class="w-full mb-3 p-3 bg-gray-50 rounded-xl border-none text-sm"><input id="expYear" value="${y||''}" placeholder="Year" class="w-full mb-4 p-3 bg-gray-50 rounded-xl border-none text-sm"><button onclick="submitExp()" class="btn-zobbly w-full py-2 rounded-xl font-bold text-sm">Save</button>`; document.getElementById('genericModal').classList.remove('hidden'); }
-    async function submitExp() { const d = { company: document.getElementById('expCompany').value, role: document.getElementById('expRole').value, year: document.getElementById('expYear').value }; if(currentExpId) await APIService.user.editExperience(currentExpId, d); else await APIService.user.addExperience(d); closeModal(); viewUserProfile(localStorage.getItem("userId")); }
 
-    async function deleteExp(id) { openConfirmModal("Delete Experience?", "Are you sure you want to remove this experience?", async () => { await APIService.user.deleteExperience(id); viewUserProfile(localStorage.getItem("userId")); }); }
-    function closeModal() { document.getElementById('genericModal').classList.add('hidden'); }
-    async function saveProfile() { const selectedLang = document.getElementById('editLang').value; localStorage.setItem('appLang', selectedLang); await APIService.user.update(document.getElementById('editName').value, document.getElementById('editHeadline').value); localStorage.setItem("userName", document.getElementById('editName').value); location.reload(); }
-    async function backupData() { await APIService.user.backup(); }
-    async function deleteAccount() { openConfirmModal("Delete Account?", "Warning: This will permanently delete your account and all data. This cannot be undone.", async () => { await APIService.user.delete(); APIService.auth.logout(); }); }
-    function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; t.classList.remove('opacity-0', 'pointer-events-none'); t.classList.add('opacity-100', '-translate-y-10'); setTimeout(()=>{ t.classList.remove('opacity-100', '-translate-y-10'); t.classList.add('opacity-0', 'pointer-events-none'); }, 3000); }
+function openExpModal(id, c, r, y) { currentExpId = id; if(document.getElementById('modalContent')) document.getElementById('modalContent').innerHTML = `<h2 class="text-lg font-bold mb-4 text-gray-800">${id?'Edit':'Add'} Experience</h2><input id="expCompany" value="${c||''}" placeholder="Company" class="w-full mb-3 p-3 bg-gray-50 rounded-xl border-none text-sm"><input id="expRole" value="${r||''}" placeholder="Role" class="w-full mb-3 p-3 bg-gray-50 rounded-xl border-none text-sm"><input id="expYear" value="${y||''}" placeholder="Year" class="w-full mb-4 p-3 bg-gray-50 rounded-xl border-none text-sm"><button onclick="submitExp()" class="btn-zobbly w-full py-2 rounded-xl font-bold text-sm">Save</button>`; if(document.getElementById('genericModal')) document.getElementById('genericModal').classList.remove('hidden'); }
+async function submitExp() { const d = { company: document.getElementById('expCompany').value, role: document.getElementById('expRole').value, year: document.getElementById('expYear').value }; if(currentExpId) await APIService.user.editExperience(currentExpId, d); else await APIService.user.addExperience(d); closeModal(); viewUserProfile(localStorage.getItem("userId")); }
 
-    window.onload = checkLoginStatus;
-    async function openFollowList(userId, type) {
-        const modal = document.getElementById('genericModal');
-        const content = document.getElementById('modalContent');
-        modal.classList.remove('hidden');
-        content.innerHTML = `<div class="text-center mt-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-purple-600"></i></div>`;
-        try {
-            let list = [];
-            if(type === 'followers') { list = await APIService.user.getFollowers(userId); } else { list = await APIService.user.getFollowing(userId); }
-            let html = `<div class="sticky top-0 bg-white z-10 pb-2 border-b mb-4 flex justify-between items-center"><h2 class="text-xl font-bold capitalize">${type}</h2><span class="bg-purple-100 text-purple-600 px-2 py-1 rounded text-xs font-bold">${list.length}</span></div><div class="space-y-2">`;
-            if(list.length === 0) { html += `<div class="text-center text-gray-400 py-10 flex flex-col items-center"><i class="fa-solid fa-users-slash text-3xl mb-2"></i><p>No ${type} found.</p></div>`; } else {
-                html += list.map(u => `
-                    <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl cursor-pointer transition border border-transparent hover:border-gray-100" onclick="closeModal(); viewUserProfile('${u._id}')">
-                        <div class="flex items-center gap-3">
-                            <img src="${u.photo || 'https://placehold.co/40'}" class="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm">
-                            <div><h4 class="font-bold text-sm text-gray-800">${u.name}</h4><p class="text-xs text-gray-500">@${u.username || 'user'}</p></div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
-                    </div>`).join('');
-            }
-            html += `</div>`;
-            content.innerHTML = html;
-        } catch(e) { console.error(e); content.innerHTML = '<p class="text-red-500 text-center mt-10">Error loading list. Try again.</p>'; }
-    }
+async function deleteExp(id) { openConfirmModal("Delete Experience?", "Are you sure you want to remove this experience?", async () => { await APIService.user.deleteExperience(id); viewUserProfile(localStorage.getItem("userId")); }); }
+function closeModal() { if(document.getElementById('genericModal')) document.getElementById('genericModal').classList.add('hidden'); }
+async function saveProfile() { const selectedLang = document.getElementById('editLang').value; localStorage.setItem('appLang', selectedLang); await APIService.user.update(document.getElementById('editName').value, document.getElementById('editHeadline').value); localStorage.setItem("userName", document.getElementById('editName').value); location.reload(); }
+async function backupData() { await APIService.user.backup(); }
+async function deleteAccount() { openConfirmModal("Delete Account?", "Warning: This will permanently delete your account and all data. This cannot be undone.", async () => { await APIService.user.delete(); APIService.auth.logout(); }); }
+function showToast(msg) { const t = document.getElementById('toast'); if(!t) return; document.getElementById('toast-msg').innerText = msg; t.classList.remove('opacity-0', 'pointer-events-none'); t.classList.add('opacity-100', '-translate-y-10'); setTimeout(()=>{ t.classList.remove('opacity-100', '-translate-y-10'); t.classList.add('opacity-0', 'pointer-events-none'); }, 3000); }
+
+window.onload = checkLoginStatus;
+
+async function openFollowList(userId, type) {
+    const modal = document.getElementById('genericModal');
+    const content = document.getElementById('modalContent');
+    if(!modal || !content) return;
+    modal.classList.remove('hidden');
+    content.innerHTML = '<div class="text-center mt-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-purple-600"></i></div>';
+    try {
+        let list = [];
+        if(type === 'followers') { list = await APIService.user.getFollowers(userId); } else { list = await APIService.user.getFollowing(userId); }
+        let html = `<div class="sticky top-0 bg-white z-10 pb-2 border-b mb-4 flex justify-between items-center"><h2 class="text-xl font-bold capitalize">${type}</h2><span class="bg-purple-100 text-purple-600 px-2 py-1 rounded text-xs font-bold">${list.length}</span></div><div class="space-y-2">`;
+        if(list.length === 0) { html += `<div class="text-center text-gray-400 py-10 flex flex-col items-center"><i class="fa-solid fa-users-slash text-3xl mb-2"></i><p>No ${type} found.</p></div>`; } else {
+            html += list.map(u => `
+                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-xl cursor-pointer transition border border-transparent hover:border-gray-100" onclick="closeModal(); viewUserProfile('${u._id}')">
+                    <div class="flex items-center gap-3">
+                        <img src="${u.photo || 'https://placehold.co/40'}" class="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm">
+                        <div><h4 class="font-bold text-sm text-gray-800">${u.name}</h4><p class="text-xs text-gray-500">@${u.username || 'user'}</p></div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-gray-300 text-xs"></i>
+                </div>`).join('');
+        }
+        html += `</div>`;
+        content.innerHTML = html;
+    } catch(e) { console.error(e); content.innerHTML = '<p class="text-red-500 text-center mt-10">Error loading list. Try again.</p>'; }
+}
     
-
 function renderJobs(container) {
+    if(!container) return;
     container.innerHTML = `
     <div class="glass-card p-6 animate-pop-view">
         <div class="mb-6 text-center">
@@ -1420,17 +1328,16 @@ function renderJobs(container) {
     applyTranslations();
 }
 
-
 function toggleInputs(source) { 
-    document.getElementById("job-what").placeholder = source === "mantiks-company" ? "Company Name" : "Job Title"; 
+    if(document.getElementById("job-what")) document.getElementById("job-what").placeholder = source === "mantiks-company" ? "Company Name" : "Job Title"; 
 }
-
 
 async function searchJobsAction() {
     const source = document.getElementById("api-source").value; 
     const what = document.getElementById("job-what").value; 
     const where = document.getElementById("job-where").value;
     const list = document.getElementById("jobList"); 
+    if(!list) return;
     
     list.innerHTML = "<p class='text-center text-gray-500'>Searching...</p>";
     
@@ -1456,23 +1363,8 @@ async function searchJobsAction() {
     }
 }
 
-
-async function checkNotifs() {
-    try {
-        const notifs = await APIService.notifications.getAll();
-        const unread = notifs.filter(n => !n.isRead).length;
-        if(unread > 0) { 
-            document.getElementById('notif-badge').classList.remove('hidden'); 
-            document.getElementById('notif-badge-static').classList.remove('hidden'); 
-        } else { 
-            document.getElementById('notif-badge').classList.add('hidden'); 
-            document.getElementById('notif-badge-static').classList.add('hidden'); 
-        }
-    } catch(e){}
-}
-
-
 async function renderNotifications(c) {
+    if(!c) return;
     const notifs = await APIService.notifications.getAll();
     c.innerHTML = `
         <div class="glass-card p-4">
@@ -1515,32 +1407,8 @@ async function renderNotifications(c) {
     applyTranslations();
 }
 
-
-function getNotifText(type) { 
-    if(type === 'like') return 'liked your post.'; 
-    if(type === 'comment') return 'commented on your post.'; 
-    if(type === 'follow') return 'started following you.'; 
-    if(type === 'message') return 'sent you a message.'; 
-    return 'interacted with you.'; 
-}
-
-
-function handleNotifClick(type, relatedId, actorId) {
-    if(type === 'message') {
-        if(actorId) {
-            APIService.user.getProfile(actorId).then(data => {
-                startChat(actorId, data.user.name, data.user.photo);
-            }).catch(() => renderView('chat'));
-        } else { renderView('chat'); }
-    }
-    else if(type === 'follow') { viewUserProfile(actorId); }
-    else if(type === 'like' || type === 'comment' || type === 'post') { viewSinglePost(relatedId); }
-    else { renderView('feed'); }
-}
-
-
 async function deleteNotification(e, id) { 
-    e.stopPropagation(); 
+    if(e) e.stopPropagation(); 
     openConfirmModal("Delete Notification?", "Remove this notification?", async () => { 
         const el = document.getElementById(`notif-item-${id}`); 
         if(el) { 
@@ -1554,6 +1422,7 @@ async function deleteNotification(e, id) {
 }
 
 async function renderChat(c) {
+    if(!c) return;
     c.innerHTML = `
     <div class="glass-card h-[calc(100vh-140px)] relative flex overflow-hidden p-0 w-full">
         <div id="chat-list-container" class="w-full h-full bg-white flex flex-col">
@@ -1568,7 +1437,9 @@ async function renderChat(c) {
 
 async function loadConversations() { 
     const users = await APIService.chat.getConversations(); 
-    document.getElementById('chat-list').innerHTML = users.map(u => `
+    const list = document.getElementById('chat-list');
+    if(!list) return;
+    list.innerHTML = users.map(u => `
         <div onclick="startChat('${u._id}','${u.name}','${u.photo}')" class="p-4 border-b cursor-pointer hover:bg-purple-50 flex gap-4 items-center transition">
             <img src="${u.photo||'https://placehold.co/40'}" class="w-12 h-12 rounded-full border shadow-sm">
             <div>
@@ -1582,7 +1453,9 @@ async function loadConversations() {
 async function searchChatUsers(q) { 
     if(q.length < 1) return loadConversations(); 
     const users = await APIService.chat.search(q); 
-    document.getElementById('chat-list').innerHTML = users.map(u => `
+    const list = document.getElementById('chat-list');
+    if(!list) return;
+    list.innerHTML = users.map(u => `
         <div onclick="startChat('${u._id}','${u.name}','${u.photo}')" class="p-4 border-b cursor-pointer hover:bg-purple-50 flex gap-4 items-center transition">
             <img src="${u.photo||'https://placehold.co/40'}" class="w-12 h-12 rounded-full border shadow-sm">
             <div>
@@ -1593,155 +1466,11 @@ async function searchChatUsers(q) {
     ).join(''); 
 }
 
-
-async function startChat(id, name, photo) {
-    activeChatUser = id;
-    document.getElementById('fc-user-name').innerText = name;
-    document.getElementById('fc-user-img').src = photo || 'https://placehold.co/30';
-    
-    if(statusInterval) clearInterval(statusInterval);
-    const updateStatus = async () => {
-        try {
-            const data = await APIService.user.getProfile(id);
-            const lastActive = new Date(data.user.lastActive || Date.now());
-            const now = new Date();
-            const diffMins = (now - lastActive) / 1000 / 60;
-            const statusEl = document.getElementById('fc-user-status');
-            if(diffMins < 5) { 
-                statusEl.innerHTML = `<span class="w-2 h-2 bg-green-500 rounded-full inline-block mr-1"></span>Online`; 
-                statusEl.className = "text-[10px] text-green-600 font-bold flex items-center"; 
-            } else { 
-                statusEl.innerText = `Last seen: ${lastActive.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`; 
-                statusEl.className = "text-[10px] text-gray-500 font-medium"; 
-            }
-        } catch(e) {}
-    };
-    updateStatus(); 
-    statusInterval = setInterval(updateStatus, 2000);
-
-    const themeMenu = document.getElementById('chat-theme-menu');
-    themeMenu.innerHTML = chatThemes.map(t => `<div class="theme-item" onclick="setChatTheme('${t.id}')"><div class="theme-preview" style="background: ${t.bg}"></div><span class="text-sm font-medium text-gray-700">${t.name}</span></div>`).join('');
-    
-    loadMsgs();
-    document.getElementById('full-chat-view').classList.add('active');
-    isChatOpen = true;
-    
-    if(window.chatInterval) clearInterval(window.chatInterval);
-    window.chatInterval = setInterval(loadMsgs, 3000);
-}
-
-function closeFullChat() { 
-    document.getElementById('full-chat-view').classList.remove('active'); 
-    isChatOpen = false; 
-    if(window.chatInterval) clearInterval(window.chatInterval); 
-    if(statusInterval) clearInterval(statusInterval); 
-}
-
-async function sendMsg() {
-    const input = document.getElementById('fc-input');
-    const txt = input.value;
-    if(!txt || !activeChatUser) return;
-
-    const chatMsgs = document.getElementById('fc-messages');
-    const tempId = 'temp-' + Date.now();
-    const themeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
-
-   
-    const html = `
-        <div class="flex justify-end mb-2" id="${tempId}">
-            <div class="chat-bubble-user ${themeBtn} text-white px-4 py-2 text-sm max-w-[80%] shadow-md opacity-70">
-                ${txt}
-                <div class="text-[9px] opacity-70 text-right mt-1 font-mono flex items-center justify-end gap-1">
-                    Sending... <i class="fa-solid fa-spinner fa-spin text-[8px]"></i>
-                </div>
-            </div>
-        </div>`;
-    
-    chatMsgs.insertAdjacentHTML('beforeend', html);
-    chatMsgs.scrollTop = chatMsgs.scrollHeight;
-    input.value = ""; 
-    input.focus();
-
-    try {
-        await APIService.chat.send(activeChatUser, txt);
-        const tempEl = document.getElementById(tempId);
-        if(tempEl) tempEl.remove();
-        loadMsgs();
-    } catch(e) {
-        const tempEl = document.getElementById(tempId);
-        if(tempEl) tempEl.querySelector('.text-[9px]').innerHTML = `<span class="text-red-300">Failed</span>`;
-    }
-}
-
-async function uploadChatFile(file) {
-    if (!file || !activeChatUser) return;
-    const chatMsgs = document.getElementById('fc-messages');
-    const tempId = 'temp-img-' + Date.now();
-    const themeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const html = `
-            <div class="flex justify-end mb-2" id="${tempId}">
-                <div class="chat-bubble-user ${themeBtn} p-1 rounded-lg max-w-[80%] shadow-md relative overflow-hidden">
-                    <img src="${e.target.result}" class="max-w-[200px] rounded-lg opacity-50 grayscale">
-                    <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/10">
-                        <i class="fa-solid fa-spinner fa-spin text-white text-2xl"></i>
-                    </div>
-                </div>
-            </div>`;
-        chatMsgs.insertAdjacentHTML('beforeend', html);
-        chatMsgs.scrollTop = chatMsgs.scrollHeight;
-    };
-    reader.readAsDataURL(file);
-
-    const fd = new FormData();
-    fd.append("chatFile", file);
-    fd.append("receiverId", activeChatUser);
-
-    try {
-        await APIService.chat.upload(fd);
-        const tempMsg = document.getElementById(tempId);
-        if(tempMsg) tempMsg.remove(); 
-        loadMsgs();
-    } catch(e) {
-        const tempMsg = document.getElementById(tempId);
-        if(tempMsg) tempMsg.remove();
-        showToast("Photo bhenjne mein dikat aayi");
-    }
-}
-
-async function loadMsgs() {
-    if(!activeChatUser) return;
-    const msgs = await APIService.chat.getHistory(activeChatUser);
-    const myId = localStorage.getItem("userId");
-    const themeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
-
-    document.getElementById('fc-messages').innerHTML = msgs.map(m => {
-        let content = m.content;
-        if(m.type==='image') { content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; }
-        const isMe = m.senderId === myId;
-        const bubbleClass = isMe ? `chat-bubble-user ${themeBtn} text-white self-end` : 'chat-bubble-other self-start bg-white/90 backdrop-blur-sm';
-        return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 group">${isMe ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}<div class="${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md">${content}<div class="text-[9px] opacity-70 text-right mt-1 font-mono">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div></div></div>`;
-    }).join('');
-    
-    
-    const chatMsgs = document.getElementById('fc-messages');
-    if(!chatMsgs.hasAttribute('data-scrolled')) {
-        chatMsgs.scrollTop = chatMsgs.scrollHeight;
-    }
-}
-
-
-
-async function clearChat() { openConfirmModal("Clear Chat?", "Are you sure?", async () => { await APIService.chat.clearChat(activeChatUser); loadMsgs(); }); }
-async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message?", async () => { await APIService.chat.deleteMsg(id); loadMsgs(); }); }
-
-
 async function renderReels(container) {
+    if(!container) return;
     try {
         const posts = await APIService.feed.getAll();
-        const videoPosts = posts.filter(p => p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i)));
+        let videoPosts = posts.filter(p => p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i)));
 
         if(videoPosts.length === 0) {
             container.innerHTML = '<div class="h-screen flex items-center justify-center text-white bg-black">No Reels Found.</div>';
@@ -1849,10 +1578,9 @@ async function renderReels(container) {
     } catch(e) { container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; }
 }
 
-
-
 function openReelComments(postId) {
     const content = document.getElementById('modalContent');
+    if(!content) return;
     content.innerHTML = `
         <div class="flex flex-col h-[70vh]">
             <h3 class="font-black text-center mb-4 border-b pb-2">Comments</h3>
@@ -1864,12 +1592,13 @@ function openReelComments(postId) {
                 <button onclick="postReelComment('${postId}')" class="text-purple-600 font-bold px-2">Post</button>
             </div>
         </div>`;
-    document.getElementById('genericModal').classList.remove('hidden');
+    if(document.getElementById('genericModal')) document.getElementById('genericModal').classList.remove('hidden');
     loadReelComments(postId);
 }
 
 async function loadReelComments(postId) {
     const list = document.getElementById('reel-cmts-list');
+    if(!list) return;
     try {
         const posts = await APIService.feed.getAll();
         const p = posts.find(item => item._id === postId);
@@ -1879,13 +1608,10 @@ async function loadReelComments(postId) {
         }
 
         const myId = localStorage.getItem("userId");
-       
         const isMePost = p.userId?._id === myId || p.userId === myId; 
 
         list.innerHTML = p.comments.map(c => {
-           
             const canDelete = isMePost || (c.userId && (c.userId._id === myId || c.userId === myId));
-
             return `
             <div class="flex gap-3 group" id="comment-item-${c._id}">
                 <img src="${c.userId?.photo || 'https://placehold.co/30'}" class="w-8 h-8 rounded-full object-cover">
@@ -1903,7 +1629,7 @@ async function loadReelComments(postId) {
 
 async function postReelComment(postId) {
     const inp = document.getElementById('reel-cmt-input');
-    if(!inp.value) return;
+    if(!inp || !inp.value) return;
     try {
         await APIService.feed.comment(postId, inp.value);
         inp.value = "";
@@ -1913,9 +1639,9 @@ async function postReelComment(postId) {
     } catch(e) { showToast("Comment failed"); }
 }
 
-
 async function handleReelFollow(userId, postId) {
     const btn = document.getElementById(`rfollow-${postId}`);
+    if(!btn) return;
     const originalText = btn.innerText;
     const isFollowingNow = originalText === 'Follow';
     btn.innerText = isFollowingNow ? 'Following' : 'Follow';
@@ -1935,10 +1661,10 @@ async function handleReelFollow(userId, postId) {
     }
 }
 
-
 async function toggleReelLike(postId) {
     const icon = document.getElementById(`rlike-icon-${postId}`);
     const countSpan = document.getElementById(`rlike-cnt-${postId}`);
+    if(!icon || !countSpan) return;
     let count = parseInt(countSpan.innerText);
 
     if (icon.classList.contains('text-red-500')) {
@@ -1951,42 +1677,13 @@ async function toggleReelLike(postId) {
         countSpan.innerText = count + 1;
     }
 
-    try {
-        await APIService.feed.like(postId);
-    } catch (e) {
-        console.error("Like failed", e);
-    }
+    try { await APIService.feed.like(postId); } catch (e) { console.error("Like failed", e); }
 }
-
-async function downloadReelWithProgress(url, postId) {
-    const icon = document.getElementById(`dl-icon-${postId}`);
-    const percText = document.getElementById(`dl-perc-${postId}`);
-    icon.classList.add('hidden');
-    percText.classList.remove('hidden');
-
-    try {
-        const response = await axios({
-            url: url, method: 'GET', responseType: 'blob',
-            onDownloadProgress: (progressEvent) => {
-                let percent = Math.floor((progressEvent.loaded / progressEvent.total) * 100);
-                percText.innerText = percent + "%";
-            }
-        });
-        const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.setAttribute('download', `Zobbly_Reel_${postId}.mp4`);
-        document.body.appendChild(link);
-        link.click();
-        showToast("Saved to Gallery!");
-    } catch (e) { showToast("Download failed"); }
-    finally { icon.classList.remove('hidden'); percText.classList.add('hidden'); }
-}
-
 
 let reelClickTimer = null;
 function handleReelClick(e, postId) {
     const v = document.getElementById(`vid-${postId}`);
+    if(!v) return;
     if (reelClickTimer == null) {
         reelClickTimer = setTimeout(() => {
             reelClickTimer = null;
@@ -2004,16 +1701,18 @@ function updateMuteUI(postId, isMuted) {
     const statusBox = document.getElementById(`mute-stat-${postId}`);
     const statusIcon = document.getElementById(`mute-icon-center-${postId}`);
     const miniMute = document.getElementById(`mini-mute-${postId}`);
-    statusIcon.className = isMuted ? "fa-solid fa-volume-xmark text-2xl" : "fa-solid fa-volume-high text-2xl";
-    miniMute.innerHTML = isMuted ? '<i class="fa-solid fa-volume-xmark text-xs"></i>' : '<i class="fa-solid fa-volume-high text-xs"></i>';
-    statusBox.classList.remove('opacity-0');
-    setTimeout(() => statusBox.classList.add('opacity-0'), 800);
+    if(statusIcon) statusIcon.className = isMuted ? "fa-solid fa-volume-xmark text-2xl" : "fa-solid fa-volume-high text-2xl";
+    if(miniMute) miniMute.innerHTML = isMuted ? '<i class="fa-solid fa-volume-xmark text-xs"></i>' : '<i class="fa-solid fa-volume-high text-xs"></i>';
+    if(statusBox) {
+        statusBox.classList.remove('opacity-0');
+        setTimeout(() => statusBox.classList.add('opacity-0'), 800);
+    }
 }
 
 function updateReelProgress(postId) {
     const v = document.getElementById(`vid-${postId}`);
     const bar = document.getElementById(`prog-bar-${postId}`);
-    if (v.duration) {
+    if (v && bar && v.duration) {
         const perc = (v.currentTime / v.duration) * 100;
         bar.style.width = perc + "%";
     }
@@ -2021,6 +1720,7 @@ function updateReelProgress(postId) {
 
 function seekReel(e, postId) {
     const v = document.getElementById(`vid-${postId}`);
+    if(!v || !v.duration) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     v.currentTime = (x / rect.width) * v.duration;
@@ -2029,7 +1729,6 @@ function seekReel(e, postId) {
 async function downloadReelWithProgress(url, postId) {
     const icon = document.getElementById(`dl-icon-${postId}`);
     const percText = document.getElementById(`dl-perc-${postId}`);
-    
     if (!icon || !percText) return;
 
     icon.classList.add('hidden');
@@ -2038,11 +1737,8 @@ async function downloadReelWithProgress(url, postId) {
 
     try {
         const secureUrl = url.replace("http://", "https://");
-
         const response = await axios({
-            url: secureUrl,
-            method: 'GET',
-            responseType: 'blob', 
+            url: secureUrl, method: 'GET', responseType: 'blob', 
             onDownloadProgress: (progressEvent) => {
                 if (progressEvent.total) {
                     let percent = Math.floor((progressEvent.loaded / progressEvent.total) * 100);
@@ -2059,10 +1755,8 @@ async function downloadReelWithProgress(url, postId) {
         link.setAttribute('download', `Zobbly_Reel_${postId}.mp4`);
         document.body.appendChild(link);
         link.click();
-        
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
-        
         showToast("Video Saved!");
     } catch (e) {
         console.error("Download Error Details:", e);
@@ -2075,9 +1769,8 @@ async function downloadReelWithProgress(url, postId) {
 }
 
 function openEditProfile() {
-    document.getElementById('editProfileModal').classList.remove('hidden');
+    if(document.getElementById('editProfileModal')) document.getElementById('editProfileModal').classList.remove('hidden');
     const currentLang = localStorage.getItem('appLang') || 'en';
-
     
     const langOptions = {
         'en': {t: 'English', i: 'gb'}, 'hi': {t: 'Hindi (हिंदी)', i: 'in'}, 'es': {t: 'Spanish (Español)', i: 'es'},
@@ -2088,75 +1781,64 @@ function openEditProfile() {
         'id': {t: 'Indonesian (Bahasa)', i: 'id'}, 'vi': {t: 'Vietnamese (Tiếng Việt)', i: 'vn'}, 'th': {t: 'Thai (ไทย)', i: 'th'},
         'bn': {t: 'Bengali (বাংলা)', i: 'bd'}, 'pa': {t: 'Punjabi (ਪੰਜਾਬੀ)', i: 'in'}, 'ur': {t: 'Urdu (اردو)', i: 'pk'}
     };
-    
     const data = langOptions[currentLang] || langOptions['en'];
 
-    
-    document.getElementById('editName').value = localStorage.getItem("userName") || "";
-    document.getElementById('editLang').value = currentLang;
-    document.getElementById('lang-selected-text').innerHTML = `<img src="https://flagcdn.com/w20/${data.i}.png" class="w-5 h-5 rounded-full shadow-sm"> ${data.t}`;
+    if(document.getElementById('editName')) document.getElementById('editName').value = localStorage.getItem("userName") || "";
+    if(document.getElementById('editLang')) document.getElementById('editLang').value = currentLang;
+    if(document.getElementById('lang-selected-text')) document.getElementById('lang-selected-text').innerHTML = `<img src="https://flagcdn.com/w20/${data.i}.png" class="w-5 h-5 rounded-full shadow-sm"> ${data.t}`;
 
-    
     document.querySelectorAll('#lang-dropdown-menu .dropdown-option').forEach(el => {
         el.classList.remove('selected');
         if(el.getAttribute('onclick').includes(`'${currentLang}'`)) el.classList.add('selected');
     });
 }
 
-
 async function saveProfile() {
     const selectedLang = document.getElementById('editLang').value;
     const newName = document.getElementById('editName').value;
     const newHeadline = document.getElementById('editHeadline').value;
-
     localStorage.setItem('appLang', selectedLang);
-    
     try {
         await APIService.user.update(newName, newHeadline);
         localStorage.setItem("userName", newName);
         showToast("Profile Updated!");
         location.reload(); 
-    } catch(e) {
-        showToast("Update failed!");
-    }
+    } catch(e) { showToast("Update failed!"); }
 }
 
-let currentUploadTask = null;
-let currentFilter = 'none';
-
-document.getElementById('postImage').onchange = function(e) {
-    const file = e.target.files[0];
-    if(!file) return;
-    
-    const reader = new FileReader();
-    const previewBox = document.getElementById('mediaPreviewBox');
-    
-    reader.onload = function(event) {
-        document.getElementById('postModal').classList.add('hidden');
-        document.getElementById('postEditorModal').classList.remove('hidden');
-        
-        if(file.type.startsWith('video')) {
-            previewBox.innerHTML = `<video id="previewMedia" src="${event.target.result}" loop muted autoplay class="max-w-full max-h-[70vh]"></video>`;
-        } else {
-            previewBox.innerHTML = `<img id="previewMedia" src="${event.target.result}" class="max-w-full max-h-[70vh] object-contain">`;
-        }
+if(document.getElementById('postImage')) {
+    document.getElementById('postImage').onchange = function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        const previewBox = document.getElementById('mediaPreviewBox');
+        reader.onload = function(event) {
+            if(document.getElementById('postModal')) document.getElementById('postModal').classList.add('hidden');
+            if(document.getElementById('postEditorModal')) document.getElementById('postEditorModal').classList.remove('hidden');
+            if(previewBox) {
+                if(file.type.startsWith('video')) {
+                    previewBox.innerHTML = `<video id="previewMedia" src="${event.target.result}" loop muted autoplay class="max-w-full max-h-[70vh]"></video>`;
+                } else {
+                    previewBox.innerHTML = `<img id="previewMedia" src="${event.target.result}" class="max-w-full max-h-[70vh] object-contain">`;
+                }
+            }
+        };
+        reader.readAsDataURL(file);
     };
-    reader.readAsDataURL(file);
-};
+}
 
 function applyFilter(filter) {
-    currentFilter = filter;
     const media = document.getElementById('previewMedia');
     if(media) media.style.filter = filter;
 }
 
 function updateOverlayText(val) {
-    document.getElementById('overlayTextDisplay').innerText = val;
+    if(document.getElementById('overlayTextDisplay')) document.getElementById('overlayTextDisplay').innerText = val;
 }
 
 function cancelPostEditor() {
-    document.getElementById('postEditorModal').classList.add('hidden');
-    document.getElementById('postModal').classList.remove('hidden');
+    if(document.getElementById('postEditorModal')) document.getElementById('postEditorModal').classList.add('hidden');
+    if(document.getElementById('postModal')) document.getElementById('postModal').classList.remove('hidden');
 }
 
 async function finalSubmitPost() {
@@ -2166,24 +1848,23 @@ async function finalSubmitPost() {
     const file = document.getElementById('postImage').files[0];
 
     fd.append('content', (overlayText ? overlayText + "\n" : "") + content);
-    fd.append('postImage', file);
+    if(file) fd.append('postImage', file);
 
-    document.getElementById('postEditorModal').classList.add('hidden');
+    if(document.getElementById('postEditorModal')) document.getElementById('postEditorModal').classList.add('hidden');
     const progressModal = document.getElementById('uploadProgressModal');
-    progressModal.classList.remove('hidden');
+    if(progressModal) progressModal.classList.remove('hidden');
 
-    currentUploadTask = axios.CancelToken.source();
+    let currentUploadTask = axios.CancelToken.source();
 
     try {
-        const res = await axios.post(`${API_BASE}/api/posts/create`, fd, {
+        await axios.post(`${API_BASE}/api/posts/create`, fd, {
             headers: { 'x-auth-token': localStorage.getItem("token") },
             cancelToken: currentUploadTask.token,
             onUploadProgress: (p) => {
                 const perc = Math.round((p.loaded * 100) / p.total);
-                document.getElementById('uploadPercentage').innerText = perc + "%";
+                if(document.getElementById('uploadPercentage')) document.getElementById('uploadPercentage').innerText = perc + "%";
             }
         });
-
         showToast("Post Uploaded!");
         resetPostForm();
         renderView('feed');
@@ -2191,40 +1872,26 @@ async function finalSubmitPost() {
         if (axios.isCancel(err)) showToast("Upload Cancelled");
         else showToast("Post Failed");
     } finally {
-        progressModal.classList.add('hidden');
+        if(progressModal) progressModal.classList.add('hidden');
     }
-}
-
-function abortUpload() {
-    if(currentUploadTask) currentUploadTask.cancel();
 }
 
 function resetPostForm() {
-    document.getElementById('postContent').value = "";
-    document.getElementById('postImage').value = "";
-    document.getElementById('overlayTextInput').value = "";
-    document.getElementById('overlayTextDisplay').innerText = "";
+    if(document.getElementById('postContent')) document.getElementById('postContent').value = "";
+    if(document.getElementById('postImage')) document.getElementById('postImage').value = "";
+    if(document.getElementById('overlayTextInput')) document.getElementById('overlayTextInput').value = "";
+    if(document.getElementById('overlayTextDisplay')) document.getElementById('overlayTextDisplay').innerText = "";
 }
-
-
 
 function toggleThemeMenu() {
-    const menu = document.getElementById('theme-options');
-    if (menu) {
-        menu.classList.toggle('hidden');
-    } else {
-        console.error("Error: 'theme-options' ID वाला एलिमेंट नहीं मिला!");
-    }
+    if (document.getElementById('theme-options')) document.getElementById('theme-options').classList.toggle('hidden');
 }
-
 
 function changeTheme(themeName) {
     const body = document.body;
-  
     const html = document.documentElement; 
     const content = document.getElementById('main-content');
 
-  
     body.classList.remove('theme-dark', 'theme-pink', 'theme-red');
     body.style.background = '';
     body.style.backgroundColor = '';
@@ -2239,57 +1906,37 @@ function changeTheme(themeName) {
         content.style.backgroundColor = '';
     }
 
-    
-    if (themeName === 'default') {
-       
-        console.log("Applied Default Theme (Gradient)");
-    } 
-    else {
-       
+    if (themeName !== 'default') {
         body.classList.add(`theme-${themeName}`);
         body.style.backgroundImage = 'none';
         html.style.backgroundImage = 'none';
         
-       
         let newColor = '';
         if (themeName === 'dark') newColor = '#000000'; 
         else if (themeName === 'pink') newColor = '#ffe4e1';
         else if (themeName === 'red') newColor = '#fff5f5';
 
-      
         if (newColor) {
             body.style.backgroundColor = newColor;
             html.style.backgroundColor = newColor;
             if(content) content.style.backgroundColor = newColor;
         }
     }
-
-   
     localStorage.setItem('selectedTheme', themeName);
 }
 
-
 function applySavedTheme() {
     const saved = localStorage.getItem('selectedTheme');
-    if (saved) {
-        changeTheme(saved);
-    }
+    if (saved) changeTheme(saved);
 }
 
-
-document.addEventListener('DOMContentLoaded', () => {
-    applySavedTheme();
-});
-
-
+document.addEventListener('DOMContentLoaded', () => { applySavedTheme(); });
 
 const SECRET_KEY = "Zobbly_Secure_Lock_99"; 
-
 
 function encrypt(data) {
     return CryptoJS.AES.encrypt(JSON.stringify(data), SECRET_KEY).toString();
 }
-
 
 function decrypt(cipher) {
     try {
@@ -2310,16 +1957,13 @@ async function getLocalVaultData(email) {
     try {
         const rawData = await localforage.getItem(`vault_data_${email}`);
         if (!rawData) return {};
-       
         return decrypt(rawData) || JSON.parse(rawData);
-    } catch (e) {
-        console.error("Error loading local vault:", e);
-        return {};
-    }
+    } catch (e) { return {}; }
 }
 
 async function renderDocuments() {
     const c = document.getElementById('main-content');
+    if(!c) return;
     c.innerHTML = '<div class="text-center mt-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-purple-600"></i><p class="mt-2 text-sm text-gray-500">Unlocking Local Vault...</p></div>';
 
     try {
@@ -2329,10 +1973,8 @@ async function renderDocuments() {
             return;
         }
 
-     
         const savedData = await getLocalVaultData(loggedInEmail);
-
-        const html = `
+        c.innerHTML = `
         <div class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between">
             <button onclick="renderView('feed')" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-700">
                 <i class="fa-solid fa-arrow-left text-lg"></i>
@@ -2340,19 +1982,15 @@ async function renderDocuments() {
             <h1 class="text-lg font-bold text-gray-800 tracking-wide">My Secure Vault 🔒</h1>
             <div class="w-10"></div>
         </div>
-
         <div style="height: 70px;"></div>
-
         <div class="p-4 pb-24">
             <p class="text-xs text-center text-green-600 mb-4 font-bold"><i class="fa-solid fa-shield-halved"></i> Data is stored offline on this device.</p>
-            
             <div class="glass-card p-5 mb-6 shadow-sm border border-gray-100 rounded-2xl bg-white">
                 <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                     <i class="fa-solid fa-user-gear text-purple-600"></i> Identity Details
                 </h3>
                 <div class="space-y-4">
                     <input type="text" id="vault-name" value="${savedData.fullName || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none focus:ring-2 ring-purple-500/20" placeholder="Full Name">
-                    
                     <div class="grid grid-cols-2 gap-3">
                         <input type="date" id="vault-dob" value="${savedData.dob || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none">
                         <select id="vault-gender" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none">
@@ -2361,44 +1999,33 @@ async function renderDocuments() {
                             <option value="Female" ${savedData.gender === 'Female' ? 'selected' : ''}>Female</option>
                         </select>
                     </div>
-
                     <div class="grid grid-cols-2 gap-3">
                         <input type="text" id="vault-pan" value="${savedData.panNo || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none uppercase" placeholder="PAN Number">
-                        <input type="number" id="vault-aadhar" value="${savedData.aadharNo || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none" placeholder="Aadhar No">
+                        <input type="number" id="vault-aadhar" value="${savedData.aadharNo || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none" placeholder="Identity No">
                     </div>
-
                     <input type="text" id="vault-mark" value="${savedData.birthMark || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none" placeholder="Visible Birth Mark">
-                    
                     <textarea id="vault-address" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none h-20" placeholder="Full Permanent Address">${savedData.address || ''}</textarea>
                 </div>
             </div>
-
             <div class="glass-card p-5 mb-6 shadow-sm border border-gray-100 rounded-2xl bg-white">
                 <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                     <i class="fa-solid fa-file-invoice text-purple-600"></i> My Documents
                 </h3>
                 <div class="space-y-8">
                     ${renderDocumentItem('Passport Photo', 'doc-photo', savedData.photoImg)}
-                    ${renderDocumentItem('Aadhar Card', 'doc-aadhar', savedData.aadharImg)}
+                    ${renderDocumentItem('Identity Card', 'doc-aadhar', savedData.aadharImg)}
                     ${renderDocumentItem('PAN Card', 'doc-pan', savedData.panImg)}
                     ${renderDocumentItem('10th Marksheet', 'doc-10th', savedData.mark10Img)}
                     ${renderDocumentItem('12th Marksheet', 'doc-12th', savedData.mark12Img)}
                     ${renderDocumentItem('Caste Certificate', 'doc-caste', savedData.casteImg)}
                 </div>
             </div>
-
             <button onclick="saveVaultLocally()" id="save-btn" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition flex justify-center items-center gap-2">
                 <i class="fa-solid fa-hard-drive"></i> Save Securely to Phone
             </button>
         </div>`;
-
-        c.innerHTML = html;
-    } catch(e) { 
-        console.error(e); 
-        c.innerHTML = '<div class="text-center mt-20 text-red-500 font-bold">Error loading vault data.</div>';
-    }
+    } catch(e) { c.innerHTML = '<div class="text-center mt-20 text-red-500 font-bold">Error loading vault data.</div>'; }
 }
-
 
 function renderDocumentItem(label, id, base64) {
     return `
@@ -2416,7 +2043,6 @@ function renderDocumentItem(label, id, base64) {
                     </button>
                 </div>
             </div>
-            
             <div class="flex gap-2">
                 ${base64 ? `
                     <button onclick="downloadVaultFile('${base64}', '${label}')" class="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full">
@@ -2432,9 +2058,8 @@ function renderDocumentItem(label, id, base64) {
     </div>`;
 }
 
-
 function previewLocalFile(input, previewId) {
-    if (input.files && input.files[0]) {
+    if (input.files && input.files[0] && document.getElementById(previewId)) {
         document.getElementById(previewId).classList.remove('hidden');
     }
 }
@@ -2449,33 +2074,24 @@ function downloadVaultFile(base64, name) {
 function deleteVaultFile(keyId) {
     if(confirm("Delete this document from phone memory? Remember to click 'Save' below.")) {
         alert("File flagged for removal. Click 'Save' to finalize.");
-        document.getElementById(keyId).value = "";
-       
+        if(document.getElementById(keyId)) document.getElementById(keyId).value = "";
     }
 }
 
-    async function saveVaultLocally() {
+async function saveVaultLocally() {
     const loggedInEmail = localStorage.getItem('userEmail');
     if(!loggedInEmail) return;
 
     const btn = document.getElementById('save-btn');
+    if(!btn) return;
     const originalBtnText = btn.innerHTML; 
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Securing to Device...';
 
     try {
-       
-        if (typeof localforage === 'undefined') {
-            throw new Error("localforage library load nahi hui! Kripya <head> mein script tag check karein.");
-        }
-
         const oldData = await getLocalVaultData(loggedInEmail);
-
         const getImg = async (id, oldImg) => {
             const el = document.getElementById(id);
-          
-            if(el && el.files && el.files[0]) {
-                return await fileToBase64(el.files[0]);
-            }
+            if(el && el.files && el.files[0]) return await fileToBase64(el.files[0]);
             return oldImg;
         };
 
@@ -2487,8 +2103,6 @@ function deleteVaultFile(keyId) {
             aadharNo: document.getElementById('vault-aadhar')?.value || "",
             birthMark: document.getElementById('vault-mark')?.value || "",
             address: document.getElementById('vault-address')?.value || "",
-            
-         
             photoImg: await getImg('doc-photo', oldData.photoImg || ''),
             aadharImg: await getImg('doc-aadhar', oldData.aadharImg || ''),
             panImg: await getImg('doc-pan', oldData.panImg || ''),
@@ -2498,59 +2112,43 @@ function deleteVaultFile(keyId) {
             lastUpdated: new Date().toLocaleString()
         };
 
-       
         const encryptedData = encrypt(dataToSave);
-        
-      
         await localforage.setItem(`vault_data_${loggedInEmail}`, encryptedData);
 
-       
         if(window.AndroidBridge && typeof window.AndroidBridge.saveToAndroid === 'function') {
-            try {
-                window.AndroidBridge.saveToAndroid(encryptedData);
-            } catch (bridgeErr) {
-                console.log("Android Bridge Error (Ignore if testing in browser):", bridgeErr);
-            }
+            try { window.AndroidBridge.saveToAndroid(encryptedData); } catch (e) {}
         }
 
         alert("✅ Vault Saved 100% Offline to your Phone!");
         renderDocuments(); 
-        
     } catch (error) {
-       
-        console.error("Save Error:", error);
         alert("❌ Data save karne mein error aayi: " + error.message);
         btn.innerHTML = originalBtnText; 
     }
 }
 
 let lastScrollY = 0;
-document.getElementById('app-screen').addEventListener('scroll', (e) => {
-    if (!document.body.classList.contains('feed-mode')) return;
-    const currentScrollY = e.target.scrollTop;
-    const mainHeader = document.getElementById('main-app-header');
-    const feedTopBar = document.getElementById('feed-top-bar');
-    
-    if (currentScrollY > 60 && currentScrollY > lastScrollY) {
-       
-        if (mainHeader) mainHeader.style.transform = 'translateY(-100%)';
-        if (feedTopBar) feedTopBar.style.transform = 'translateY(-150%)';
-    } else {
-      
-        if (mainHeader) mainHeader.style.transform = 'translateY(0)';
-        if (feedTopBar) feedTopBar.style.transform = 'translateY(0)';
-    }
-    lastScrollY = currentScrollY;
-}, { passive: true });
-
-
+if(document.getElementById('app-screen')) {
+    document.getElementById('app-screen').addEventListener('scroll', (e) => {
+        if (!document.body.classList.contains('feed-mode')) return;
+        const currentScrollY = e.target.scrollTop;
+        const mainHeader = document.getElementById('main-app-header');
+        const feedTopBar = document.getElementById('feed-top-bar');
+        
+        if (currentScrollY > 60 && currentScrollY > lastScrollY) {
+            if (mainHeader) mainHeader.style.transform = 'translateY(-100%)';
+            if (feedTopBar) feedTopBar.style.transform = 'translateY(-150%)';
+        } else {
+            if (mainHeader) mainHeader.style.transform = 'translateY(0)';
+            if (feedTopBar) feedTopBar.style.transform = 'translateY(0)';
+        }
+        lastScrollY = currentScrollY;
+    }, { passive: true });
+}
 
 let backPressCount = 0;
-
-
 window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
 window.addEventListener('popstate', function (event) {
-   
     const fullChat = document.getElementById('full-chat-view');
     if (fullChat && fullChat.classList.contains('active')) {
         closeFullChat();
@@ -2580,7 +2178,6 @@ window.addEventListener('popstate', function (event) {
         return;
     }
 
-    
     const sidePanel = document.getElementById('side-panel');
     if (sidePanel && sidePanel.classList.contains('open')) {
         toggleSidePanel();
@@ -2588,7 +2185,6 @@ window.addEventListener('popstate', function (event) {
         return;
     }
 
-   
     const feedBtn = document.getElementById('nav-feed');
     if (feedBtn && !feedBtn.classList.contains('nav-active')) {
         renderView('feed');
@@ -2599,17 +2195,9 @@ window.addEventListener('popstate', function (event) {
     if (backPressCount === 0) {
         showToast("Press back again to exit");
         backPressCount++;
-         window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
-        
-      
-        setTimeout(() => {
-            backPressCount = 0; 
-        }, 2000);
+        window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
+        setTimeout(() => { backPressCount = 0; }, 2000);
     } else {
-      
         window.history.back();
     }
 });
-
-
-

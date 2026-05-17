@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+   
+    const savedUI = localStorage.getItem("Zobbly_UI");
+    const isCurrentIndex1 = window.location.pathname.includes("index1.html");
+    if (savedUI === "index1.html" && !isCurrentIndex1) {
+        window.location.replace("index1.html");
+    } 
+   
+    else if (savedUI === "index.html" && isCurrentIndex1) {
+        window.location.replace("index.html");
+    }
+</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zobbly - The Zebra Network</title>
+    <link rel="preload" as="image" href="https://i.ibb.co/z1jXcZX/Screenshot-2025-11-22-at-2-45-03-PM-removebg-preview.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <style>
+        html, body
+{
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #a18cd1, #fbc2eb, #84fab0, #8fd3f4);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+   
+    height: 100%; 
+    overflow-x: hidden;
+    overflow-y: auto; 
+    position: relative; 
+    -webkit-tap-highlight-color: transparent;
+}
+
+#app-screen {
+    height: 100vh;
+    width: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; 
+    position: relative;
+}
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999;
+            background: linear-gradient(to bottom right, #ffe4fa, #e0c3fc);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+         }
+
+        @keyframes gentleBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .doll-anim { animation: gentleBounce 2s infinite ease-in-out; }
+        
+        .main-scroll-container { padding-top: 60px; padding-bottom: 120px; min-height: 100%; overflow-y: visible; }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .hidden-screen { display: none !important; }
+        .glass-header-top { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); border-bottom: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05); }
+        .glass-nav-bottom { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border-top: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.05); }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.6); border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); }
+         .modern-input {
+            width: 100%; padding: 14px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.8); border-radius: 16px; font-size: 14px; color: #1a1a1a;
+            outline: none; transition: 0.3s; font-weight: 600; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+         }
+        .modern-input:focus { background: #fff; border-color: #a18cd1; box-shadow: 0 0 0 3px rgba(161, 140, 209, 0.2); transform: translateY(-1px); }
+        .nav-item { transition: all 0.3s ease; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 20%; height: 100%; }
+        .nav-active { color: #a18cd1 !important; transform: translateY(-2px); }
+        .nav-active::after { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 40%; height: 3px; background: #a18cd1; border-radius: 0 0 4px 4px; }
+        .btn-zobbly { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.3); transition: all 0.3s ease; }
+        .btn-zobbly:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(118, 75, 162, 0.4); }
+        .btn-follow { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-left: auto; }
+        .btn-not-following { background: black; color: white; border: 1px solid transparent; }
+        .btn-following { background: transparent; color: black; border: 1px solid #ccc; }
+        @keyframes popOutEffect { 0% { opacity: 0; transform: scale(0.95); } 100% { opacity: 1; transform: scale(1); } }
+        .animate-pop-view { animation: popOutEffect 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: inherit; z-index: 100; overflow-y: auto; }
+        .auth-container { position: relative; width: 100%; max-width: 360px; padding: 20px; display: flex; justify-content: center; align-items: center; margin-top: 30px; }
+        .doll-main { position: absolute; width: 180px; top: -120px; z-index: 20; animation: breathe 3s ease-in-out infinite; }
+        @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        .char-yellow { position: absolute; width: 85px; top: -45px; right: -10px; z-index: 5; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0% { transform: translateY(0); } 50% { transform: translateY(-15px); } 100% { transform: translateY(0); } }
+        .char-orange { position: absolute; width: 160px; bottom: -55px; right: -50px; z-index: 10; transform: rotate(-10deg); }
+        .login-card { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px); width: 100%; padding: 90px 25px 30px; border-radius: 35px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1); position: relative; z-index: 5; border: 1px solid rgba(255,255,255,0.5); }
+        .icon-lock-img { position: absolute; width: 45px; top: 35px; right: 25px; }
+        .auth-h2 { color: #333; font-size: 28px; margin-bottom: 20px; font-weight: 800; text-align: center; }
+        .input-group { margin-bottom: 15px; }
+        .input-wrapper { position: relative; }
+        .input-wrapper i { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #90a0b5; font-size: 16px; z-index: 2; }
+        .input-wrapper input, .input-wrapper select { width: 100%; padding: 15px 15px 15px 50px; background: rgba(255,255,255,0.6); border: 2px solid transparent; border-radius: 50px; font-size: 15px; color: #333; outline: none; transition: 0.3s; }
+        .input-wrapper input:focus, .input-wrapper select:focus { background: #fff; border-color: #a18cd1; box-shadow: 0 0 10px rgba(161, 140, 209, 0.3); }
+        .btn-auth { width: 100%; padding: 12px; border: none; border-radius: 50px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: 0.3s; color: white; display: block; }
+        .btn-login-style { background: linear-gradient(to right, #4facfe, #00f2fe); box-shadow: 0 10px 20px rgba(0, 198, 251, 0.3); }
+        .btn-signup-style { background: linear-gradient(to right, #43e97b, #38f9d7); box-shadow: 0 10px 20px rgba(56, 249, 215, 0.3); }
+        .btn-otp-style { background: linear-gradient(to right, #fa709a, #fee140); box-shadow: 0 10px 20px rgba(250, 112, 154, 0.3); }
+        .btn-auth:active { transform: scale(0.98); }
+        .link-btn { margin-top: 12px; text-align: center; font-weight: 600; color: #333; cursor: pointer; font-size: 14px; }
+
+        #side-panel { transition: transform 0.4s; transform: translateX(100%); }
+        #side-panel.open { transform: translateX(0); }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        .line-clamp-custom { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: center; z-index: 10000 !important; }
+        .modal-box { background: #fff; padding: 30px; border-radius: 25px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.3); transform: scale(1); animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-icon-wrap { width: 80px; height: 80px; background: #ffebee; border-radius: 50%; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; }
+        .modal-icon-wrap i { font-size: 35px; color: #ff5252; }
+        .modal-box h3 { color: #2d3436; margin: 0 0 10px 0; font-weight: 800; font-size: 20px; }
+        .modal-box p { color: #636e72; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+        .modal-buttons { display: flex; gap: 15px; }
+        .modal-buttons button { flex: 1; padding: 14px; border: none; border-radius: 15px; font-weight: 700; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        .btn-cancel { background: #f1f2f6; color: #2d3436; }
+        .btn-delete { background: linear-gradient(45deg, #ff7675, #d63031); color: white; box-shadow: 0 8px 20px rgba(214, 48, 49, 0.3); }
+        .btn-cancel:active, .btn-delete:active { transform: scale(0.95); }
+        @keyframes bounceIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .custom-dropdown-trigger { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); transition: all 0.3s ease; }
+        .custom-dropdown-trigger:hover, .custom-dropdown-trigger.active { background: white; border-color: #a18cd1; box-shadow: 0 4px 15px rgba(161, 140, 209, 0.2); }
+        .custom-dropdown-menu { position: absolute; top: 110%; left: 0; width: 100%; max-height: 250px; overflow-y: auto; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); z-index: 60; opacity: 0; transform: translateY(-10px); pointer-events: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .custom-dropdown-menu.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .dropdown-option { padding: 12px 15px; cursor: pointer; transition: all 0.2s; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 14px; color: #4a5568; display: flex; align-items: center; gap: 10px; }
+        .dropdown-option:last-child { border-bottom: none; }
+        .dropdown-option:hover { background: linear-gradient(to right, #f3e7ff, #ffe4fa); color: #7c3aed; padding-left: 20px; }
+        .dropdown-option.selected { background: linear-gradient(to right, #e9d5ff, #fad0c4); font-weight: 700; color: #6b21a8; }
+        .fa-chevron-down { transition: transform 0.3s; }
+        .custom-dropdown-trigger.active .fa-chevron-down { transform: rotate(180deg); }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        #full-chat-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 9999; 
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+         }
+        #full-chat-view.active {
+            transform: translateX(0);
+        }
+        .chat-bubble-user {
+            border-radius: 18px 18px 2px 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .chat-bubble-other {
+            border-radius: 18px 18px 18px 2px;
+            background: #f3f4f6;
+            color: #1f2937;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+         }
+        #chat-theme-menu {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            width: 250px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 100;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            transform: scale(0);
+            transform-origin: top right;
+            transition: transform 0.2s;
+         }
+        #chat-theme-menu.open {
+            transform: scale(1);
+        }
+        .theme-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+         }
+        .theme-item:hover { background: #f9f9f9; }
+        .theme-preview { width: 35px; height: 35px; border-radius: 8px; background-size: cover; background-position: center; border: 1px solid #ddd; }
+        #fc-messages {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background 0.3s ease;
+            overflow-anchor: none; 
+        }
+        #fc-header, #fc-footer {
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+         }
+        #ptr-container {
+            transition: transform 0s; 
+         }
+        .reels-wrapper {
+            height: calc(100vh - 64px); 
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+            background: #000;
+            scrollbar-width: none;
+         }
+        .reels-wrapper::-webkit-scrollbar { display: none; }
+
+        .reel-card {
+            height: calc(100vh - 64px);
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            position: relative;
+            width: 100%;
+            max-width: 500px; 
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+         }
+
+        .reel-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+         }
+
+        .reel-actions-overlay {
+            position: absolute;
+            right: 12px;
+            bottom: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            z-index: 20;
+            color: white;
+         }
+
+        .reel-info-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 15px;
+            right: 70px;
+            z-index: 20;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+         }
+        #upload-progress-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 10000;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+         }
+        .progress-ring { width: 100px; height: 100px; border: 5px solid #f3f3f3; border-top: 5px solid #a18cd1; border-radius: 50%;  animation: spin 1s linear infinite; }
+         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }
+
+           
+.feed-mode {
+    overflow-y: scroll;
+    scroll-snap-type: none;
+    -webkit-overflow-scrolling: touch;
+}
+
+
+.reels-mode {
+    overflow-y: scroll;
+  
+    scroll-snap-type: y mandatory; 
+    height: 100vh !important;
+    background: #000; 
+.reels-wrapper {
+    height: 100vh; 
+    width: 100%;
+}
+
+
+.reel-card {
+    height: 100vh; 
+    width: 100%;
+    scroll-snap-align: start; 
+    scroll-snap-stop: always; 
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.sending-msg {
+    opacity: 0.6;
+    filter: grayscale(0.5);
+    position: relative;
+}
+
+
+.msg-loader {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ffffff66;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    display: inline-block;
+    animation: spin 1s linear infinite;
+    margin-left: 5px;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+body.theme-dark {
+    background-color: #000000 !important; 
+}
+
+body.theme-dark #main-content, 
+body.theme-dark .main-scroll-container {
+    background-color: #000000 !important; 
+}
+
+body.theme-dark .glass-card,
+body.theme-dark .bg-white,
+body.theme-dark .bg-slate-50 {
+    background-color: #1a1a1a !important; 
+    color: #ffffff !important;             
+    border: 1px solid #333 !important;    
+}
+
+
+body.theme-dark h1, body.theme-dark h2, body.theme-dark h3, 
+body.theme-dark p, body.theme-dark span, body.theme-dark div {
+    color: #e5e5e5 !important;
+}
+
+
+
+body.theme-pink {
+    background-color: #ffe4e1 !important;
+}
+
+
+body.theme-pink #main-content,
+body.theme-pink .main-scroll-container {
+    background-color: #ffe4e1 !important;
+}
+
+body.theme-pink .glass-card,
+body.theme-pink .bg-white {
+    background-color: #fff0f5 !important; 
+    color: #4a002c !important;            
+    border: 1px solid #ffc0cb !important;
+}
+
+
+body.theme-red {
+    background-color: #fff5f5 !important;
+}
+
+body.theme-red #main-content {
+    background-color: #fff5f5 !important;
+}
+
+body.theme-red .glass-card,
+body.theme-red .bg-white {
+    background-color: #ffffff !important;
+    border: 1px solid #feb2b2 !important; 
+}
+
+body.theme-dark, body.theme-dark h1, body.theme-dark h2, body.theme-dark p, body.theme-dark span, body.theme-dark div {
+    color: #ffffff !important;
+}
+body.theme-dark .glass-card, body.theme-dark .bg-white {
+    background-color: #1a1a1a !important; 
+    border: 1px solid #333 !important;
+}
+
+
+    </style>
+   </head>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <body class="text-gray-900 relative">
+    <div id="postEditorModal" class="fixed inset-0 bg-black z-[60] hidden flex flex-col">
+
+    <div class="flex justify-between p-4 bg-black/50 text-white">
+        <button onclick="cancelPostEditor()" class="text-lg"><i class="fa-solid fa-xmark"></i></button>
+        <h3 class="font-bold">Edit Post</h3>
+        <button onclick="finalSubmitPost()" class="text-purple-400 font-bold">Done</button>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center bg-black relative overflow-hidden" id="editorContainer">
+        <div id="mediaPreviewBox" class="relative max-w-full max-h-full transition-all duration-300"></div>
+        <div id="editorTextOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+             <span id="overlayTextDisplay" class="text-white text-2xl font-bold p-2 text-center" style="text-shadow: 2px 2px 4px #000;"></span>
+        </div>
+    </div>
+
+    <div class="p-4 bg-black/80 flex gap-4 overflow-x-auto border-t border-white/10">
+        <button onclick="applyFilter('grayscale(100%)')" class="text-white text-xs flex-shrink-0">B&W</button>
+        <button onclick="applyFilter('sepia(100%)')" class="text-white text-xs flex-shrink-0">Vintage</button>
+        <button onclick="applyFilter('brightness(150%)')" class="text-white text-xs flex-shrink-0">Bright</button>
+        <button onclick="applyFilter('none')" class="text-white text-xs flex-shrink-0">Reset</button>
+        <input type="text" id="overlayTextInput" oninput="updateOverlayText(this.value)" placeholder="Add text..." class="bg-white/10 text-white p-2 rounded-lg text-xs outline-none">
+    </div>
+</div>
+
+    <div id="uploadProgressModal" class="fixed inset-0 bg-black/90 z-[70] hidden flex flex-col items-center justify-center text-white">
+         <div class="w-20 h-20 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+         <div id="uploadPercentage" class="text-2xl font-black mb-2">0%</div>
+         <p class="text-gray-400 text-sm mb-6">Posting your moment...</p>
+    <button onclick="abortUpload()" class="bg-red-500/20 text-red-500 px-6 py-2 rounded-full font-bold border border-red-500/50">Cancel</button>
+</div>
+
+    <div id="splash-screen">
+         <img src="https://i.ibb.co/z1jXcZX/Screenshot-2025-11-22-at-2-45-03-PM-removebg-preview.png" class="w-48 h-48 object-contain doll-anim drop-shadow-2xl mb-4" alt="Loading...">
+         <div class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 tracking-tighter animate-pulse">Zobbly
+    </div>
+</div>
+
+    <div id="ptr-container" class="fixed top-0 left-0 w-full flex justify-center pointer-events-none z-50 transition-transformduration-200"      style="transform: translateY(-120px);">
+        <div class="mt-4 flex flex-col items-center">
+        <img id="ptr-icon" src="https://i.ibb.co/z1jXcZX/Screenshot-2025-11-22-at-2-45-03-PM-removebg-preview.png" class="w-14 h-14 object-contain drop-shadow-2xl transition-transform duration-200">
+    </div>
+</div>
+
+    <div id="full-chat-view" class="">
+        <div id="fc-header" class="h-16 flex items-center justify-between px-4 shadow-sm z-20 relative bg-white/90 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+        <button onclick="closeFullChat()" class="text-gray-600 hover:text-black p-2 rounded-full"><i class="fa-solid fa-arrow-left text-xl"></i></button>
+        <img id="fc-user-img" src="" class="w-10 h-10 rounded-full border border-gray-300 object-cover">
+        <div>
+        <h3 id="fc-user-name" class="font-bold text-gray-800 text-sm leading-tight">User Name</h3>
+        <span id="fc-user-status" class="text-[10px] text-gray-500 font-bold flex items-center gap-1">...</span>
+    </div>
+</div>
+
+    <div class="flex items-center gap-2">
+        <button onclick="toggleChatThemeMenu()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-purple-600 hover:bg-purple-100"><i class="fa-solid fa-palette"></i></button>
+        <button onclick="clearChat()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-red-500 hover:bg-red-100"><i class="fa-solid fa-trash"></i></button>
+    </div>
+        <div id="chat-theme-menu" class="scrollbar-hide"></div>
+</div>
+
+    <div id="fc-messages" class="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-3 relative">
+        <div class="flex flex-col items-center justify-center h-full text-gray-300">
+        <i class="fa-regular fa-paper-plane text-4xl mb-2 opacity-50"></i>
+        <p class="text-xs" data-key="message">Start a conversation...</p>
+     </div>
+</div>
+
+    <div id="fc-footer" class="p-3 bg-white border-t flex items-center gap-2 z-20">
+        <label class="cursor-pointer text-gray-400 hover:text-purple-600 p-2"><i class="fa-solid fa-plus text-xl"></i><input type="file" onchange="uploadChatFile(this.files[0])" class="hidden"></label>
+        <input id="fc-input" type="text" class="flex-1 bg-gray-100 rounded-full px-4 py-3 text-sm outline-none focus:ring-2 ring-purple-200 transition" placeholder="Type a message...">
+        <button id="fc-send-btn" onmousedown="event.preventDefault()" onclick="sendMsg()" class="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg hover:scale-105 transition"><i class="fa-solid fa-paper-plane text-sm"></i></button>
+    </div>
+</div>
+
+<div id="universalConfirmModal" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+        <div class="modal-icon-wrap"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <h3 id="modalTitle">Confirm Action</h3>
+        <p id="modalMessage">Are you sure you want to proceed?</p>
+        <div class="modal-buttons">
+        <button onclick="closeConfirmModal()" class="btn-cancel" data-key="back">Cancel</button>
+        <button onclick="executeConfirmAction()" class="btn-delete" id="modalConfirmBtn">Yes, Proceed</button>
+      </div>
+    </div>
+</div>
+
+<div id="auth-screen" class="hidden-screen">
+    <div class="auth-container">
+        <img src="https://i.ibb.co/z1jXcZX/Screenshot-2025-11-22-at-2-45-03-PM-removebg-preview.png" class="doll-main" alt="Doll">
+        <img src="https://i.ibb.co/jvZs6MnK/Screenshot-2025-11-22-at-2-48-15-PM-removebg-preview.png" class="char-yellow" alt="Yellow">
+        <img src="https://i.ibb.co/bRQqTjqn/IMAGE-2025-11-25-21-49-34-removebg-preview.png" class="char-orange" alt="Orange">
+        <div class="login-card">
+        <img src="https://i.ibb.co/ycwwnZD1/Screenshot-2025-11-22-at-2-48-21-PM-removebg-preview.png" class="icon-lock-img" alt="Lock">
+            
+    <div id="form-login" class="auth-form">
+        <h2 class="auth-h2">Zobbly</h2>
+        <div class="input-group"><div class="input-wrapper"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="Email Address" /></div></div>
+        <div class="input-group"><div class="input-wrapper"><i class="fas fa-lock"></i><input type="password" id="loginPass" placeholder="Password" /></div></div>
+        <button class="btn-auth btn-login-style" onclick="APIService.auth.login()">Enter World</button>
+        <button class="btn-auth btn-signup-style" onclick="switchAuth('form-register')">Join Network</button>
+        <div class="link-btn" onclick="switchAuth('form-forgot')">Forgot Password?</div>
+    </div>
+
+     <div id="form-register" class="auth-form hidden-screen">
+        <h2 class="auth-h2">Join</h2>
+                
+     <div id="reg-step-1">
+         <div class="input-group"><div class="input-wrapper"><i class="fas fa-user"></i><input type="text" id="regName" placeholder="Full Name" /></div></div>
+         <div class="input-group"><div class="input-wrapper"><i class="fas fa-at"></i><input type="text" id="regUsername" placeholder="Username (Unique)" /></div></div>
+         <div class="input-group"><div class="input-wrapper"><i class="fas fa-envelope"></i><input type="email" id="regEmail" placeholder="Email Address" /></div></div>
+         <div class="input-group"><div class="input-wrapper"><i class="fas fa-lock"></i><input type="password" id="regPass" placeholder="Password" /></div></div>
+         <div class="input-group">
+
+     <div class="input-wrapper">
+         <i class="fas fa-globe"></i>
+         <select id="regCountry" class="cursor-pointer">
+
+                      <option value="India" selected>India</option>
+                      <option value="USA">United States</option>
+                      <option value="UK">United Kingdom</option>
+                      <option value="Canada">Canada</option>
+                      <option value="Other">Other</option>
+                    </select>
+            </div>
+        </div>
+   <button class="btn-auth btn-signup-style" onclick="APIService.auth.initiateRegister()">Get Verification Code</button>
+ </div>
+
+        <div id="reg-step-2" class="hidden">
+            <div class="bg-blue-50 p-3 rounded-lg text-center mb-3">
+            <p class="text-xs text-blue-600">Code sent to your email!</p>
+      </div>
+
+       <div class="input-group"><div class="input-wrapper"><i class="fas fa-key"></i><input type="text" id="regOtpInput" placeholder="Enter Verification Code" /></div></div>
+       <button class="btn-auth btn-login-style" onclick="APIService.auth.completeRegister()">Create Account</button>
+  </div>
+
+         <div class="link-btn" onclick="switchAuth('form-login')">Back to Login</div>
+      </div>
+
+        <div id="form-forgot" class="auth-form hidden-screen">
+            <h2 class="auth-h2">Reset</h2>
+            <div class="input-group"><div class="input-wrapper"><i class="fas fa-envelope"></i><input type="email" id="forgotEmail" placeholder="Enter Email" /></div></div>
+            <button class="btn-auth btn-otp-style" onclick="APIService.auth.sendOtp('forgot')">Send OTP</button>
+            <div class="link-btn" onclick="switchAuth('form-login')">Back</div>
+        </div>
+
+        <div id="form-otp" class="auth-form hidden-screen">
+            <h2 class="auth-h2">Verify</h2>
+            <p class="text-center text-xs mb-2">Code sent to: <span id="displayEmail" class="font-bold"></span></p>
+            <div class="input-group"><div class="input-wrapper"><i class="fas fa-key"></i><input type="text" id="otpCode" placeholder="Enter OTP" /></div></div>
+            <button class="btn-auth btn-login-style" onclick="APIService.auth.verifyOtp()">Verify</button>
+          <div class="link-btn" onclick="switchAuth('form-login')">Cancel</div>
+       </div>
+
+        <div id="form-reset" class="auth-form hidden-screen">
+            <h2 class="auth-h2">New Pass</h2>
+            <div class="input-group"><div class="input-wrapper"><i class="fas fa-lock"></i><input type="password" id="newPassInput" placeholder="New Password" /></div></div>
+            <button class="btn-auth btn-login-style" onclick="APIService.auth.resetPassword()">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="app-screen" class="hidden-screen h-full w-full">
+            <header class="glass-header-top fixed top-0 w-full z-40 h-14 flex items-center justify-between px-4">
+            <div class="text-2xl font-black tracking-tighter cursor-pointer text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600" onclick="renderView('feed')">
+        Zobbly
+    </div>
+
+    <div class="flex items-center gap-1">
+        <div class="cursor-pointer relative p-2" id="nav-notifs" onclick="renderView('notifications')">
+            <div class="text-xl relative inline-block">
+            <i class="fa-solid fa-bell text-gray-600"></i>
+            <span id="notif-badge" class="absolute top-[-2px] right-[-2px] w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white hidden animate-ping"></span>
+            <span id="notif-badge-static" class="absolute top-[-2px] right-[-2px] w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white hidden"></span>
+        </div>
+    </div>
+
+      <button onclick="toggleSidePanel()" class="text-xl text-gray-600 p-2">
+            <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+</header>
+
+    <nav class="glass-nav-bottom fixed bottom-0 w-full z-50 h-16 flex items-center justify-around px-2">
+        <div class="nav-item nav-active cursor-pointer" id="nav-feed" onclick="renderView('feed')">
+        <div class="text-xl mb-0.5"><i class="fa-solid fa-house-chimney"></i></div>
+        </div>
+        <div class="nav-item cursor-pointer" id="nav-jobs" onclick="renderView('jobs')">
+        <div class="text-xl mb-0.5"><i class="fa-solid fa-briefcase"></i></div>
+   </div>
+
+        <div class="nav-item cursor-pointer" id="nav-reels" onclick="renderView('reels')">
+        <div class="text-xl"><i class="fa-solid fa-clapperboard"></i></div>
+    </div>
+
+      <div class="nav-item cursor-pointer" id="nav-chat" onclick="renderView('chat')">
+      <div class="text-xl mb-0.5"><i class="fa-solid fa-comment-dots"></i></div>
+  </div>
+      <div class="nav-item cursor-pointer" id="nav-profile" onclick="renderView('profile')">
+      <div class="text-xl mb-0.5"><i class="fa-solid fa-circle-user"></i></div>
+  </div>
+</nav>
+
+    <div class="max-w-md mx-auto main-scroll-container px-2">
+        <div class="grid grid-cols-1 gap-4">
+        <div class="col-span-1" id="main-content"></div>
+    </div>
+</div>
+
+    <div id="side-panel" class="fixed top-0 right-0 h-full w-72 glass-card z-50 p-6 rounded-none border-l border-white/50 bg-white/95 backdrop-blur-xl shadow-2xl">
+        <div class="flex justify-between items-center mb-10 pt-4">
+            <h2 id="lbl-settings" class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600" data-key="settings">Settings</h2>
+            <button onclick="toggleSidePanel()" class="text-2xl text-gray-500 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="space-y-4">
+           <button onclick="openEditProfile()" class="w-full text-left p-4 hover:bg-white/50 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-pen-to-square text-purple-500"></i> <span id="lbl-edit-profile">Edit Profile</span></button>
+        
+<script>
+   
+    function badalDoUI() {
+        const isCurrentIndex1 = window.location.pathname.includes("index1.html");
+        
+        if (isCurrentIndex1) {
+          
+            localStorage.setItem("Zobbly_UI", "index.html");
+            window.location.href = "index.html";
+        } else {
+          
+            localStorage.setItem("Zobbly_UI", "index1.html");
+            window.location.href = "index1.html";
+        }
+    }
+</script>
+            
+
+            <div onclick="toggleThemeMenu()" class="w-full text-left p-4 hover:bg-white/50 rounded-xl flex items-center gap-4 transition cursor-pointer">
+    <i class="fa-solid fa-palette text-purple-600"></i> 
+    <span class="font-medium text-gray-700">Change Theme</span>
+    <i class="fa-solid fa-chevron-down text-xs text-gray-400 ml-auto"></i>
+</div>
+
+<div id="theme-options" class="hidden flex flex-col gap-2 pl-14 pr-4 pb-4">
+    <button onclick="changeTheme('default')" class="w-full text-left p-2 rounded-lg hover:bg-purple-100 text-sm font-medium transition text-gray-600">
+        🌈 Default (Gradient)
+    </button>
+    <button onclick="changeTheme('dark')" class="w-full text-left p-2 rounded-lg hover:bg-gray-800 hover:text-white text-sm font-medium transition text-gray-600">
+        🌑 Dark Mode
+    </button>
+    <button onclick="changeTheme('pink')" class="w-full text-left p-2 rounded-lg hover:bg-pink-100 text-sm font-medium transition text-gray-600">
+        🌸 Pink Mode
+    </button>
+    <button onclick="changeTheme('red')" class="w-full text-left p-2 rounded-lg hover:bg-red-100 text-sm font-medium transition text-gray-600">
+        🔴 Red Mode
+    </button>
+</div>
+
+
+<button onclick="renderDocuments()" class="mt-4 w-full bg-purple-50 text-purple-700 font-bold py-2 rounded-xl border border-purple-100 flex items-center justify-center gap-2"><i class="fa-solid fa-vault"></i> My Documents Vault</button>
+
+
+             <button onclick="backupData()" class="w-full text-left p-4 hover:bg-white/50 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-cloud-arrow-down text-blue-500"></i> <span id="lbl-backup">Backup Data</span></button>
+            <div class="h-px bg-gray-300 my-4"></div>
+            <button onclick="deleteAccount()" class="w-full text-left p-4 text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-trash"></i> <span id="lbl-delete">Delete Account</span></button>
+            <button onclick="APIService.auth.logout()" class="w-full text-left p-4 text-gray-600 hover:bg-gray-100 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-right-from-bracket"></i> <span id="lbl-logout">Logout</span></button>
+            <button onclick="window.open('https://doc-hosting.flycricket.io/zobbly-terms-of-use/d1ee1b3a-65d2-4457-8036-ba6a90e58bbb/terms', '_blank')" class="w-full text-left p-4 text-gray-600 hover:bg-gray-100 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-file-contract"></i> <span>Privacy Policy</span></button>
+            <button onclick="badalDoUI()" class="w-full text-left p-4 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl flex items-center gap-4 transition font-bold border border-purple-200 shadow-sm">
+                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i> <span>Change UI Version</span>
+            </button>
+                                                                                                                                                                                                                                                                                                                                            
+        </div>
+    </div>
+</div>
+
+<div id="postModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="glass-card w-11/12 p-6 relative shadow-2xl animate-pop-view" style="background:white">
+        <button onclick="document.getElementById('postModal').classList.add('hidden')" class="absolute top-4 right-4 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <h2 id="lbl-create-post" class="text-xl font-bold mb-4" data-key="createPost">Create Post</h2>
+        <textarea id="postContent" class="w-full bg-gray-50 p-4 rounded-xl mb-4 outline-none focus:ring-2 ring-purple-200" rows="4" placeholder="What's happening?"></textarea>
+        <div class="mb-4">
+            <div class="flex items-center bg-gray-50 rounded-xl px-3 border border-transparent focus-within:border-purple-300 focus-within:ring-2 ring-purple-100 transition">
+         <i class="fa-solid fa-link text-gray-400 mr-2"></i>
+         <input id="postLink" class="w-full bg-transparent p-3 outline-none text-sm" placeholder="Paste link here (http://...)">
+    </div>
+ </div>
+
+        <div class="flex justify-between items-center">
+            <input type="file" id="postImage" class="text-sm text-gray-500 w-1/2">
+            <button id="lbl-btn-post" onclick="submitPost()" class="btn-zobbly px-6 py-2 rounded-full font-bold text-sm" data-key="post">Post</button>
+        </div>
+    </div>
+</div>
+
+<div id="editProfileModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div class="glass-card w-11/12 p-6 relative animate-pop-view" style="background:white">
+        <button onclick="document.getElementById('editProfileModal').classList.add('hidden')" class="absolute top-4 right-4 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <h2 id="lbl-edit-header" class="text-xl font-bold mb-4" data-key="editProfile">Edit Profile</h2>
+        <input id="editName" placeholder="Full Name" class="modern-input mb-4">
+        <input id="editHeadline" placeholder="Headline / Bio" class="modern-input mb-4">
+
+        <label class="text-sm font-bold text-gray-600 mb-1 block ml-1">App Language</label>
+        <div class="relative mb-4" id="lang-dropdown-container">
+        <input type="hidden" id="editLang" value="en">
+
+        <button onclick="toggleCustomDropdown('lang-dropdown-menu', this)" class="custom-dropdown-trigger w-full p-3 rounded-xl flex justify-between items-center text-gray-800 font-medium outline-none">
+        <span id="lang-selected-text" class="flex items-center gap-2"><img src="https://flagcdn.com/w20/gb.png" class="w-5 h-5 rounded-full shadow-sm"> English</span>
+        <i class="fa-solid fa-chevron-down text-purple-500 text-sm"></i>
+  </button>
+
+            <div id="lang-dropdown-menu" class="custom-dropdown-menu scrollbar-hide">
+                <div class="dropdown-option selected" onclick="selectCustomOption('en', 'English', 'gb', 'lang')"><img src="https://flagcdn.com/w20/gb.png" class="w-5 rounded-full"> English</div>
+                <div class="dropdown-option" onclick="selectCustomOption('hi', 'Hindi (हिंदी)', 'in', 'lang')"><img src="https://flagcdn.com/w20/in.png" class="w-5 rounded-full"> Hindi (हिंदी)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('es', 'Spanish (Español)', 'es', 'lang')"><img src="https://flagcdn.com/w20/es.png" class="w-5 rounded-full"> Spanish (Español)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('fr', 'French (Français)', 'fr', 'lang')"><img src="https://flagcdn.com/w20/fr.png" class="w-5 rounded-full"> French (Français)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('de', 'German (Deutsch)', 'de', 'lang')"><img src="https://flagcdn.com/w20/de.png" class="w-5 rounded-full"> German (Deutsch)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('zh', 'Chinese (中文)', 'cn', 'lang')"><img src="https://flagcdn.com/w20/cn.png" class="w-5 rounded-full"> Chinese (中文)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('ja', 'Japanese (日本語)', 'jp', 'lang')"><img src="https://flagcdn.com/w20/jp.png" class="w-5 rounded-full"> Japanese (日本語)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('ru', 'Russian (Русский)', 'ru', 'lang')"><img src="https://flagcdn.com/w20/ru.png" class="w-5 rounded-full"> Russian (Русский)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('pt', 'Portuguese (Português)', 'pt', 'lang')"><img src="https://flagcdn.com/w20/pt.png" class="w-5 rounded-full"> Portuguese (Português)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('ar', 'Arabic (العربية)', 'sa', 'lang')"><img src="https://flagcdn.com/w20/sa.png" class="w-5 rounded-full"> Arabic (العربية)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('it', 'Italian (Italiano)', 'it', 'lang')"><img src="https://flagcdn.com/w20/it.png" class="w-5 rounded-full"> Italian (Italiano)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('ko', 'Korean (한국어)', 'kr', 'lang')"><img src="https://flagcdn.com/w20/kr.png" class="w-5 rounded-full"> Korean (한국어)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('tr', 'Turkish (Türkçe)', 'tr', 'lang')"><img src="https://flagcdn.com/w20/tr.png" class="w-5 rounded-full"> Turkish (Türkçe)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('nl', 'Dutch (Nederlands)', 'nl', 'lang')"><img src="https://flagcdn.com/w20/nl.png" class="w-5 rounded-full"> Dutch (Nederlands)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('pl', 'Polish (Polski)', 'pl', 'lang')"><img src="https://flagcdn.com/w20/pl.png" class="w-5 rounded-full"> Polish (Polski)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('id', 'Indonesian (Bahasa)', 'id', 'lang')"><img src="https://flagcdn.com/w20/id.png" class="w-5 rounded-full"> Indonesian (Bahasa)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('vi', 'Vietnamese (Tiếng Việt)', 'vn', 'lang')"><img src="https://flagcdn.com/w20/vn.png" class="w-5 rounded-full"> Vietnamese (Tiếng Việt)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('th', 'Thai (ไทย)', 'th', 'lang')"><img src="https://flagcdn.com/w20/th.png" class="w-5 rounded-full"> Thai (ไทย)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('bn', 'Bengali (বাংলা)', 'bd', 'lang')"><img src="https://flagcdn.com/w20/bd.png" class="w-5 rounded-full"> Bengali (বাংলা)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('pa', 'Punjabi (ਪੰਜਾਬੀ)', 'in', 'lang')"><img src="https://flagcdn.com/w20/in.png" class="w-5 rounded-full"> Punjabi (ਪੰਜਾਬੀ)</div>
+                <div class="dropdown-option" onclick="selectCustomOption('ur', 'Urdu (اردو)', 'pk', 'lang')"><img src="https://flagcdn.com/w20/pk.png" class="w-5 rounded-full"> Urdu (اردو)</div>
+            </div>
+        </div>
+        <button id="lbl-save-changes" onclick="saveProfile()" class="btn-zobbly w-full py-3 rounded-xl font-bold shadow-lg" data-key="save">Save Changes</button>
+    </div>
+</div>
+
+<div id="genericModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="glass-card w-11/12 p-6 relative shadow-2xl animate-pop-view h-auto max-h-[90vh]" style="background: white;">
+        <button onclick="closeModal()" class="absolute top-2 right-4 text-xl z-20"><i class="fa-solid fa-xmark"></i></button>
+        <div id="modalContent" class="h-full"></div>
+    </div>
+</div>
+
+<div id="toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-black text-white px-6 py-3 rounded-full shadow-2xl transition duration-300 z-50 border border-gray-700 flex items-center gap-3 opacity-0 pointer-events-none" style="width: max-content;">
+    <i class="fa-solid fa-bell text-yellow-400"></i><span id="toast-msg">Notification</span>
+</div>
+
+<div id="upload-progress-container">
+    <div class="progress-ring mb-4"></div>
+    <div id="upload-status" class="text-white font-bold text-xl mb-2">Uploading: 0%</div>
+    <div class="w-64 bg-gray-700 rounded-full h-2.5 mb-6">
+        <div id="progress-bar-fill" class="bg-purple-500 h-2.5 rounded-full" style="width: 0%"></div>
+    </div>
+    <button id="cancel-upload-btn" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold">Cancel Post</button>
+</div>
+
+<script src="script1.js"></script>
+</body>
+</html>

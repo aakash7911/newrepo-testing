@@ -1,4 +1,4 @@
-<script>
+
     const API_BASE = "https://zobbly.onrender.com";
     let activeChatUser = null;
     let myFollowers = [];
@@ -2611,4 +2611,5 @@ window.addEventListener('popstate', function (event) {
     }
 });
 
-</script>
+
+

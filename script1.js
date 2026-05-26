@@ -1917,7 +1917,6 @@ async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; 
     }
 }*/
-
 async function renderReels(container) {
     try {
         // 🔥 OFFLINE/ONLINE SMART LOGIC FOR LOTTIE LOADER 🔥
@@ -2151,7 +2150,7 @@ async function renderReels(container) {
                         }
                     }
 
-                    // 🔥 PRELOAD NEXT 5 REELS LOGIC 🔥 (Bina awaz kiye)
+                    // 🔥 PRELOAD NEXT 5 REELS LOGIC 🔥 (Bina awaz kiye, sirf download/buffer honge)
                     let nextCard = entry.target.nextElementSibling;
                     for (let i = 0; i < 5 && nextCard; i++) {
                         let nextIframe = nextCard.querySelector('.youtube-iframe');
@@ -2159,6 +2158,13 @@ async function renderReels(container) {
                             // Preload ke liye autoplay=0 use kar rahe hain, isliye download hoga par chalega nahi
                             nextIframe.setAttribute('src', nextIframe.getAttribute('data-src'));
                         }
+                        
+                        // 🔥 NAYA FIX: Normal MP4 videos ko bhi forcefully background me download/buffer karne ke liye
+                        let nextVid = nextCard.querySelector('.reel-video');
+                        if (nextVid && nextVid.readyState === 0) {
+                            nextVid.load(); // Ye command browser ko force karti hai video fetch karne ke liye
+                        }
+                        
                         nextCard = nextCard.nextElementSibling;
                     }
 

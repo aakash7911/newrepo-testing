@@ -1769,7 +1769,7 @@ async function clearChat() { openConfirmModal("Clear Chat?", "Are you sure?", as
 async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message?", async () => { await APIService.chat.deleteMsg(id); loadMsgs(); }); }
 
 
-async function renderReels(container) {
+/*async function renderReels(container) {
     try {
         // 🔥 OFFLINE/ONLINE SMART LOGIC FOR LOTTIE LOADER 🔥
         container.innerHTML = `
@@ -1907,6 +1907,153 @@ async function renderReels(container) {
                     if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
                 } else {
                     if (v) { v.pause(); }
+                    if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
+                }
+            });
+        }, { threshold: 0.6 }); 
+
+        document.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
+    } catch(e) { 
+        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; 
+    }
+}*/
+
+async function renderReels(container) {
+    try {
+        // 🔥 OFFLINE/ONLINE SMART LOGIC FOR LOTTIE LOADER 🔥
+        container.innerHTML = `
+            <div id="reels-loader" class="h-screen w-full flex flex-col items-center justify-center bg-black absolute inset-0 z-50">
+                <lottie-player 
+                    src="https://aakash7911.github.io/cat_animation.json/" 
+                    background="transparent" 
+                    speed="1" 
+                    style="width: 150px; height: 150px;" 
+                    loop 
+                    autoplay>
+                </lottie-player>
+                <p class="text-sm text-white/70 font-medium mt-2 animate-pulse">Loading Reels...</p>
+            </div>
+        `;
+
+        // 🔥 YOUTUBE KO CONTROL KARNE KA SMART LOGIC
+        if (!window.ytControllerAdded) {
+            window.ytControllerAdded = true;
+            window.ytClickTimers = {};
+            window.ytPlayState = {}; 
+            window.ytMuteState = {}; 
+
+            window.handleYtAction = (e, id) => {
+                const iframe = document.getElementById('yt-iframe-' + id);
+                if (!iframe || !iframe.contentWindow) return;
+
+                if (window.ytClickTimers[id]) {
+                    clearTimeout(window.ytClickTimers[id]);
+                    window.ytClickTimers[id] = null;
+                    
+                    window.ytPlayState[id] = !window.ytPlayState[id]; 
+                    const action = window.ytPlayState[id] ? 'pauseVideo' : 'playVideo';
+                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
+                } else {
+                    window.ytClickTimers[id] = setTimeout(() => {
+                        window.ytClickTimers[id] = null;
+                        window.ytMuteState[id] = !window.ytMuteState[id];
+                        const action = window.ytMuteState[id] ? 'mute' : 'unMute';
+                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
+                        
+                        const statDiv = document.getElementById('yt-mute-stat-' + id);
+                        const icon = document.getElementById('yt-mute-icon-' + id);
+                        if (statDiv && icon) {
+                            icon.className = window.ytMuteState[id] ? "fa-solid fa-volume-xmark text-2xl" : "fa-solid fa-volume-high text-2xl";
+                            statDiv.classList.remove('opacity-0');
+                            setTimeout(() => statDiv.classList.add('opacity-0'), 1000);
+                        }
+                    }, 250); 
+                }
+            };
+        }
+
+        const posts = await APIService.feed.getAll();
+        let videoPosts = posts.filter(p => p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i)) || p.category === 'youtube_reel');
+
+        if(videoPosts.length === 0) {
+            container.innerHTML = '<div class="h-screen flex items-center justify-center text-white bg-black">No Reels Found.</div>';
+            return;
+        }
+
+        videoPosts = videoPosts.sort(() => Math.random() - 0.5);
+        const myId = localStorage.getItem("userId");
+
+        container.innerHTML = `<div class="reels-wrapper">
+            ${videoPosts.map(p => {
+                let videoUrl = p.video || p.image;
+                const isLiked = p.likes?.includes(myId);
+                const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
+                const isMe = p.userId?._id === myId;
+                
+                const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
+                
+                // 🔥 INSTANT THUMBNAIL LOGIC 🔥
+                let ytId = isYouTube ? videoUrl.match(/embed\/([^?]+)/)?.[1] : null;
+                let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover;"` : "";
+
+                // 🔥 FORCE MUTE AND AUTOPLAY FOR FAST LOAD
+                if (isYouTube) {
+                    const params = 'enablejsapi=1&autoplay=1&mute=1&controls=0&rel=0';
+                    videoUrl += videoUrl.includes('?') ? '&' + params : '?' + params;
+                }
+
+                return `
+                <div class="reel-card" id="reel-${p._id}">
+                    ${isYouTube ? `
+                        <div class="absolute inset-0 z-0 bg-black flex items-center justify-center" ${thumbStyle}>
+                            <iframe id="yt-iframe-${p._id}" class="youtube-iframe w-full h-full border-none scale-[1.35]" src="${videoUrl}" allow="autoplay; encrypted-media" loading="eager" allowfullscreen></iframe>
+                        </div>
+                        <div id="yt-mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
+                            <i class="fa-solid fa-volume-high text-2xl" id="yt-mute-icon-${p._id}"></i>
+                        </div>
+                        <div class="absolute inset-0 z-10 bg-transparent cursor-pointer" onclick="handleYtAction(event, '${p._id}')"></div>
+                    ` : `
+                        <div class="absolute inset-0 flex items-center justify-center z-0" id="loader-${p._id}"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i></div>
+                        <video loop playsinline webkit-playsinline preload="auto" class="reel-video absolute inset-0 w-full h-full object-cover z-0" id="vid-${p._id}"
+                            onplaying="document.getElementById('loader-${p._id}').classList.add('hidden')"
+                            onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
+                            <source src="${videoUrl}" type="video/mp4">
+                        </video>
+                    `}
+                    
+                    <div class="reel-actions-overlay" style="z-index: 20;">
+                        <div class="flex flex-col items-center mb-4" onclick="toggleReelLike('${p._id}')">
+                            <i class="fa-solid fa-heart text-3xl ${isLiked ? 'text-red-500' : 'text-white'}" id="rlike-icon-${p._id}"></i>
+                            <span class="text-xs font-bold" id="rlike-cnt-${p._id}">${p.likes?.length || 0}</span>
+                        </div>
+                        <div class="flex flex-col items-center mb-4" onclick="openReelComments('${p._id}')"><i class="fa-solid fa-comment text-3xl text-white"></i><span class="text-xs font-bold" id="rcmt-cnt-${p._id}">${p.comments?.length || 0}</span></div>
+                        <div class="flex flex-col items-center mb-4" onclick="reportUser('${p.userId?._id}', '${p.userId?.username}')"><i class="fa-solid fa-flag text-2xl text-white/80"></i></div>
+                        <div class="flex flex-col items-center" onclick="${isYouTube ? `alert('YouTube reels direct download nahi ho sakti.')` : `downloadReelWithProgress('${videoUrl}', '${p._id}')`}"><i class="fa-solid fa-download text-2xl text-white"></i></div>
+                    </div>
+
+                    <div class="reel-info-overlay" style="z-index: 20;">
+                        <div class="flex items-center gap-2 mb-2">
+                            <img src="${p.userId?.photo || 'https://placehold.co/40'}" class="w-10 h-10 rounded-full border-2 border-white object-cover cursor-pointer" onclick="viewUserProfile('${p.userId?._id}')">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-white cursor-pointer" onclick="viewUserProfile('${p.userId?._id}')">@${p.userId?.username || 'user'}</span>
+                                ${!isMe ? `<button id="rfollow-${p._id}" onclick="handleReelFollow('${p.userId?._id}', '${p._id}')" class="text-[11px] font-black uppercase text-left ${isFollowing ? 'text-gray-300' : 'text-purple-400'}">${isFollowing ? 'Following' : 'Follow'}</button>` : ''}
+                            </div>
+                        </div>
+                        <p class="text-sm text-white line-clamp-2">${p.content || ''}</p>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const v = entry.target.querySelector('video');
+                const iframe = entry.target.querySelector('.youtube-iframe');
+                if (entry.isIntersecting) {
+                    if (v) v.play().catch(() => {});
+                    if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+                } else {
+                    if (v) v.pause();
                     if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
                 }
             });

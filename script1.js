@@ -2012,9 +2012,9 @@ async function renderReels(container) {
                     videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
                 }
                 
-                // 🔥 UPDATE: Auto-replay aur Mute lagaya taaki turant chale aur repeat ho
+                // 🔥 FIX: Controls poori tarah hide kiye aur Mute hata diya taaki aawaz aaye
                 if (isYouTube) {
-                    videoUrl += `&autoplay=1&mute=1&controls=0&loop=1${ytId ? '&playlist='+ytId : ''}`;
+                    videoUrl += `&autoplay=1&controls=0&disablekb=1&playsinline=1&modestbranding=1&rel=0&loop=1${ytId ? '&playlist='+ytId : ''}`;
                 }
 
                 return `
@@ -2047,7 +2047,7 @@ async function renderReels(container) {
                             <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
                         </div>
 
-                        <video loop muted playsinline webkit-playsinline preload="auto" 
+                        <video loop playsinline webkit-playsinline preload="auto" 
                             class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" 
                             id="vid-${p._id}"
                             onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
@@ -2132,8 +2132,9 @@ async function renderReels(container) {
                         if (!iframe.getAttribute('src')) {
                             iframe.setAttribute('src', iframe.getAttribute('data-src')); 
                         } else {
-                            // Agar load hai toh bas play command bhejo
+                            // Agar load hai toh bas play aur unmute command bhejo
                             iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'unMute', args: []}), '*');
                         }
                     }
                 } else {
@@ -2160,8 +2161,6 @@ async function renderReels(container) {
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }
-
-
 
 
 function openReelComments(postId) {

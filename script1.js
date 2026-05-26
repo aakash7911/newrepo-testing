@@ -1992,9 +1992,8 @@ async function renderReels(container) {
         const myId = localStorage.getItem("userId");
 
         // 🔥 Yahan par naya content aate hi loader automatic hat jayega (kyunki innerHTML overwrite ho jayega)
-        // 🔥 UPDATE: .map(p => { ki jagah .map((p, index) => { taaki first 2 reels load ho sakein
         container.innerHTML = `<div class="reels-wrapper">
-            ${videoPosts.map((p, index) => {
+            ${videoPosts.map((p, index) => { // 🔥 UPDATE: Added index for initial 5 reels preloading
                 let videoUrl = p.video || p.image;
                 const isLiked = p.likes?.includes(myId);
                 const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
@@ -2003,18 +2002,18 @@ async function renderReels(container) {
                 // YouTube reel pehchanne ka logic
                 const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
 
-                // 🔥 UPDATE: THUMBNAIL, AUTOPLAY & LOOP LOGIC 
+                // 🔥 THUMBNAIL LOGIC 🔥
                 let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
                 let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
 
-                // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
-                if (isYouTube && !videoUrl.includes('enablejsapi=1')) {
-                    videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
-                }
-                
-                // 🔥 FIX: Controls poori tarah hide kiye aur Mute hata diya taaki aawaz aaye
+                // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai aur autoplay force kiya
                 if (isYouTube) {
-                    videoUrl += `&autoplay=1&controls=0&disablekb=1&playsinline=1&modestbranding=1&rel=0&loop=1${ytId ? '&playlist='+ytId : ''}`;
+                    if (!videoUrl.includes('enablejsapi=1')) {
+                        videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
+                    }
+                    if (!videoUrl.includes('autoplay=1')) {
+                        videoUrl += '&autoplay=1';
+                    }
                 }
 
                 return `
@@ -2026,7 +2025,7 @@ async function renderReels(container) {
                                 id="yt-iframe-${p._id}"
                                 class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
                                 data-src="${videoUrl}" 
-                                src="${index < 2 ? videoUrl : ''}" 
+                                src="${index < 5 ? videoUrl : ''}" 
                                 allow="autoplay; encrypted-media"
                                 loading="eager"
                                 allowfullscreen>
@@ -2047,7 +2046,7 @@ async function renderReels(container) {
                             <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
                         </div>
 
-                        <video loop playsinline webkit-playsinline preload="auto" 
+                        <video loop muted playsinline webkit-playsinline preload="auto" 
                             class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" 
                             id="vid-${p._id}"
                             onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
@@ -2121,30 +2120,40 @@ async function renderReels(container) {
                         v.muted = false; 
                         v.play().catch(() => { v.muted = true; v.play(); }); 
                         if(typeof updateMuteUI === 'function') updateMuteUI(v.id.split('-')[1], v.muted);
+                        
+                        // 🔥 AUTO REPLAY LOGIC
+                        v.onended = () => { v.play(); };
                     }
                     if (iframe) {
-                        // Jab video samne aaye toh state reset kar do (auto-play hamesha chalu hoga)
+                        // Jab video samne aaye toh state reset kar do
                         const id = iframe.id.split('-')[2];
                         if(window.ytPlayState) window.ytPlayState[id] = false; 
                         if(window.ytMuteState) window.ytMuteState[id] = false;
                         
-                        // 🔥 UPDATE: Internet bachane ke liye (Agar pehle se load nahi hai tabhi load karo)
                         if (!iframe.getAttribute('src')) {
                             iframe.setAttribute('src', iframe.getAttribute('data-src')); 
                         } else {
-                            // Agar load hai toh bas play aur unmute command bhejo
                             iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
-                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'unMute', args: []}), '*');
                         }
                     }
+
+                    // 🔥 PRELOAD NEXT 5 REELS LOGIC 🔥 (Bina current logic chhede)
+                    let nextCard = entry.target.nextElementSibling;
+                    for (let i = 0; i < 5 && nextCard; i++) {
+                        let nextIframe = nextCard.querySelector('.youtube-iframe');
+                        if (nextIframe && !nextIframe.getAttribute('src')) {
+                            nextIframe.setAttribute('src', nextIframe.getAttribute('data-src'));
+                        }
+                        nextCard = nextCard.nextElementSibling;
+                    }
+
                 } else {
                     if (v) {
                         v.pause();
-                        // 🔥 UPDATE: v.currentTime = 0; Hata diya taaki reverse scroll me wahi se chale jahan ruki thi
+                        // v.currentTime = 0; // 🔥 HATA DIYA: Taaki reverse scroll me wahi se chale jahan chhodi thi
                     }
                     if (iframe) {
-                        // 🔥 UPDATE: iframe.setAttribute('src', ''); Hata diya taaki data dobara kharch na ho
-                        // Bas video pause kar do
+                        // iframe.setAttribute('src', ''); // 🔥 HATA DIYA: Taaki video destroy na ho aur data bache
                         if (iframe.getAttribute('src')) {
                             iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
                         }
@@ -2161,7 +2170,6 @@ async function renderReels(container) {
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }
-
 
 function openReelComments(postId) {
     const content = document.getElementById('modalContent');

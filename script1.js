@@ -2118,6 +2118,16 @@ async function renderReels(container) {
                 const iframe = entry.target.querySelector('.youtube-iframe');
 
                 if (entry.isIntersecting) {
+                    // 🔥 STRICT LOGIC: Jo screen par nahi hai use force pause karo (Ek sath na chalein)
+                    document.querySelectorAll('.reel-video').forEach(vid => {
+                        if (vid !== v) vid.pause();
+                    });
+                    document.querySelectorAll('.youtube-iframe').forEach(ifr => {
+                        if (ifr !== iframe && ifr.getAttribute('src')) {
+                            ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+                        }
+                    });
+
                     if (v) {
                         v.muted = false; 
                         v.play().catch(() => { v.muted = true; v.play(); }); 
@@ -2176,7 +2186,6 @@ async function renderReels(container) {
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }
-
 
 
 

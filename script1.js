@@ -1976,7 +1976,7 @@ async function renderReels(container) {
             };
         }
 
-        // Data aane ka wait karo
+        // Data aane ka wait karo (Tab tak billi khelti rahegi)
         const posts = await APIService.feed.getAll();
         let videoPosts = posts.filter(p => p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i)) || p.category === 'youtube_reel');
 
@@ -1990,7 +1990,7 @@ async function renderReels(container) {
 
         const myId = localStorage.getItem("userId");
 
-        // 🔥 Yahan par naya content aate hi loader automatic hat jayega
+        // 🔥 Yahan par naya content aate hi loader automatic hat jayega (kyunki innerHTML overwrite ho jayega)
         container.innerHTML = `<div class="reels-wrapper">
             ${videoPosts.map((p, index) => { 
                 let videoUrl = p.video || p.image;
@@ -1998,44 +1998,68 @@ async function renderReels(container) {
                 const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
                 const isMe = p.userId?._id === myId;
                 
+                // YouTube reel pehchanne ka logic
                 const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
 
                 // 🔥 THUMBNAIL LOGIC 🔥
                 let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
                 let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
 
-                // 🔥 FORCE MUTE-FIRST AUTOPLAY FOR FAST LOADING 🔥
+                // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
                 if (isYouTube) {
-                    if (!videoUrl.includes('enablejsapi=1')) videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
-                    // Mute=1 lagaya taaki browser block na kare
-                    videoUrl += '&autoplay=1&mute=1&controls=0&disablekb=1&playsinline=1&loop=1' + (ytId ? '&playlist='+ytId : '');
+                    if (!videoUrl.includes('enablejsapi=1')) {
+                        videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
+                    }
+                    // 🔥 FIX: Background preloading ke liye default autoplay=0 rakha, taaki ek sath na chale
+                    if (!videoUrl.includes('autoplay=0')) {
+                        videoUrl += '&autoplay=0';
+                    }
+                    videoUrl = videoUrl.replace('autoplay=1', 'autoplay=0'); // Agar pehle se hai toh hata do
                 }
 
                 return `
                 <div class="reel-card" id="reel-${p._id}">
+                    
                     ${isYouTube ? `
                         <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" ${thumbStyle}>
                             <iframe 
                                 id="yt-iframe-${p._id}"
                                 class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
                                 data-src="${videoUrl}" 
-                                src="${index < 5 ? videoUrl : ''}" 
+                                src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index < 5 ? videoUrl : '')}" 
                                 allow="autoplay; encrypted-media"
                                 loading="eager"
                                 allowfullscreen>
                             </iframe>
                         </div>
+
                         <div id="yt-mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
                             <i class="fa-solid fa-volume-high text-2xl" id="yt-mute-icon-${p._id}"></i>
                         </div>
+
                         <div class="absolute inset-0 z-10 bg-transparent cursor-pointer" onclick="handleYtAction(event, '${p._id}')"></div>
                     ` : `
-                        <div class="absolute inset-0 flex items-center justify-center z-0" id="loader-${p._id}"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i></div>
-                        <video loop muted playsinline webkit-playsinline preload="auto" class="reel-video absolute inset-0 w-full h-full object-cover z-0" id="vid-${p._id}"
-                            onplaying="document.getElementById('loader-${p._id}').classList.add('hidden')"
+                        <div class="absolute inset-0 flex items-center justify-center z-0" id="loader-${p._id}">
+                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i>
+                        </div>
+
+                        <div id="mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
+                            <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
+                        </div>
+
+                        <video loop muted playsinline webkit-playsinline preload="auto" 
+                            class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" 
+                            id="vid-${p._id}"
+                            onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
+                            onplaying="document.getElementById('loader-${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
+                            ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('${p._id}') : null"
                             onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
                             <source src="${videoUrl}" type="video/mp4">
                         </video>
+
+                        <div class="absolute bottom-24 right-4 z-30 bg-black/20 p-2 rounded-full text-white pointer-events-none" id="mini-mute-${p._id}">
+                            <i class="fa-solid fa-volume-high text-xs"></i>
+                        </div>
                     `}
                     
                     <div class="reel-actions-overlay" style="z-index: 20;">
@@ -2043,21 +2067,46 @@ async function renderReels(container) {
                             <i class="fa-solid fa-heart text-3xl transition-transform active:scale-150 ${isLiked ? 'text-red-500' : 'text-white'}" id="rlike-icon-${p._id}"></i>
                             <span class="text-xs font-bold shadow-sm" id="rlike-cnt-${p._id}">${p.likes?.length || 0}</span>
                         </div>
-                        <div class="flex flex-col items-center mb-4" onclick="openReelComments('${p._id}')"><i class="fa-solid fa-comment text-3xl text-white"></i><span class="text-xs font-bold shadow-sm" id="rcmt-cnt-${p._id}">${p.comments?.length || 0}</span></div>
-                        <div class="flex flex-col items-center mb-4" onclick="reportUser('${p.userId?._id}', '${p.userId?.username}')"><i class="fa-solid fa-flag text-2xl text-white/80"></i></div>
-                        <div class="flex flex-col items-center" onclick="${isYouTube ? `alert('YouTube reels direct download nahi ho sakti.')` : `downloadReelWithProgress('${videoUrl}', '${p._id}')`}"><i class="fa-solid fa-download text-2xl ${isYouTube ? 'text-white/50' : 'text-white'}" id="dl-icon-${p._id}"></i></div>
+                        
+                        <div class="flex flex-col items-center mb-4" onclick="openReelComments('${p._id}')">
+                            <i class="fa-solid fa-comment text-3xl text-white"></i>
+                            <span class="text-xs font-bold shadow-sm" id="rcmt-cnt-${p._id}">${p.comments?.length || 0}</span>
+                        </div>
+
+                        <div class="flex flex-col items-center mb-4" onclick="reportUser('${p.userId?._id}', '${p.userId?.username}')">
+                            <i class="fa-solid fa-flag text-2xl text-white/80"></i>
+                        </div>
+
+                        <div class="flex flex-col items-center" onclick="${isYouTube ? `alert('YouTube reels direct download nahi ho sakti.')` : `downloadReelWithProgress('${videoUrl}', '${p._id}')`}">
+                            <i class="fa-solid fa-download text-2xl ${isYouTube ? 'text-white/50' : 'text-white'}" id="dl-icon-${p._id}"></i>
+                            <span class="text-[9px] font-bold hidden" id="dl-perc-${p._id}">0%</span>
+                        </div>
                     </div>
 
                     <div class="reel-info-overlay" style="z-index: 20;">
                         <div class="flex items-center gap-2 mb-2">
-                            <img src="${p.userId?.photo || 'https://placehold.co/40'}" class="w-10 h-10 rounded-full border-2 border-white object-cover cursor-pointer" onclick="viewUserProfile('${p.userId?._id}')">
+                            <img src="${p.userId?.photo || 'https://placehold.co/40'}" 
+                                class="w-10 h-10 rounded-full border-2 border-white object-cover cursor-pointer" 
+                                onclick="viewUserProfile('${p.userId?._id}')">
                             <div class="flex flex-col">
                                 <span class="font-bold text-white shadow-sm cursor-pointer" onclick="viewUserProfile('${p.userId?._id}')">@${p.userId?.username || 'user'}</span>
-                                ${!isMe ? `<button id="rfollow-${p._id}" onclick="handleReelFollow('${p.userId?._id}', '${p._id}')" class="text-[11px] font-black uppercase text-left transition-all ${isFollowing ? 'text-gray-300' : 'text-purple-400'}">${isFollowing ? 'Following' : 'Follow'}</button>` : ''}
+                                ${!isMe ? `
+                                <button id="rfollow-${p._id}" onclick="handleReelFollow('${p.userId?._id}', '${p._id}')" 
+                                    class="text-[11px] font-black uppercase text-left transition-all ${isFollowing ? 'text-gray-300' : 'text-purple-400'}">
+                                    ${isFollowing ? 'Following' : 'Follow'}
+                                </button>` : ''}
                             </div>
                         </div>
                         <p class="text-sm text-white shadow-sm line-clamp-2">${p.content || ''}</p>
                     </div>
+
+                    ${!isYouTube ? `
+                    <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-800/50 z-40 cursor-pointer group" onclick="seekReel(event, '${p._id}')">
+                        <div id="prog-bar-${p._id}" class="h-full bg-white w-0 transition-all duration-100 relative">
+                            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>`;
             }).join('')}
         </div>`;
@@ -2066,38 +2115,64 @@ async function renderReels(container) {
             entries.forEach(entry => {
                 const v = entry.target.querySelector('video');
                 const iframe = entry.target.querySelector('.youtube-iframe');
-                
-                if (entry.isIntersecting) {
-                    // Force Pause Others
-                    document.querySelectorAll('.reel-video').forEach(vid => { if (vid !== v) vid.pause(); });
-                    document.querySelectorAll('.youtube-iframe').forEach(ifr => { if (ifr !== iframe && ifr.getAttribute('src')) ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*'); });
 
-                    if (v) { v.muted = false; v.play().catch(() => { v.muted = true; v.play(); }); v.onended = () => v.play(); }
+                if (entry.isIntersecting) {
+                    if (v) {
+                        v.muted = false; 
+                        v.play().catch(() => { v.muted = true; v.play(); }); 
+                        if(typeof updateMuteUI === 'function') updateMuteUI(v.id.split('-')[1], v.muted);
+                        
+                        // 🔥 AUTO REPLAY LOGIC
+                        v.onended = () => { v.play(); };
+                    }
                     if (iframe) {
-                        if (!iframe.getAttribute('src')) iframe.setAttribute('src', iframe.getAttribute('data-src'));
-                        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+                        // Jab video samne aaye toh state reset kar do 
+                        const id = iframe.id.split('-')[2];
+                        if(window.ytPlayState) window.ytPlayState[id] = false; 
+                        if(window.ytMuteState) window.ytMuteState[id] = false;
+                        
+                        // 🔥 FIX: Agar preload nahi tha, toh instantly autoplay=1 load karo
+                        if (!iframe.getAttribute('src')) {
+                            iframe.setAttribute('src', iframe.getAttribute('data-src').replace('autoplay=0', 'autoplay=1')); 
+                        } else {
+                            // Agar pehle se downloaded/preloaded hai, toh sirf API se play command bhejo
+                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+                        }
                     }
-                    
-                    // Preload Logic
-                    let next = entry.target.nextElementSibling;
-                    for (let i = 0; i < 5 && next; i++) {
-                        let nextIfr = next.querySelector('.youtube-iframe');
-                        if (nextIfr && !nextIfr.getAttribute('src')) nextIfr.setAttribute('src', nextIfr.getAttribute('data-src'));
-                        let nextVid = next.querySelector('.reel-video');
-                        if (nextVid && nextVid.readyState === 0) nextVid.load();
-                        next = next.nextElementSibling;
+
+                    // 🔥 PRELOAD NEXT 5 REELS LOGIC 🔥 (Bina awaz kiye)
+                    let nextCard = entry.target.nextElementSibling;
+                    for (let i = 0; i < 5 && nextCard; i++) {
+                        let nextIframe = nextCard.querySelector('.youtube-iframe');
+                        if (nextIframe && !nextIframe.getAttribute('src')) {
+                            // Preload ke liye autoplay=0 use kar rahe hain, isliye download hoga par chalega nahi
+                            nextIframe.setAttribute('src', nextIframe.getAttribute('data-src'));
+                        }
+                        nextCard = nextCard.nextElementSibling;
                     }
+
                 } else {
-                    if (v) v.pause();
-                    if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
+                    if (v) {
+                        v.pause();
+                        // v.currentTime = 0; // 🔥 Reverse scroll internet saver
+                    }
+                    if (iframe) {
+                        // iframe.setAttribute('src', ''); // 🔥 Data saver: Video destroy nahi hogi
+                        if (iframe.getAttribute('src')) {
+                            // User jaise hi aage scroll kare, purani video pause ho jaye
+                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+                        }
+                    }
                 }
             });
         }, { threshold: 0.7 }); 
 
         document.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
+
     } catch(e) { 
         console.error(e);
-        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; 
+        // Error aane par bhi local wali billi ko dikha sakte ho ya error message
+        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }
 

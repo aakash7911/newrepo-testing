@@ -1916,7 +1916,7 @@ async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message
     } catch(e) { 
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; 
     }
-}*/
+}
 async function renderReels(container) {
     try {
         // 🔥 OFFLINE/ONLINE SMART LOGIC FOR LOTTIE LOADER 🔥
@@ -2168,7 +2168,149 @@ async function renderReels(container) {
         // Error aane par bhi local wali billi ko dikha sakte ho ya error message
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
+}*/
+async function renderReels(container) {
+    try {
+        // 🔥 OFFLINE/ONLINE SMART LOGIC FOR LOTTIE LOADER 🔥
+        container.innerHTML = `
+            <div id="reels-loader" class="h-screen w-full flex flex-col items-center justify-center bg-black absolute inset-0 z-50">
+                <lottie-player 
+                    src="https://aakash7911.github.io/cat_animation.json/" 
+                    background="transparent" 
+                    speed="1" 
+                    style="width: 150px; height: 150px;" 
+                    loop 
+                    autoplay>
+                </lottie-player>
+                <p class="text-sm text-white/70 font-medium mt-2 animate-pulse">Loading Reels...</p>
+            </div>
+        `;
+
+        // 🔥 YOUTUBE KO CONTROL KARNE KA SMART LOGIC (Sirf ek baar load hoga)
+        if (!window.ytControllerAdded) {
+            window.ytControllerAdded = true;
+            window.ytClickTimers = {};
+            window.ytPlayState = {}; 
+            window.ytMuteState = {}; 
+
+            window.handleYtAction = (e, id) => {
+                const iframe = document.getElementById('yt-iframe-' + id);
+                if (!iframe || !iframe.contentWindow) return;
+
+                if (window.ytClickTimers[id]) {
+                    clearTimeout(window.ytClickTimers[id]);
+                    window.ytClickTimers[id] = null;
+                    
+                    window.ytPlayState[id] = !window.ytPlayState[id];
+                    const action = window.ytPlayState[id] ? 'pauseVideo' : 'playVideo';
+                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
+                } else {
+                    window.ytClickTimers[id] = setTimeout(() => {
+                        window.ytClickTimers[id] = null;
+                        
+                        window.ytMuteState[id] = !window.ytMuteState[id];
+                        const action = window.ytMuteState[id] ? 'mute' : 'unMute';
+                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
+                        
+                        const statDiv = document.getElementById('yt-mute-stat-' + id);
+                        const icon = document.getElementById('yt-mute-icon-' + id);
+                        if (statDiv && icon) {
+                            icon.className = window.ytMuteState[id] ? "fa-solid fa-volume-xmark text-2xl" : "fa-solid fa-volume-high text-2xl";
+                            statDiv.classList.remove('opacity-0');
+                            setTimeout(() => statDiv.classList.add('opacity-0'), 1000);
+                        }
+                    }, 250);
+                }
+            };
+        }
+
+        const posts = await APIService.feed.getAll();
+        let videoPosts = posts.filter(p => p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i)) || p.category === 'youtube_reel');
+
+        if(videoPosts.length === 0) {
+            container.innerHTML = '<div class="h-screen flex items-center justify-center text-white bg-black">No Reels Found.</div>';
+            return;
+        }
+
+        videoPosts = videoPosts.sort(() => Math.random() - 0.5);
+        const myId = localStorage.getItem("userId");
+
+        container.innerHTML = `<div class="reels-wrapper">
+            ${videoPosts.map((p, index) => { 
+                let videoUrl = p.video || p.image;
+                const isLiked = p.likes?.includes(myId);
+                const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
+                const isMe = p.userId?._id === myId;
+                
+                const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
+                let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
+                let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
+
+                if (isYouTube) {
+                    if (!videoUrl.includes('enablejsapi=1')) { videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1'; }
+                    if (!videoUrl.includes('autoplay=1')) { videoUrl += '&autoplay=1'; }
+                }
+
+                return `
+                <div class="reel-card" id="reel-${p._id}">
+                    ${isYouTube ? `
+                        <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" ${thumbStyle}>
+                            <iframe id="yt-iframe-${p._id}" class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" data-src="${videoUrl}" src="${index < 5 ? videoUrl : ''}" allow="autoplay; encrypted-media" loading="eager" allowfullscreen></iframe>
+                        </div>
+                        <div id="yt-mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
+                            <i class="fa-solid fa-volume-high text-2xl" id="yt-mute-icon-${p._id}"></i>
+                        </div>
+                        <div class="absolute inset-0 z-10 bg-transparent cursor-pointer" onclick="handleYtAction(event, '${p._id}')"></div>
+                    ` : `
+                        <div class="absolute inset-0 flex items-center justify-center z-0" id="loader-${p._id}"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i></div>
+                        <div id="mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
+                            <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
+                        </div>
+                        <video loop muted playsinline webkit-playsinline preload="auto" class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" id="vid-${p._id}" onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')" onplaying="document.getElementById('loader-${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')" ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('${p._id}') : null" onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
+                            <source src="${videoUrl}" type="video/mp4">
+                        </video>
+                        <div class="absolute bottom-24 right-4 z-30 bg-black/20 p-2 rounded-full text-white pointer-events-none" id="mini-mute-${p._id}"><i class="fa-solid fa-volume-high text-xs"></i></div>
+                    `}
+                    
+                    <div class="reel-actions-overlay" style="z-index: 20;">...</div>
+                    <div class="reel-info-overlay" style="z-index: 20;">...</div>
+                    ${!isYouTube ? `<div class="absolute bottom-0 left-0 w-full h-1 bg-gray-800/50 z-40 cursor-pointer group" onclick="seekReel(event, '${p._id}')"><div id="prog-bar-${p._id}" class="h-full bg-white w-0 transition-all duration-100 relative"><div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full"></div></div></div>` : ''}
+                </div>`;
+            }).join('')}
+        </div>`;
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const v = entry.target.querySelector('video');
+                const iframe = entry.target.querySelector('.youtube-iframe');
+
+                if (entry.isIntersecting) {
+                    if (v) { v.muted = false; v.play().catch(() => { v.muted = true; v.play(); }); if(typeof updateMuteUI === 'function') updateMuteUI(v.id.split('-')[1], v.muted); v.onended = () => { v.play(); }; }
+                    if (iframe) {
+                        const id = iframe.id.split('-')[2];
+                        if(window.ytPlayState) window.ytPlayState[id] = false; 
+                        if (!iframe.getAttribute('src')) { iframe.setAttribute('src', iframe.getAttribute('data-src')); } 
+                        else { iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*'); }
+                    }
+                    let nextCard = entry.target.nextElementSibling;
+                    for (let i = 0; i < 5 && nextCard; i++) {
+                        let nextIframe = nextCard.querySelector('.youtube-iframe');
+                        if (nextIframe && !nextIframe.getAttribute('src')) { nextIframe.setAttribute('src', nextIframe.getAttribute('data-src')); }
+                        nextCard = nextCard.nextElementSibling;
+                    }
+                } else {
+                    // Yahan se force pause ho raha hai jab screen se hat raha hai
+                    if (v) { v.pause(); }
+                    if (iframe && iframe.getAttribute('src')) { iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*'); }
+                }
+            });
+        }, { threshold: 0.7 }); 
+
+        document.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
+
+    } catch(e) { console.error(e); }
 }
+
 
 function openReelComments(postId) {
     const content = document.getElementById('modalContent');

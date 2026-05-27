@@ -1927,7 +1927,7 @@ async function renderReels(container) {
                         : null;
 
                     let thumbStyle = ytId
-                        ? `style="background:url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"`
+                        ? \`style="background:url('https://img.youtube.com/vi/\${ytId}/hqdefault.jpg') center/cover no-repeat;"\`
                         : "";
 
                     if (isYouTube) {
@@ -1950,19 +1950,21 @@ async function renderReels(container) {
                             );
                     }
 
-                    return `
+                    return \`
 
-                    <div class="reel-card" id="reel-${p._id}">
+                    <div class="reel-card" id="reel-\${p._id}">
 
-                        ${isYouTube ? `
+                        \${isYouTube ? \`
 
-                            <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" ${thumbStyle}>
+                            <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" \${thumbStyle}>
 
                                 <iframe
-                                    id="yt-iframe-${p._id}"
+                                    id="yt-iframe-\${p._id}"
                                     class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]"
-                                    data-src="${videoUrl}"
-                                    src="${index === 0 ? videoUrl : ''}"
+                                    data-src="\${videoUrl}"
+
+                                    src="\${index < 5 ? videoUrl : ''}"
+
                                     allow="autoplay; encrypted-media"
                                     loading="lazy"
                                     allowfullscreen>
@@ -1970,29 +1972,29 @@ async function renderReels(container) {
 
                             </div>
 
-                            <div id="yt-mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
+                            <div id="yt-mute-stat-\${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
 
                                 <i class="fa-solid fa-volume-high text-2xl"
-                                   id="yt-mute-icon-${p._id}"></i>
+                                   id="yt-mute-icon-\${p._id}"></i>
 
                             </div>
 
                             <div class="absolute inset-0 z-10 bg-transparent cursor-pointer"
-                                 onclick="handleYtAction(event, '${p._id}')"></div>
+                                 onclick="handleYtAction(event, '\${p._id}')"></div>
 
-                        ` : `
+                        \` : \`
 
                             <div class="absolute inset-0 flex items-center justify-center z-0"
-                                 id="loader-${p._id}">
+                                 id="loader-\${p._id}">
 
                                 <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i>
 
                             </div>
 
-                            <div id="mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
+                            <div id="mute-stat-\${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
 
                                 <i class="fa-solid fa-volume-high text-2xl"
-                                   id="mute-icon-center-${p._id}"></i>
+                                   id="mute-icon-center-\${p._id}"></i>
 
                             </div>
 
@@ -2001,26 +2003,26 @@ async function renderReels(container) {
                                 muted
                                 playsinline
                                 webkit-playsinline
-                                preload="metadata"
+                                preload="auto"
                                 class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0"
-                                id="vid-${p._id}"
+                                id="vid-\${p._id}"
 
-                                onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
+                                onwaiting="document.getElementById('loader-\${p._id}').classList.remove('hidden')"
 
-                                onplaying="document.getElementById('loader-${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
+                                onplaying="document.getElementById('loader-\${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
 
-                                ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('${p._id}') : null"
+                                ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('\${p._id}') : null"
 
-                                onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
+                                onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '\${p._id}') : null">
 
-                                <source src="${videoUrl}" type="video/mp4">
+                                <source src="\${videoUrl}" type="video/mp4">
 
                             </video>
 
-                        `}
+                        \`}
 
                     </div>
-                    `;
+                    \`;
                 }).join('')}
 
             </div>
@@ -2071,8 +2073,6 @@ async function renderReels(container) {
                     // 🔥 PLAY CURRENT VIDEO ONLY
                     if (v) {
 
-                        v.pause();
-
                         const playPromise = v.play();
 
                         if (playPromise !== undefined) {
@@ -2104,11 +2104,11 @@ async function renderReels(container) {
                         );
                     }
 
-                    // 🔥 PRELOAD NEXT ONLY
+                    // 🔥 PRELOAD NEXT 5 ONLY
                     let next =
                         entry.target.nextElementSibling;
 
-                    for (let i = 0; i < 3 && next; i++) {
+                    for (let i = 0; i < 5 && next; i++) {
 
                         let nI =
                             next.querySelector('.youtube-iframe');
@@ -2122,6 +2122,19 @@ async function renderReels(container) {
                                 'src',
                                 nI.getAttribute('data-src')
                             );
+
+                            setTimeout(() => {
+
+                                nI.contentWindow?.postMessage(
+                                    JSON.stringify({
+                                        event: 'command',
+                                        func: 'pauseVideo',
+                                        args: []
+                                    }),
+                                    '*'
+                                );
+
+                            }, 500);
                         }
 
                         let nV =
@@ -2129,7 +2142,12 @@ async function renderReels(container) {
 
                         if (nV) {
 
-                            nV.preload = "metadata";
+                            nV.preload = "auto";
+
+                            if (nV.readyState === 0) {
+                                nV.load();
+                            }
+
                             nV.pause();
                         }
 

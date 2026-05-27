@@ -1768,10 +1768,10 @@ async function loadMsgs() {
 async function clearChat() { openConfirmModal("Clear Chat?", "Are you sure?", async () => { await APIService.chat.clearChat(activeChatUser); loadMsgs(); }); }
 async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message?", async () => { await APIService.chat.deleteMsg(id); loadMsgs(); }); }
 
+
 async function renderReels(container) {
     try {
-
-        // 🔥 LOADER
+        // 🔥 OFFLINE/ONLINE SMART LOGIC FOR LOTTIE LOADER 🔥
         container.innerHTML = `
             <div id="reels-loader" class="h-screen w-full flex flex-col items-center justify-center bg-black absolute inset-0 z-50">
                 <lottie-player 
@@ -1782,418 +1782,263 @@ async function renderReels(container) {
                     loop 
                     autoplay>
                 </lottie-player>
-
-                <p class="text-sm text-white/70 font-medium mt-2 animate-pulse">
-                    Loading Reels...
-                </p>
+                <p class="text-sm text-white/70 font-medium mt-2 animate-pulse">Loading Reels...</p>
             </div>
         `;
 
-        // 🔥 YOUTUBE CONTROLLER
+        // 🔥 YOUTUBE KO CONTROL KARNE KA SMART LOGIC (Sirf ek baar load hoga)
         if (!window.ytControllerAdded) {
-
             window.ytControllerAdded = true;
             window.ytClickTimers = {};
-            window.ytPlayState = {};
-            window.ytMuteState = {};
+            window.ytPlayState = {}; 
+            window.ytMuteState = {}; 
 
             window.handleYtAction = (e, id) => {
-
                 const iframe = document.getElementById('yt-iframe-' + id);
-
                 if (!iframe || !iframe.contentWindow) return;
 
                 if (window.ytClickTimers[id]) {
-
+                    // 🚀 DOUBLE CLICK: Video Play/Pause karne ke liye
                     clearTimeout(window.ytClickTimers[id]);
                     window.ytClickTimers[id] = null;
-
-                    window.ytPlayState[id] = !window.ytPlayState[id];
-
-                    const action = window.ytPlayState[id]
-                        ? 'pauseVideo'
-                        : 'playVideo';
-
-                    iframe.contentWindow.postMessage(JSON.stringify({
-                        event: 'command',
-                        func: action,
-                        args: []
-                    }), '*');
-
+                    
+                    window.ytPlayState[id] = !window.ytPlayState[id]; 
+                    const action = window.ytPlayState[id] ? 'pauseVideo' : 'playVideo';
+                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
                 } else {
-
+                    // 🚀 SINGLE CLICK: Audio Mute/Unmute karne ke liye
                     window.ytClickTimers[id] = setTimeout(() => {
-
                         window.ytClickTimers[id] = null;
-
-                        window.ytMuteState[id] =
-                            !window.ytMuteState[id];
-
-                        const action = window.ytMuteState[id]
-                            ? 'mute'
-                            : 'unMute';
-
-                        iframe.contentWindow.postMessage(JSON.stringify({
-                            event: 'command',
-                            func: action,
-                            args: []
-                        }), '*');
-
-                        const statDiv =
-                            document.getElementById(
-                                'yt-mute-stat-' + id
-                            );
-
-                        const icon =
-                            document.getElementById(
-                                'yt-mute-icon-' + id
-                            );
-
+                        
+                        window.ytMuteState[id] = !window.ytMuteState[id];
+                        const action = window.ytMuteState[id] ? 'mute' : 'unMute';
+                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
+                        
+                        // Mute/Unmute ka Icon screen par dikhane ke liye
+                        const statDiv = document.getElementById('yt-mute-stat-' + id);
+                        const icon = document.getElementById('yt-mute-icon-' + id);
                         if (statDiv && icon) {
-
-                            icon.className =
-                                window.ytMuteState[id]
-                                    ? "fa-solid fa-volume-xmark text-2xl"
-                                    : "fa-solid fa-volume-high text-2xl";
-
+                            icon.className = window.ytMuteState[id] ? "fa-solid fa-volume-xmark text-2xl" : "fa-solid fa-volume-high text-2xl";
                             statDiv.classList.remove('opacity-0');
-
-                            setTimeout(() => {
-                                statDiv.classList.add('opacity-0');
-                            }, 1000);
+                            setTimeout(() => statDiv.classList.add('opacity-0'), 1000);
                         }
-
-                    }, 250);
+                    }, 250); 
                 }
             };
         }
 
-        // 🔥 FETCH POSTS
+        // Data aane ka wait karo (Tab tak billi khelti rahegi)
         const posts = await APIService.feed.getAll();
+        let videoPosts = posts.filter(p => p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i)) || p.category === 'youtube_reel');
 
-        let videoPosts = posts.filter(
-            p =>
-                p.video ||
-                (p.image &&
-                    p.image.match(/\.(mp4|mov|webm)$/i)) ||
-                p.category === 'youtube_reel'
-        );
-
-        if (videoPosts.length === 0) {
-
-            container.innerHTML = `
-                <div class="h-screen flex items-center justify-center text-white bg-black">
-                    No Reels Found.
-                </div>
-            `;
-
+        if(videoPosts.length === 0) {
+            container.innerHTML = '<div class="h-screen flex items-center justify-center text-white bg-black">No Reels Found.</div>';
             return;
         }
 
-        // 🔥 RANDOMIZE
-        videoPosts = videoPosts.sort(
-            () => Math.random() - 0.5
-        );
+        // 🔥 REELS KO RANDOM/SHUFFLE KARNE KA LOGIC
+        videoPosts = videoPosts.sort(() => Math.random() - 0.5);
 
         const myId = localStorage.getItem("userId");
 
-        container.innerHTML = `
-            <div class="reels-wrapper">
+        // 🔥 Yahan par naya content aate hi loader automatic hat jayega
+        container.innerHTML = `<div class="reels-wrapper">
+            ${videoPosts.map((p, index) => { 
+                let videoUrl = p.video || p.image;
+                const isLiked = p.likes?.includes(myId);
+                const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
+                const isMe = p.userId?._id === myId;
+                
+                // YouTube reel pehchanne ka logic
+                const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
 
-                ${videoPosts.map((p, index) => {
+                // 🔥 THUMBNAIL LOGIC 🔥
+                let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
+                let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
 
-                    let videoUrl = p.video || p.image;
-
-                    const isLiked =
-                        p.likes?.includes(myId);
-
-                    const isFollowing =
-                        typeof myFollowing !== 'undefined'
-                            ? myFollowing.includes(p.userId?._id)
-                            : false;
-
-                    const isMe =
-                        p.userId?._id === myId;
-
-                    const isYouTube =
-                        p.category === 'youtube_reel' ||
-                        (videoUrl &&
-                            videoUrl.includes('youtube.com'));
-
-                    let ytId = isYouTube
-                        ? videoUrl.match(
-                            /(?:embed\/|v=|youtu\.be\/)([^?&]+)/
-                        )?.[1]
-                        : null;
-
-                    let thumbStyle = ytId
-                        ? \`style="background:url('https://img.youtube.com/vi/\${ytId}/hqdefault.jpg') center/cover no-repeat;"\`
-                        : "";
-
-                    if (isYouTube) {
-
-                        if (!videoUrl.includes('enablejsapi=1')) {
-
-                            videoUrl += videoUrl.includes('?')
-                                ? '&enablejsapi=1'
-                                : '?enablejsapi=1';
-                        }
-
-                        if (!videoUrl.includes('autoplay=0')) {
-                            videoUrl += '&autoplay=0';
-                        }
-
-                        videoUrl =
-                            videoUrl.replace(
-                                'autoplay=1',
-                                'autoplay=0'
-                            );
+                // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
+                if (isYouTube) {
+                    if (!videoUrl.includes('enablejsapi=1')) {
+                        videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
                     }
+                    if (!videoUrl.includes('autoplay=0')) {
+                        videoUrl += '&autoplay=0'; // Start में pause रखेंगे
+                    }
+                    videoUrl = videoUrl.replace('autoplay=1', 'autoplay=0'); 
+                }
 
-                    return \`
+                return `
+                <div class="reel-card" id="reel-${p._id}">
+                    
+                    ${isYouTube ? `
+                        <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" ${thumbStyle}>
+                            <iframe 
+                                id="yt-iframe-${p._id}"
+                                class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
+                                data-src="${videoUrl}" 
+                                src="${index === 0 ? videoUrl : ''}" 
+                                allow="autoplay; encrypted-media"
+                                loading="lazy"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
 
-                    <div class="reel-card" id="reel-\${p._id}">
+                        <div id="yt-mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
+                            <i class="fa-solid fa-volume-high text-2xl" id="yt-mute-icon-${p._id}"></i>
+                        </div>
 
-                        \${isYouTube ? \`
+                        <div class="absolute inset-0 z-10 bg-transparent cursor-pointer" onclick="handleYtAction(event, '${p._id}')"></div>
+                    ` : `
+                        <div class="absolute inset-0 flex items-center justify-center z-0" id="loader-${p._id}">
+                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i>
+                        </div>
 
-                            <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" \${thumbStyle}>
+                        <div id="mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
+                            <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
+                        </div>
 
-                                <iframe
-                                    id="yt-iframe-\${p._id}"
-                                    class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]"
-                                    data-src="\${videoUrl}"
+                        <video loop muted playsinline webkit-playsinline preload="${index === 0 ? 'auto' : 'none'}" 
+                            class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" 
+                            id="vid-${p._id}"
+                            onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
+                            onplaying="document.getElementById('loader-${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
+                            ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('${p._id}') : null"
+                            onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
+                            <source src="${videoUrl}" type="video/mp4">
+                        </video>
 
-                                    src="\${index < 5 ? videoUrl : ''}"
+                        <div class="absolute bottom-24 right-4 z-30 bg-black/20 p-2 rounded-full text-white pointer-events-none" id="mini-mute-${p._id}">
+                            <i class="fa-solid fa-volume-high text-xs"></i>
+                        </div>
+                    `}
+                    
+                    <div class="reel-actions-overlay" style="z-index: 20;">
+                        <div class="flex flex-col items-center mb-4" onclick="toggleReelLike('${p._id}')">
+                            <i class="fa-solid fa-heart text-3xl transition-transform active:scale-150 ${isLiked ? 'text-red-500' : 'text-white'}" id="rlike-icon-${p._id}"></i>
+                            <span class="text-xs font-bold shadow-sm" id="rlike-cnt-${p._id}">${p.likes?.length || 0}</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center mb-4" onclick="openReelComments('${p._id}')">
+                            <i class="fa-solid fa-comment text-3xl text-white"></i>
+                            <span class="text-xs font-bold shadow-sm" id="rcmt-cnt-${p._id}">${p.comments?.length || 0}</span>
+                        </div>
 
-                                    allow="autoplay; encrypted-media"
-                                    loading="lazy"
-                                    allowfullscreen>
-                                </iframe>
+                        <div class="flex flex-col items-center mb-4" onclick="reportUser('${p.userId?._id}', '${p.userId?.username}')">
+                            <i class="fa-solid fa-flag text-2xl text-white/80"></i>
+                        </div>
 
-                            </div>
-
-                            <div id="yt-mute-stat-\${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
-
-                                <i class="fa-solid fa-volume-high text-2xl"
-                                   id="yt-mute-icon-\${p._id}"></i>
-
-                            </div>
-
-                            <div class="absolute inset-0 z-10 bg-transparent cursor-pointer"
-                                 onclick="handleYtAction(event, '\${p._id}')"></div>
-
-                        \` : \`
-
-                            <div class="absolute inset-0 flex items-center justify-center z-0"
-                                 id="loader-\${p._id}">
-
-                                <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i>
-
-                            </div>
-
-                            <div id="mute-stat-\${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
-
-                                <i class="fa-solid fa-volume-high text-2xl"
-                                   id="mute-icon-center-\${p._id}"></i>
-
-                            </div>
-
-                            <video
-                                loop
-                                muted
-                                playsinline
-                                webkit-playsinline
-                                preload="auto"
-                                class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0"
-                                id="vid-\${p._id}"
-
-                                onwaiting="document.getElementById('loader-\${p._id}').classList.remove('hidden')"
-
-                                onplaying="document.getElementById('loader-\${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
-
-                                ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('\${p._id}') : null"
-
-                                onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '\${p._id}') : null">
-
-                                <source src="\${videoUrl}" type="video/mp4">
-
-                            </video>
-
-                        \`}
-
+                        <div class="flex flex-col items-center" onclick="${isYouTube ? `alert('YouTube reels direct download nahi ho sakti.')` : `downloadReelWithProgress('${videoUrl}', '${p._id}')`}">
+                            <i class="fa-solid fa-download text-2xl ${isYouTube ? 'text-white/50' : 'text-white'}" id="dl-icon-${p._id}"></i>
+                            <span class="text-[9px] font-bold hidden" id="dl-perc-${p._id}">0%</span>
+                        </div>
                     </div>
-                    \`;
-                }).join('')}
 
-            </div>
-        `;
+                    <div class="reel-info-overlay" style="z-index: 20;">
+                        <div class="flex items-center gap-2 mb-2">
+                            <img src="${p.userId?.photo || 'https://placehold.co/40'}" 
+                                class="w-10 h-10 rounded-full border-2 border-white object-cover cursor-pointer" 
+                                onclick="viewUserProfile('${p.userId?._id}')">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-white shadow-sm cursor-pointer" onclick="viewUserProfile('${p.userId?._id}')">@${p.userId?.username || 'user'}</span>
+                                ${!isMe ? `
+                                <button id="rfollow-${p._id}" onclick="handleReelFollow('${p.userId?._id}', '${p._id}')" 
+                                    class="text-[11px] font-black uppercase text-left transition-all ${isFollowing ? 'text-gray-300' : 'text-purple-400'}">
+                                    ${isFollowing ? 'Following' : 'Follow'}
+                                </button>` : ''}
+                            </div>
+                        </div>
+                        <p class="text-sm text-white shadow-sm line-clamp-2">${p.content || ''}</p>
+                    </div>
 
-        // 🔥 ONLY ONE REEL PLAY
+                    ${!isYouTube ? `
+                    <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-800/50 z-40 cursor-pointer group" onclick="seekReel(event, '${p._id}')">
+                        <div id="prog-bar-${p._id}" class="h-full bg-white w-0 transition-all duration-100 relative">
+                            <div class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>`;
+            }).join('')}
+        </div>`;
+
+        // 🔥 GLOBAL STATE: Current playing reel track karne ke liye
+        let activeReelId = null;
+
         const observer = new IntersectionObserver((entries) => {
-
             entries.forEach(entry => {
-
-                const v =
-                    entry.target.querySelector('video');
-
-                const iframe =
-                    entry.target.querySelector('.youtube-iframe');
+                const v = entry.target.querySelector('video');
+                const iframe = entry.target.querySelector('.youtube-iframe');
+                const reelId = entry.target.id;
 
                 if (entry.isIntersecting) {
+                    activeReelId = reelId; // Mark visible reel as active
 
-                    // 🔥 PAUSE ALL VIDEOS
-                    document.querySelectorAll('video')
-                        .forEach(vid => {
+                    // 🔥 STRICT PLAYBACK: Pausing all other videos instantly
+                    document.querySelectorAll('video').forEach(vid => { 
+                        if (vid !== v) vid.pause(); 
+                    });
+                    document.querySelectorAll('.youtube-iframe').forEach(ifr => {
+                        if (ifr !== iframe && ifr.getAttribute('src')) {
+                            ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+                        }
+                    });
 
-                            if (vid !== v) {
-                                vid.pause();
-                            }
-                        });
-
-                    // 🔥 PAUSE ALL YOUTUBE
-                    document.querySelectorAll('.youtube-iframe')
-                        .forEach(ifr => {
-
-                            if (
-                                ifr !== iframe &&
-                                ifr.getAttribute('src')
-                            ) {
-
-                                ifr.contentWindow.postMessage(
-                                    JSON.stringify({
-                                        event: 'command',
-                                        func: 'pauseVideo',
-                                        args: []
-                                    }),
-                                    '*'
-                                );
-                            }
-                        });
-
-                    // 🔥 PLAY CURRENT VIDEO ONLY
-                    if (v) {
-
+                    // Play the visible one safely
+                    if (v) { 
+                        v.muted = false; 
                         const playPromise = v.play();
-
+                        
+                        // FIX: Promise based race condition prevent karne ke liye
                         if (playPromise !== undefined) {
-
-                            playPromise.catch(() => {
-
-                                v.muted = true;
-                                v.play();
-                            });
+                            playPromise.then(() => {
+                                // Agar video load hote hote user ne aage scroll kar diya, toh use turant pause kar do
+                                if (activeReelId !== reelId) {
+                                    v.pause();
+                                }
+                            }).catch(() => { 
+                                v.muted = true; 
+                                v.play().then(() => {
+                                    if (activeReelId !== reelId) v.pause();
+                                }).catch(e => console.log(e)); 
+                            }); 
                         }
-
-                        v.onended = () => {
-
-                            v.currentTime = 0;
-                            v.play();
-                        };
+                        v.onended = () => { if (activeReelId === reelId) v.play(); }; 
                     }
-
-                    // 🔥 PLAY CURRENT YOUTUBE ONLY
+                    
                     if (iframe) {
-
-                        iframe.contentWindow.postMessage(
-                            JSON.stringify({
-                                event: 'command',
-                                func: 'playVideo',
-                                args: []
-                            }),
-                            '*'
-                        );
+                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
                     }
 
-                    // 🔥 PRELOAD NEXT 5 ONLY
-                    let next =
-                        entry.target.nextElementSibling;
-
-                    for (let i = 0; i < 5 && next; i++) {
-
-                        let nI =
-                            next.querySelector('.youtube-iframe');
-
-                        if (
-                            nI &&
-                            !nI.getAttribute('src')
-                        ) {
-
-                            nI.setAttribute(
-                                'src',
-                                nI.getAttribute('data-src')
-                            );
-
-                            setTimeout(() => {
-
-                                nI.contentWindow?.postMessage(
-                                    JSON.stringify({
-                                        event: 'command',
-                                        func: 'pauseVideo',
-                                        args: []
-                                    }),
-                                    '*'
-                                );
-
-                            }, 500);
+                    // Preload next 2 reels (5 ki jagah taaki device aur network free rahe)
+                    let next = entry.target.nextElementSibling;
+                    for (let i = 0; i < 2 && next; i++) {
+                        let nI = next.querySelector('.youtube-iframe');
+                        if (nI && !nI.getAttribute('src')) nI.setAttribute('src', nI.getAttribute('data-src'));
+                        let nV = next.querySelector('.reel-video');
+                        if (nV && nV.getAttribute('preload') === 'none') {
+                            nV.setAttribute('preload', 'auto');
                         }
-
-                        let nV =
-                            next.querySelector('.reel-video');
-
-                        if (nV) {
-
-                            nV.preload = "auto";
-
-                            if (nV.readyState === 0) {
-                                nV.load();
-                            }
-
-                            nV.pause();
-                        }
-
-                        next =
-                            next.nextElementSibling;
+                        next = next.nextElementSibling;
                     }
-
                 } else {
-
-                    // 🔥 OUT OF SCREEN = PAUSE
-                    if (v) {
-                        v.pause();
-                    }
-
+                    // Out of view hone par video properly pause karna
+                    if (v) v.pause();
                     if (iframe) {
-
-                        iframe.contentWindow.postMessage(
-                            JSON.stringify({
-                                event: 'command',
-                                func: 'pauseVideo',
-                                args: []
-                            }),
-                            '*'
-                        );
+                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
                     }
                 }
             });
+        }, { threshold: 0.6 }); 
 
-        }, {
-            threshold: 0.9
-        });
+        document.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
 
-        document.querySelectorAll('.reel-card')
-            .forEach(card => observer.observe(card));
-
-    } catch (e) {
-
+    } catch(e) { 
         console.error(e);
-
-        container.innerHTML = `
-            <div class='text-white text-center p-20'>
-                Error loading reels.
-            </div>
-        `;
+        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; 
     }
 }
+
+
 
 
 function openReelComments(postId) {

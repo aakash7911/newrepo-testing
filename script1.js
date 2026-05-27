@@ -1771,62 +1771,116 @@ async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message
 
 async function renderReels(container) {
     try {
-        container.innerHTML = `<div id="reels-wrapper" class="h-screen overflow-y-scroll snap-y snap-mandatory scroll-smooth"></div>`;
-        const wrapper = document.getElementById('reels-wrapper');
+        // 🔥 LOTTIE LOADER (Pehle jaisa)
+        container.innerHTML = `
+            <div id="reels-loader" class="h-screen w-full flex flex-col items-center justify-center bg-black absolute inset-0 z-50">
+                <lottie-player src="https://aakash7911.github.io/cat_animation.json/" background="transparent" speed="1" style="width: 150px; height: 150px;" loop autoplay></lottie-player>
+                <p class="text-sm text-white/70 font-medium mt-2 animate-pulse">Loading Reels...</p>
+            </div>
+        `;
 
-        // Loader
-        wrapper.innerHTML = `<div class="h-screen flex items-center justify-center text-white">Loading...</div>`;
+        // 🔥 YOUTUBE LOGIC (Pehle jaisa)
+        if (!window.ytControllerAdded) {
+            window.ytControllerAdded = true;
+            window.ytClickTimers = {};
+            window.ytPlayState = {}; 
+            window.ytMuteState = {}; 
+            window.handleYtAction = (e, id) => {
+                const iframe = document.getElementById('yt-iframe-' + id);
+                if (!iframe || !iframe.contentWindow) return;
+                if (window.ytClickTimers[id]) {
+                    clearTimeout(window.ytClickTimers[id]);
+                    window.ytClickTimers[id] = null;
+                    window.ytPlayState[id] = !window.ytPlayState[id]; 
+                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: window.ytPlayState[id] ? 'pauseVideo' : 'playVideo', args: []}), '*');
+                } else {
+                    window.ytClickTimers[id] = setTimeout(() => {
+                        window.ytClickTimers[id] = null;
+                        window.ytMuteState[id] = !window.ytMuteState[id];
+                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: window.ytMuteState[id] ? 'mute' : 'unMute', args: []}), '*');
+                        const statDiv = document.getElementById('yt-mute-stat-' + id);
+                        if (statDiv) { statDiv.classList.remove('opacity-0'); setTimeout(() => statDiv.classList.add('opacity-0'), 1000); }
+                    }, 250);
+                }
+            };
+        }
 
         const posts = await APIService.feed.getAll();
-        const videoPosts = posts.filter(p => p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i)) || p.category === 'youtube_reel');
+        let videoPosts = posts.filter(p => p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i)) || p.category === 'youtube_reel');
+        videoPosts = videoPosts.sort(() => Math.random() - 0.5);
+        const myId = localStorage.getItem("userId");
 
-        wrapper.innerHTML = ""; // Clear loader
+        // 🔥 RENDER LOGIC (Sab kuch purane jaisa hi hai)
+        container.innerHTML = `<div class="reels-wrapper">
+            ${videoPosts.map((p, index) => {
+                let videoUrl = p.video || p.image;
+                const isLiked = p.likes?.includes(myId);
+                const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
+                const isMe = p.userId?._id === myId;
+                const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
+                
+                if (isYouTube) {
+                    if (!videoUrl.includes('enablejsapi=1')) videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
+                    videoUrl += '&autoplay=0&mute=0&controls=0'; // Aawaz chalu rahegi
+                }
 
-        // Render in chunks of 5
-        const renderChunk = (start) => {
-            const chunk = videoPosts.slice(start, start + 5);
-            chunk.forEach(p => {
-                const card = document.createElement('div');
-                card.className = "reel-card h-screen w-full snap-start relative bg-black";
-                card.innerHTML = `
-                    ${p.category === 'youtube_reel' ? 
-                    `<iframe id="yt-${p._id}" class="w-full h-full" src="${p.video}?enablejsapi=1&autoplay=0&mute=1&controls=0" allow="autoplay"></iframe>` :
-                    `<video class="w-full h-full object-cover" preload="metadata" loop playsinline src="${p.video}"></video>`}
-                `;
-                wrapper.appendChild(card);
-            });
-        };
+                return `
+                <div class="reel-card h-screen w-full relative snap-start" id="reel-${p._id}">
+                    ${isYouTube ? `
+                        <div class="absolute inset-0 z-0 bg-black flex items-center justify-center">
+                            <iframe id="yt-iframe-${p._id}" class="youtube-iframe w-full h-full border-none" data-src="${videoUrl}" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                        </div>
+                        <div class="absolute inset-0 z-10 bg-transparent cursor-pointer" onclick="handleYtAction(event, '${p._id}')"></div>
+                    ` : `
+                        <video loop playsinline preload="metadata" class="reel-video absolute inset-0 w-full h-full object-cover z-0" id="vid-${p._id}" onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
+                            <source src="${videoUrl}" type="video/mp4">
+                        </video>
+                    `}
+                    
+                    <div class="reel-actions-overlay absolute right-4 bottom-24 z-20 flex flex-col items-center">
+                        <div class="flex flex-col items-center mb-4" onclick="toggleReelLike('${p._id}')">
+                            <i class="fa-solid fa-heart text-3xl ${isLiked ? 'text-red-500' : 'text-white'}"></i>
+                            <span class="text-xs font-bold text-white">${p.likes?.length || 0}</span>
+                        </div>
+                        <div class="flex flex-col items-center mb-4" onclick="openReelComments('${p._id}')">
+                            <i class="fa-solid fa-comment text-3xl text-white"></i>
+                            <span class="text-xs font-bold text-white">${p.comments?.length || 0}</span>
+                        </div>
+                        <div class="flex flex-col items-center mb-4" onclick="reportUser('${p.userId?._id}', '${p.userId?.username}')">
+                            <i class="fa-solid fa-flag text-2xl text-white"></i>
+                        </div>
+                    </div>
 
-        renderChunk(0); // Pehli 5 reels load karo
+                    <div class="reel-info-overlay absolute bottom-4 left-4 z-20 text-white">
+                        <span class="font-bold">@${p.userId?.username || 'user'}</span>
+                        <p class="text-sm">${p.content || ''}</p>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
 
-        // Intersection Observer (The Performance Engine)
+        // 🔥 OBSERVER: Play current, Pause others
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                const video = entry.target.querySelector('video');
-                const iframe = entry.target.querySelector('iframe');
-
+                const v = entry.target.querySelector('video');
+                const iframe = entry.target.querySelector('.youtube-iframe');
                 if (entry.isIntersecting) {
-                    // Play current
-                    if (video) video.play().catch(() => {});
-                    if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
-                    
-                    // Trigger next chunk if reached end
-                    if (entry.target === wrapper.lastElementChild) renderChunk(wrapper.children.length);
+                    if (v) { v.play().catch(()=>{}); v.onended = () => v.play(); }
+                    if (iframe) {
+                        if (!iframe.src) iframe.src = iframe.dataset.src;
+                        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+                    }
                 } else {
-                    // Pause current
-                    if (video) video.pause();
+                    if (v) v.pause();
                     if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
                 }
             });
-        }, { threshold: 0.6 });
+        }, { threshold: 0.7 }); 
 
-        document.querySelectorAll('.reel-card').forEach(c => observer.observe(c));
-
-    } catch(e) {
-        console.error(e);
-    }
+        document.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
+        document.getElementById('reels-loader').classList.add('hidden');
+    } catch(e) { console.error(e); }
 }
-
 function openReelComments(postId) {
     const content = document.getElementById('modalContent');
     content.innerHTML = `

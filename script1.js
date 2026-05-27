@@ -1772,6 +1772,7 @@ async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message
 async function renderReels(container) {
     try {
         // 🔥 OFFLINE/ONLINE SMART LOGIC FOR LOTTIE LOADER 🔥
+    
         container.innerHTML = `
             <div id="reels-loader" class="h-screen w-full flex flex-col items-center justify-center bg-black absolute inset-0 z-50">
                 <lottie-player 
@@ -1790,8 +1791,8 @@ async function renderReels(container) {
         if (!window.ytControllerAdded) {
             window.ytControllerAdded = true;
             window.ytClickTimers = {};
-            window.ytPlayState = {}; 
-            window.ytMuteState = {}; 
+            window.ytPlayState = {}; // Track karega ki pause hai ya play
+            window.ytMuteState = {}; // Track karega ki mute hai ya unmute
 
             window.handleYtAction = (e, id) => {
                 const iframe = document.getElementById('yt-iframe-' + id);
@@ -1802,7 +1803,7 @@ async function renderReels(container) {
                     clearTimeout(window.ytClickTimers[id]);
                     window.ytClickTimers[id] = null;
                     
-                    window.ytPlayState[id] = !window.ytPlayState[id]; 
+                    window.ytPlayState[id] = !window.ytPlayState[id]; // Toggle state
                     const action = window.ytPlayState[id] ? 'pauseVideo' : 'playVideo';
                     iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
                 } else {
@@ -1822,7 +1823,7 @@ async function renderReels(container) {
                             statDiv.classList.remove('opacity-0');
                             setTimeout(() => statDiv.classList.add('opacity-0'), 1000);
                         }
-                    }, 250); 
+                    }, 250); // 250ms ka timer taaki pata chale single click hai ya double
                 }
             };
         }
@@ -1841,9 +1842,9 @@ async function renderReels(container) {
 
         const myId = localStorage.getItem("userId");
 
-        // 🔥 Yahan par naya content aate hi loader automatic hat jayega
+        // 🔥 Yahan par naya content aate hi loader automatic hat jayega (kyunki innerHTML overwrite ho jayega)
         container.innerHTML = `<div class="reels-wrapper">
-            ${videoPosts.map((p, index) => { 
+            ${videoPosts.map(p => {
                 let videoUrl = p.video || p.image;
                 const isLiked = p.likes?.includes(myId);
                 const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
@@ -1851,34 +1852,27 @@ async function renderReels(container) {
                 
                 // YouTube reel pehchanne ka logic
                 const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
-
-                // 🔥 THUMBNAIL LOGIC 🔥
-                let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
-                let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
+                
+                // 🔥 THUMBNAIL GENERATOR 🔥
+                let poster = isYouTube ? `https://img.youtube.com/vi/${videoUrl.split('/').pop().split('?')[0]}/hqdefault.jpg` : "";
 
                 // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
-                if (isYouTube) {
-                    if (!videoUrl.includes('enablejsapi=1')) {
-                        videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
-                    }
-                    if (!videoUrl.includes('autoplay=0')) {
-                        videoUrl += '&autoplay=0'; // Start में pause रखेंगे
-                    }
-                    videoUrl = videoUrl.replace('autoplay=1', 'autoplay=0'); 
+                if (isYouTube && !videoUrl.includes('enablejsapi=1')) {
+                    videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
                 }
 
                 return `
                 <div class="reel-card" id="reel-${p._id}">
                     
                     ${isYouTube ? `
-                        <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" ${thumbStyle}>
+                        <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden">
                             <iframe 
                                 id="yt-iframe-${p._id}"
                                 class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
                                 data-src="${videoUrl}" 
-                                src="${index === 0 ? videoUrl : ''}" 
+                                src="" 
                                 allow="autoplay; encrypted-media"
-                                loading="lazy"
+                                loading="eager"
                                 allowfullscreen>
                             </iframe>
                         </div>
@@ -1897,7 +1891,7 @@ async function renderReels(container) {
                             <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
                         </div>
 
-                        <video loop muted playsinline webkit-playsinline preload="${index === 0 ? 'auto' : 'none'}" 
+                        <video loop muted playsinline webkit-playsinline preload="auto" poster="${poster}"
                             class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" 
                             id="vid-${p._id}"
                             onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
@@ -1961,83 +1955,36 @@ async function renderReels(container) {
             }).join('')}
         </div>`;
 
-        // 🔥 GLOBAL STATE: Current playing reel track karne ke liye
-        let activeReelId = null;
-
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 const v = entry.target.querySelector('video');
                 const iframe = entry.target.querySelector('.youtube-iframe');
-                const reelId = entry.target.id;
 
                 if (entry.isIntersecting) {
-                    activeReelId = reelId; // Mark visible reel as active
-
-                    // 🔥 STRICT PLAYBACK: Pausing all other videos instantly
-                    document.querySelectorAll('video').forEach(vid => { 
-                        if (vid !== v) vid.pause(); 
-                    });
-                    document.querySelectorAll('.youtube-iframe').forEach(ifr => {
-                        if (ifr !== iframe && ifr.getAttribute('src')) {
-                            ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
-                        }
-                    });
-
-                    // Play the visible one safely
-                    if (v) { 
+                    if (v) {
                         v.muted = false; 
-                        const playPromise = v.play();
-                        
-                        // FIX: Promise based race condition prevent karne ke liye
-                        if (playPromise !== undefined) {
-                            playPromise.then(() => {
-                                // Agar video load hote hote user ne aage scroll kar diya, toh use turant pause kar do
-                                if (activeReelId !== reelId) {
-                                    v.pause();
-                                }
-                            }).catch(() => { 
-                                v.muted = true; 
-                                v.play().then(() => {
-                                    if (activeReelId !== reelId) v.pause();
-                                }).catch(e => console.log(e)); 
-                            }); 
-                        }
-                        v.onended = () => { if (activeReelId === reelId) v.play(); }; 
+                        v.play().catch(() => { v.muted = true; v.play(); }); 
+                        // 🔥 AUTO REPLAY LOGIC
+                        v.onended = () => { v.play(); };
                     }
-                    
                     if (iframe) {
+                        if (!iframe.getAttribute('src')) iframe.setAttribute('src', iframe.getAttribute('data-src')); 
                         iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
                     }
-
-                    // Preload next 2 reels (5 ki jagah taaki device aur network free rahe)
-                    let next = entry.target.nextElementSibling;
-                    for (let i = 0; i < 2 && next; i++) {
-                        let nI = next.querySelector('.youtube-iframe');
-                        if (nI && !nI.getAttribute('src')) nI.setAttribute('src', nI.getAttribute('data-src'));
-                        let nV = next.querySelector('.reel-video');
-                        if (nV && nV.getAttribute('preload') === 'none') {
-                            nV.setAttribute('preload', 'auto');
-                        }
-                        next = next.nextElementSibling;
-                    }
                 } else {
-                    // Out of view hone par video properly pause karna
                     if (v) v.pause();
-                    if (iframe) {
-                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
-                    }
+                    if (iframe) iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
                 }
             });
-        }, { threshold: 0.6 }); 
+        }, { threshold: 0.7 }); 
 
         document.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
 
     } catch(e) { 
         console.error(e);
-        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; 
+        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }
-
 
 
 

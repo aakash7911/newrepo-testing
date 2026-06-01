@@ -1845,7 +1845,7 @@ async function renderReels(container) {
 
         // 🔥 Yahan par naya content aate hi loader automatic hat jayega (kyunki innerHTML overwrite ho jayega)
         container.innerHTML = `<div class="reels-wrapper">
-            ${videoPosts.map((p, index) => { 
+            ${videoPosts.map(p => {
                 let videoUrl = p.video || p.image;
                 const isLiked = p.likes?.includes(myId);
                 const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
@@ -1857,13 +1857,16 @@ async function renderReels(container) {
                 // 🔥 THUMBNAIL LOGIC 🔥
                 let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
                 let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
+                
+                // 🔥 MP4 THUMBNAIL LOGIC 🔥
+                let posterUrl = p.image || ""; 
 
                 // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
                 if (isYouTube) {
                     if (!videoUrl.includes('enablejsapi=1')) {
                         videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
                     }
-                    // 🔥 FIX: Preload wali videos background me aawaz na karein isliye default 'autoplay=0' lagana zaroori hai
+                    // 🔥 FIX: Background preloading ke liye default autoplay=0 rakha, taaki ek sath na chale
                     videoUrl = videoUrl.replace('autoplay=1', 'autoplay=0');
                     if (!videoUrl.includes('autoplay=0')) {
                         videoUrl += '&autoplay=0';
@@ -1879,7 +1882,7 @@ async function renderReels(container) {
                                 id="yt-iframe-${p._id}"
                                 class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
                                 data-src="${videoUrl}" 
-                                src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : ''}" 
+                                src="" 
                                 allow="autoplay; encrypted-media"
                                 loading="eager"
                                 allowfullscreen>
@@ -1900,7 +1903,7 @@ async function renderReels(container) {
                             <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
                         </div>
 
-                        <video loop muted playsinline webkit-playsinline preload="auto" 
+                        <video loop muted playsinline webkit-playsinline preload="auto" poster="${posterUrl}"
                             class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" 
                             id="vid-${p._id}"
                             onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
@@ -2036,9 +2039,13 @@ async function renderReels(container) {
 
     } catch(e) { 
         console.error(e);
+        // Error aane par bhi local wali billi ko dikha sakte ho ya error message
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }
+
+
+
 async function loadReelComments(postId) {
     const list = document.getElementById('reel-cmts-list');
     try {

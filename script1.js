@@ -1845,7 +1845,7 @@ async function renderReels(container) {
 
         // 🔥 Yahan par naya content aate hi loader automatic hat jayega (kyunki innerHTML overwrite ho jayega)
         container.innerHTML = `<div class="reels-wrapper">
-            ${videoPosts.map((p, index) => {
+            ${videoPosts.map((p, index) => { 
                 let videoUrl = p.video || p.image;
                 const isLiked = p.likes?.includes(myId);
                 const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
@@ -1859,8 +1859,15 @@ async function renderReels(container) {
                 let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
 
                 // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
-                if (isYouTube && !videoUrl.includes('enablejsapi=1')) {
-                    videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
+                if (isYouTube) {
+                    if (!videoUrl.includes('enablejsapi=1')) {
+                        videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
+                    }
+                    // 🔥 FIX: Preload wali videos background me aawaz na karein isliye default 'autoplay=0' lagana zaroori hai
+                    videoUrl = videoUrl.replace('autoplay=1', 'autoplay=0');
+                    if (!videoUrl.includes('autoplay=0')) {
+                        videoUrl += '&autoplay=0';
+                    }
                 }
 
                 return `
@@ -1872,7 +1879,7 @@ async function renderReels(container) {
                                 id="yt-iframe-${p._id}"
                                 class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
                                 data-src="${videoUrl}" 
-                                src="" 
+                                src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : ''}" 
                                 allow="autoplay; encrypted-media"
                                 loading="eager"
                                 allowfullscreen>
@@ -1987,15 +1994,16 @@ async function renderReels(container) {
                         if(window.ytPlayState) window.ytPlayState[id] = false; 
                         if(window.ytMuteState) window.ytMuteState[id] = false;
                         
-                        // 🔥 Agar pehle se load nahi tha, toh src set karo, warna sirf play command bhejo
+                        // 🔥 Agar pehle se load nahi tha, toh instantly autoplay=1 load karo
                         if (!iframe.getAttribute('src')) {
-                            iframe.setAttribute('src', iframe.getAttribute('data-src')); 
+                            iframe.setAttribute('src', iframe.getAttribute('data-src').replace('autoplay=0', 'autoplay=1')); 
                         } else {
+                            // Agar pehle se preloaded hai (bg mein data-src se aaya tha), toh sirf play command bhejo
                             iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
                         }
                     }
 
-                    // 🔥 PRELOAD NEXT 5 REELS LOGIC 🔥
+                    // 🔥 PRELOAD NEXT 5 REELS LOGIC 🔥 (Bina awaz kiye, sirf buffer hongi kyunki data-src mein autoplay=0 hai)
                     let nextCard = entry.target.nextElementSibling;
                     for (let i = 0; i < 5 && nextCard; i++) {
                         let nextIframe = nextCard.querySelector('.youtube-iframe');
@@ -2013,10 +2021,10 @@ async function renderReels(container) {
                 } else {
                     if (v) {
                         v.pause();
-                        // v.currentTime = 0; // 🔥 Reverse scroll ke liye data saver (hata diya)
                     }
                     if (iframe) {
                         if (iframe.getAttribute('src')) {
+                            // User jaise hi aage scroll kare, purani video 100% pause ho jaye
                             iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
                         }
                     }
@@ -2028,7 +2036,6 @@ async function renderReels(container) {
 
     } catch(e) { 
         console.error(e);
-        // Error aane par bhi local wali billi ko dikha sakte ho ya error message
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }

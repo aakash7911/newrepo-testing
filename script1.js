@@ -1845,7 +1845,7 @@ async function renderReels(container) {
 
         // 🔥 Yahan par naya content aate hi loader automatic hat jayega (kyunki innerHTML overwrite ho jayega)
         container.innerHTML = `<div class="reels-wrapper">
-            ${videoPosts.map(p => {
+            ${videoPosts.map((p, index) => {
                 let videoUrl = p.video || p.image;
                 const isLiked = p.likes?.includes(myId);
                 const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
@@ -1858,19 +1858,12 @@ async function renderReels(container) {
                 let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
                 let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
                 
-                // 🔥 MP4 THUMBNAIL LOGIC 🔥
+                // MP4 POSTER
                 let posterUrl = p.image || ""; 
 
                 // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
-                if (isYouTube) {
-                    if (!videoUrl.includes('enablejsapi=1')) {
-                        videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
-                    }
-                    // 🔥 FIX: Background preloading ke liye default autoplay=0 rakha, taaki ek sath na chale
-                    videoUrl = videoUrl.replace('autoplay=1', 'autoplay=0');
-                    if (!videoUrl.includes('autoplay=0')) {
-                        videoUrl += '&autoplay=0';
-                    }
+                if (isYouTube && !videoUrl.includes('enablejsapi=1')) {
+                    videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
                 }
 
                 return `
@@ -1882,7 +1875,7 @@ async function renderReels(container) {
                                 id="yt-iframe-${p._id}"
                                 class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
                                 data-src="${videoUrl}" 
-                                src="" 
+                                src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index < 5 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 
                                 allow="autoplay; encrypted-media"
                                 loading="eager"
                                 allowfullscreen>
@@ -1910,7 +1903,7 @@ async function renderReels(container) {
                             onplaying="document.getElementById('loader-${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
                             ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('${p._id}') : null"
                             onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
-                            <source src="${videoUrl}" type="video/mp4">
+                            <source data-src="${videoUrl}" src="${index < 5 ? videoUrl : ''}" type="video/mp4">
                         </video>
 
                         <div class="absolute bottom-24 right-4 z-30 bg-black/20 p-2 rounded-full text-white pointer-events-none" id="mini-mute-${p._id}">
@@ -1983,40 +1976,44 @@ async function renderReels(container) {
                         }
                     });
 
+                    // 🔥 PLAY CURRENT VIDEO
                     if (v) {
                         v.muted = false; 
                         v.play().catch(() => { v.muted = true; v.play(); }); 
                         if(typeof updateMuteUI === 'function') updateMuteUI(v.id.split('-')[1], v.muted);
                         
-                        // 🔥 AUTO REPLAY LOGIC
+                        // AUTO REPLAY LOGIC
                         v.onended = () => { v.play(); };
                     }
                     if (iframe) {
-                        // Jab video samne aaye toh state reset kar do
                         const id = iframe.id.split('-')[2];
                         if(window.ytPlayState) window.ytPlayState[id] = false; 
                         if(window.ytMuteState) window.ytMuteState[id] = false;
                         
-                        // 🔥 Agar pehle se load nahi tha, toh instantly autoplay=1 load karo
                         if (!iframe.getAttribute('src')) {
                             iframe.setAttribute('src', iframe.getAttribute('data-src').replace('autoplay=0', 'autoplay=1')); 
                         } else {
-                            // Agar pehle se preloaded hai (bg mein data-src se aaya tha), toh sirf play command bhejo
                             iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
                         }
                     }
 
-                    // 🔥 PRELOAD NEXT 5 REELS LOGIC 🔥 (Bina awaz kiye, sirf buffer hongi kyunki data-src mein autoplay=0 hai)
+                    // 🔥 BACKGROUND PUSH PRELOAD (NEXT 5 REELS) 🔥
                     let nextCard = entry.target.nextElementSibling;
                     for (let i = 0; i < 5 && nextCard; i++) {
+                        // YouTube Preload in Push condition (paused/muted)
                         let nextIframe = nextCard.querySelector('.youtube-iframe');
                         if (nextIframe && !nextIframe.getAttribute('src')) {
-                            nextIframe.setAttribute('src', nextIframe.getAttribute('data-src'));
+                            nextIframe.setAttribute('src', nextIframe.getAttribute('data-src').replace('autoplay=1', 'autoplay=0'));
                         }
                         
+                        // MP4 Preload in Push condition
                         let nextVid = nextCard.querySelector('.reel-video');
-                        if (nextVid && nextVid.readyState === 0) {
-                            nextVid.load(); // Force preload mp4
+                        if (nextVid) {
+                            let nextSource = nextVid.querySelector('source');
+                            if (nextSource && !nextSource.getAttribute('src')) {
+                                nextSource.setAttribute('src', nextSource.getAttribute('data-src'));
+                                nextVid.load(); // Browser ko URL fetch karne ki command (Bina play kiye)
+                            }
                         }
                         nextCard = nextCard.nextElementSibling;
                     }
@@ -2027,7 +2024,6 @@ async function renderReels(container) {
                     }
                     if (iframe) {
                         if (iframe.getAttribute('src')) {
-                            // User jaise hi aage scroll kare, purani video 100% pause ho jaye
                             iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
                         }
                     }
@@ -2039,12 +2035,9 @@ async function renderReels(container) {
 
     } catch(e) { 
         console.error(e);
-        // Error aane par bhi local wali billi ko dikha sakte ho ya error message
         container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }
-
-
 
 async function loadReelComments(postId) {
     const list = document.getElementById('reel-cmts-list');

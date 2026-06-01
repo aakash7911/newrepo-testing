@@ -1845,7 +1845,7 @@ async function renderReels(container) {
 
         // 🔥 Yahan par naya content aate hi loader automatic hat jayega (kyunki innerHTML overwrite ho jayega)
         container.innerHTML = `<div class="reels-wrapper">
-            ${videoPosts.map(p => {
+            ${videoPosts.map((p, index) => {
                 let videoUrl = p.video || p.image;
                 const isLiked = p.likes?.includes(myId);
                 const isFollowing = typeof myFollowing !== 'undefined' ? myFollowing.includes(p.userId?._id) : false;
@@ -1853,6 +1853,10 @@ async function renderReels(container) {
                 
                 // YouTube reel pehchanne ka logic
                 const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
+
+                // 🔥 THUMBNAIL LOGIC 🔥
+                let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
+                let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
 
                 // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
                 if (isYouTube && !videoUrl.includes('enablejsapi=1')) {
@@ -1863,7 +1867,7 @@ async function renderReels(container) {
                 <div class="reel-card" id="reel-${p._id}">
                     
                     ${isYouTube ? `
-                        <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden">
+                        <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" ${thumbStyle}>
                             <iframe 
                                 id="yt-iframe-${p._id}"
                                 class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
@@ -1959,28 +1963,73 @@ async function renderReels(container) {
                 const iframe = entry.target.querySelector('.youtube-iframe');
 
                 if (entry.isIntersecting) {
+                    // 🔥 STRICT LOGIC: Jo screen par nahi hai use force pause karo (Ek sath na chalein)
+                    document.querySelectorAll('.reel-video').forEach(vid => {
+                        if (vid !== v) vid.pause();
+                    });
+                    document.querySelectorAll('.youtube-iframe').forEach(ifr => {
+                        if (ifr !== iframe && ifr.getAttribute('src')) {
+                            ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+                        }
+                    });
+
                     if (v) {
                         v.muted = false; 
                         v.play().catch(() => { v.muted = true; v.play(); }); 
                         if(typeof updateMuteUI === 'function') updateMuteUI(v.id.split('-')[1], v.muted);
+                        
+                        // 🔥 AUTO REPLAY LOGIC
+                        v.onended = () => { v.play(); };
                     }
                     if (iframe) {
-                        if (!iframe.src) iframe.src = iframe.dataset.src; 
-                        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
+                        // Jab video samne aaye toh state reset kar do
+                        const id = iframe.id.split('-')[2];
+                        if(window.ytPlayState) window.ytPlayState[id] = false; 
+                        if(window.ytMuteState) window.ytMuteState[id] = false;
+                        
+                        // 🔥 Agar pehle se load nahi tha, toh src set karo, warna sirf play command bhejo
+                        if (!iframe.getAttribute('src')) {
+                            iframe.setAttribute('src', iframe.getAttribute('data-src')); 
+                        } else {
+                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+                        }
                     }
+
+                    // 🔥 PRELOAD NEXT 5 REELS LOGIC 🔥
+                    let nextCard = entry.target.nextElementSibling;
+                    for (let i = 0; i < 5 && nextCard; i++) {
+                        let nextIframe = nextCard.querySelector('.youtube-iframe');
+                        if (nextIframe && !nextIframe.getAttribute('src')) {
+                            nextIframe.setAttribute('src', nextIframe.getAttribute('data-src'));
+                        }
+                        
+                        let nextVid = nextCard.querySelector('.reel-video');
+                        if (nextVid && nextVid.readyState === 0) {
+                            nextVid.load(); // Force preload mp4
+                        }
+                        nextCard = nextCard.nextElementSibling;
+                    }
+
                 } else {
-                    if (v) v.pause(); // No currentTime reset
-                    if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
+                    if (v) {
+                        v.pause();
+                        // v.currentTime = 0; // 🔥 Reverse scroll ke liye data saver (hata diya)
+                    }
+                    if (iframe) {
+                        if (iframe.getAttribute('src')) {
+                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+                        }
+                    }
                 }
             });
         }, { threshold: 0.7 }); 
 
         document.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
-        document.getElementById('reels-loader').classList.add('hidden');
 
     } catch(e) { 
         console.error(e);
-        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; 
+        // Error aane par bhi local wali billi ko dikha sakte ho ya error message
+        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
     }
 }
 async function loadReelComments(postId) {

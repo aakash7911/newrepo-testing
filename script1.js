@@ -1859,9 +1859,6 @@ async function renderReels(container) {
                     videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
                 }
 
-                // 🔥 POSTER (Thumbnail) URL - Jo image ya video ki frame se mile
-                const posterUrl = p.image || ""; 
-
                 return `
                 <div class="reel-card" id="reel-${p._id}">
                     
@@ -1892,7 +1889,7 @@ async function renderReels(container) {
                             <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
                         </div>
 
-                        <video loop playsinline webkit-playsinline preload="auto" poster="${posterUrl}"
+                        <video loop muted playsinline webkit-playsinline preload="auto" 
                             class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" 
                             id="vid-${p._id}"
                             onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
@@ -1966,40 +1963,24 @@ async function renderReels(container) {
                         v.muted = false; 
                         v.play().catch(() => { v.muted = true; v.play(); }); 
                         if(typeof updateMuteUI === 'function') updateMuteUI(v.id.split('-')[1], v.muted);
-                        
-                        // 🔥 AUTO REPLAY LOGIC
-                        v.onended = () => { v.play(); };
                     }
                     if (iframe) {
-                        // Jab video samne aaye toh state reset kar do 
-                        const id = iframe.id.split('-')[2];
-                        if(window.ytPlayState) window.ytPlayState[id] = false; 
-                        if(window.ytMuteState) window.ytMuteState[id] = false;
-                        
-                        if (!iframe.getAttribute('src')) iframe.setAttribute('src', iframe.getAttribute('data-src')); 
-                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+                        if (!iframe.src) iframe.src = iframe.dataset.src; 
+                        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":[]}', '*');
                     }
                 } else {
-                    if (v) {
-                        v.pause();
-                        // v.currentTime = 0; // 🔥 Reverse scroll internet saver: Commented out to keep progress
-                    }
-                    if (iframe) {
-                        // iframe.setAttribute('src', ''); // 🔥 Data saver: Video destroy nahi hogi
-                        if (iframe.getAttribute('src')) {
-                            iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
-                        }
-                    }
+                    if (v) v.pause(); // No currentTime reset
+                    if (iframe) iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
                 }
             });
         }, { threshold: 0.7 }); 
 
         document.querySelectorAll('.reel-card').forEach(card => observer.observe(card));
+        document.getElementById('reels-loader').classList.add('hidden');
 
     } catch(e) { 
         console.error(e);
-        // Error aane par bhi local wali billi ko dikha sakte ho ya error message
-        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels. Please check your internet.</div>"; 
+        container.innerHTML = "<div class='text-white text-center p-20'>Error loading reels.</div>"; 
     }
 }
 async function loadReelComments(postId) {

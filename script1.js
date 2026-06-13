@@ -102,12 +102,28 @@ const API_BASE = "https://zobbly.onrender.com";
         return headers;
     };
 
+    function setBtnLoading(btnId, isLoading) {
+        const btn = document.getElementById(btnId);
+        if(!btn) return;
+        if(isLoading) {
+            if(!btn.dataset.origText) btn.dataset.origText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wait...';
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+        } else {
+            if(btn.dataset.origText) btn.innerHTML = btn.dataset.origText;
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+
    const APIService = {
     auth: {
         login: async () => {
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPass').value;
             if(!email || !password) return showToast("Enter credentials");
+            setBtnLoading('loginBtn', true);
             try {
                 const res = await fetch(`${API_BASE}/api/login`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
                 const data = await res.json();
@@ -124,6 +140,7 @@ const API_BASE = "https://zobbly.onrender.com";
                     checkLoginStatus();
                 } else openAlertModal("Login Failed", data.error);
             } catch(e) { alert("Server connection failed. Is server.js running?"); }
+            finally { setBtnLoading('loginBtn', false); }
         },
         initiateRegister: async () => {
             const name = document.getElementById('regName').value;
@@ -132,6 +149,7 @@ const API_BASE = "https://zobbly.onrender.com";
             const username = document.getElementById('regUsername').value;
             
             if(!name || !email || !password || !username) return showToast("Fill all fields");
+            setBtnLoading('regOtpBtn', true);
             try {
                 const res = await fetch(`${API_BASE}/api/send-otp`, { 
                     method: "POST", 
@@ -152,6 +170,7 @@ const API_BASE = "https://zobbly.onrender.com";
                     }
                 }
             } catch(e) { showToast("Server Error"); }
+            finally { setBtnLoading('regOtpBtn', false); }
         },
         completeRegister: async () => {
             const name = document.getElementById('regName').value;
@@ -161,6 +180,7 @@ const API_BASE = "https://zobbly.onrender.com";
             const country = document.getElementById('regCountry').value;
             const otp = document.getElementById('regOtpInput').value;
             if(!otp) return showToast("Please enter OTP");
+            setBtnLoading('regCompleteBtn', true);
             try {
                 const res = await fetch(`${API_BASE}/api/register`, { 
                     method: "POST", 
@@ -183,11 +203,13 @@ const API_BASE = "https://zobbly.onrender.com";
                     }
                 }
             } catch(e) { showToast("Server Error"); }
+            finally { setBtnLoading('regCompleteBtn', false); }
         },
         sendOtp: async (context, emailParam) => {
             const email = emailParam || document.getElementById('forgotEmail').value;
             const type = context || 'forgot';
             authContext = type;
+            setBtnLoading('forgotOtpBtn', true);
             try {
                 const res = await fetch(`${API_BASE}/api/send-otp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, type }) });
                 if(res.ok) {
@@ -197,10 +219,12 @@ const API_BASE = "https://zobbly.onrender.com";
                     showToast("OTP Sent!");
                 } else alert("Error sending OTP");
             } catch(e) { showToast("Server Error"); }
+            finally { setBtnLoading('forgotOtpBtn', false); }
         },
         verifyOtp: async () => {
             const otp = document.getElementById('otpCode').value;
             const email = localStorage.getItem("tempEmail");
+            setBtnLoading('verifyOtpBtn', true);
             try {
                 const res = await fetch(`${API_BASE}/api/verify-otp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, otp }) });
                 if(res.ok) {
@@ -213,10 +237,12 @@ const API_BASE = "https://zobbly.onrender.com";
                     }
                 } else showToast("Invalid OTP");
             } catch(e) { showToast("Error"); }
+            finally { setBtnLoading('verifyOtpBtn', false); }
         },
         resetPassword: async () => {
             const newPassword = document.getElementById('newPassInput').value;
             const email = localStorage.getItem("tempEmail");
+            setBtnLoading('resetPassBtn', true);
             try {
                 const res = await fetch(`${API_BASE}/api/reset-password`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, newPassword }) });
                 if(res.ok) {
@@ -224,6 +250,7 @@ const API_BASE = "https://zobbly.onrender.com";
                     switchAuth('form-login');
                 }
             } catch(e) { showToast("Error"); }
+            finally { setBtnLoading('resetPassBtn', false); }
         },
         logout: () => { localStorage.clear(); location.reload(); }
     }, // <-- AUTH BLOCK YAHAN CLOSE HUA

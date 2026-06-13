@@ -478,7 +478,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
         <h2 class="auth-h2">Zobbly</h2>
         <div class="input-group"><div class="input-wrapper"><i class="fas fa-envelope"></i><input type="email" id="loginEmail" placeholder="Email Address" /></div></div>
         <div class="input-group"><div class="input-wrapper"><i class="fas fa-lock"></i><input type="password" id="loginPass" placeholder="Password" /></div></div>
-        <button class="btn-auth btn-login-style" onclick="APIService.auth.login()">Enter World</button>
+        <button class="btn-auth btn-login-style" id="loginBtn" onclick="APIService.auth.login()">Enter World</button>
         <button class="btn-auth btn-signup-style" onclick="switchAuth('form-register')">Join Network</button>
         <div class="link-btn" onclick="switchAuth('form-forgot')">Forgot Password?</div>
     </div>
@@ -505,7 +505,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
                     </select>
             </div>
         </div>
-   <button class="btn-auth btn-signup-style" onclick="APIService.auth.initiateRegister()">Get Verification Code</button>
+   <button class="btn-auth btn-signup-style" id="regOtpBtn" onclick="APIService.auth.initiateRegister()">Get Verification Code</button>
  </div>
 
         <div id="reg-step-2" class="hidden">
@@ -514,7 +514,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
       </div>
 
        <div class="input-group"><div class="input-wrapper"><i class="fas fa-key"></i><input type="text" id="regOtpInput" placeholder="Enter Verification Code" /></div></div>
-       <button class="btn-auth btn-login-style" onclick="APIService.auth.completeRegister()">Create Account</button>
+       <button class="btn-auth btn-login-style" id="regCompleteBtn" onclick="APIService.auth.completeRegister()">Create Account</button>
   </div>
 
          <div class="link-btn" onclick="switchAuth('form-login')">Back to Login</div>
@@ -523,7 +523,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
         <div id="form-forgot" class="auth-form hidden-screen">
             <h2 class="auth-h2">Reset</h2>
             <div class="input-group"><div class="input-wrapper"><i class="fas fa-envelope"></i><input type="email" id="forgotEmail" placeholder="Enter Email" /></div></div>
-            <button class="btn-auth btn-otp-style" onclick="APIService.auth.sendOtp('forgot')">Send OTP</button>
+            <button class="btn-auth btn-otp-style" id="forgotOtpBtn" onclick="APIService.auth.sendOtp('forgot')">Send OTP</button>
             <div class="link-btn" onclick="switchAuth('form-login')">Back</div>
         </div>
 
@@ -531,14 +531,14 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
             <h2 class="auth-h2">Verify</h2>
             <p class="text-center text-xs mb-2">Code sent to: <span id="displayEmail" class="font-bold"></span></p>
             <div class="input-group"><div class="input-wrapper"><i class="fas fa-key"></i><input type="text" id="otpCode" placeholder="Enter OTP" /></div></div>
-            <button class="btn-auth btn-login-style" onclick="APIService.auth.verifyOtp()">Verify</button>
+            <button class="btn-auth btn-login-style" id="verifyOtpBtn" onclick="APIService.auth.verifyOtp()">Verify</button>
           <div class="link-btn" onclick="switchAuth('form-login')">Cancel</div>
        </div>
 
         <div id="form-reset" class="auth-form hidden-screen">
             <h2 class="auth-h2">New Pass</h2>
             <div class="input-group"><div class="input-wrapper"><i class="fas fa-lock"></i><input type="password" id="newPassInput" placeholder="New Password" /></div></div>
-            <button class="btn-auth btn-login-style" onclick="APIService.auth.resetPassword()">Update</button>
+            <button class="btn-auth btn-login-style" id="resetPassBtn" onclick="APIService.auth.resetPassword()">Update</button>
             </div>
         </div>
     </div>

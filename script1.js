@@ -2001,14 +2001,9 @@ async function renderReels(container) {
                     ` : `
                         <div class="absolute inset-0 flex items-center justify-center z-0 bg-black">
                             <div class="w-[95%] h-[85%] relative rounded-2xl overflow-hidden shadow-2xl bg-black">
-                                <div class="absolute inset-0 flex items-center justify-center z-10" id="loader-${p._id}">
-                                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i>
-                                </div>
                                 <video loop muted playsinline webkit-playsinline preload="auto" poster="${posterUrl}"
-                                    class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-20" 
+                                    class="reel-video absolute inset-0 w-full h-full object-cover z-20" 
                                     id="vid-${p._id}"
-                                    onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
-                                    onplaying="document.getElementById('loader-${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
                                     ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('${p._id}') : null"
                                     onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
                                     <source data-src="${videoUrl}" src="${index < 5 ? videoUrl : ''}" type="video/mp4">

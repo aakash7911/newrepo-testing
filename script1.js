@@ -1894,24 +1894,18 @@ async function renderReels(container) {
                 const isMe = p.userId?._id === myId;
                 
                 // YouTube reel pehchanne ka logic
-                const isYouTube = p.category === 'youtube_reel' || (videoUrl && videoUrl.includes('youtube.com'));
+                const isYouTube = p.category === 'youtube_reel' || (videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')));
 
                 // 🔥 THUMBNAIL LOGIC 🔥
-                let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/)([^?&]+)/)?.[1] : null;
+                let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&]+)/)?.[1] : null;
                 let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
                 
                 // MP4 POSTER
                 let posterUrl = p.image || ""; 
 
-                if (isYouTube) {
-                    // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
-                    if (!videoUrl.includes('enablejsapi=1')) {
-                        videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
-                    }
-                    // 🔥 AUTO-LOOP LOGIC 🔥
-                    if (!videoUrl.includes('loop=1') && ytId) {
-                        videoUrl += `&loop=1&playlist=${ytId}`;
-                    }
+                if (isYouTube && ytId) {
+                    // Force the clean embed URL to avoid the giant Shorts logo and heavy page load
+                    videoUrl = `https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&loop=1&playlist=${ytId}&autoplay=0`;
                 }
 
                 return `

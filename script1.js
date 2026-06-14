@@ -1905,7 +1905,7 @@ async function renderReels(container) {
 
                 if (isYouTube && ytId) {
                     // Force the clean embed URL to avoid the giant Shorts logo and heavy page load
-                    videoUrl = `https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&loop=1&playlist=${ytId}&autoplay=0`;
+                    videoUrl = `https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&loop=1&playlist=${ytId}&autoplay=0&playsinline=1&iv_load_policy=3&disablekb=1`;
                 }
 
                 return `
@@ -1916,7 +1916,8 @@ async function renderReels(container) {
                             <div class="w-[95%] h-[85%] relative rounded-2xl overflow-hidden shadow-2xl bg-black" ${thumbStyle}>
                                 <iframe 
                                     id="yt-iframe-${p._id}"
-                                    class="youtube-iframe w-full h-full border-none pointer-events-none opacity-0 transition-opacity duration-500" 
+                                    class="youtube-iframe absolute left-0 w-full border-none pointer-events-none opacity-0 transition-opacity duration-500" 
+                                    style="height: calc(100% + 140px); top: -70px;"
                                     onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
                                     data-src="${videoUrl}" 
                                     src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index < 5 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 

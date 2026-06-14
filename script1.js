@@ -1614,13 +1614,16 @@ async function deleteNotification(e, id) {
 
 async function renderChat(c) {
     c.innerHTML = `
-    <div class="glass-card h-[calc(100vh-140px)] relative flex overflow-hidden p-0 w-full">
-        <div id="chat-list-container" class="w-full h-full bg-white flex flex-col">
-            <div class="p-3 border-b flex justify-between items-center bg-gray-50 h-14">
-                <input onkeyup="searchChatUsers(this.value)" placeholder="${txt('search')}..." class="w-full p-2 rounded-lg text-sm bg-white border border-gray-200 outline-none">
+    <div class="glass-card h-[calc(100vh-140px)] relative flex flex-col overflow-hidden p-0 w-full">
+        <div class="p-3 border-b bg-white flex items-center shadow-sm z-10 shrink-0">
+            <div class="flex bg-gray-100 rounded-full w-full overflow-hidden border border-gray-200 focus-within:border-purple-400 transition-colors">
+                <div class="pl-4 pr-2 flex items-center justify-center text-gray-400">
+                    <i class="fa-solid fa-search"></i>
+                </div>
+                <input onkeyup="searchChatUsers(this.value)" placeholder="${txt('search')}..." class="w-full py-2.5 text-sm bg-transparent outline-none pr-3">
             </div>
-            <div id="chat-list" class="flex-1 overflow-y-auto bg-white"></div>
         </div>
+        <div id="chat-list" class="flex-1 overflow-y-auto bg-white"></div>
     </div>`;
     loadConversations();
 }
@@ -1655,6 +1658,7 @@ async function searchChatUsers(q) {
 
 async function startChat(id, name, photo) {
     activeChatUser = id;
+    window.chatScrolledOnce = false;
     document.getElementById('fc-user-name').innerText = name;
     document.getElementById('fc-user-img').src = photo || 'https://placehold.co/30';
     
@@ -1723,9 +1727,7 @@ async function sendMsg() {
 
     try {
         await APIService.chat.send(activeChatUser, txt);
-        const tempEl = document.getElementById(tempId);
-        if(tempEl) tempEl.remove();
-        loadMsgs();
+        await loadMsgs();
     } catch(e) {
         const tempEl = document.getElementById(tempId);
         if(tempEl) tempEl.querySelector('.text-[9px]').innerHTML = `<span class="text-red-300">Failed</span>`;
@@ -1772,11 +1774,17 @@ async function uploadChatFile(file) {
 
 async function loadMsgs() {
     if(!activeChatUser) return;
+    const chatMsgs = document.getElementById('fc-messages');
+    
+    // Save current scroll state before modifying innerHTML
+    // Check if user is within 100px from the bottom
+    const isNearBottom = chatMsgs.scrollHeight - chatMsgs.scrollTop - chatMsgs.clientHeight < 100;
+    
     const msgs = await APIService.chat.getHistory(activeChatUser);
     const myId = localStorage.getItem("userId");
     const themeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
 
-    document.getElementById('fc-messages').innerHTML = msgs.map(m => {
+    chatMsgs.innerHTML = msgs.map(m => {
         let content = m.content;
         if(m.type==='image') { content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; }
         const isMe = m.senderId === myId;
@@ -1784,10 +1792,9 @@ async function loadMsgs() {
         return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 group">${isMe ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}<div class="${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md">${content}<div class="text-[9px] opacity-70 text-right mt-1 font-mono">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div></div></div>`;
     }).join('');
     
-    
-    const chatMsgs = document.getElementById('fc-messages');
-    if(!chatMsgs.hasAttribute('data-scrolled')) {
+    if (isNearBottom || !window.chatScrolledOnce) {
         chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        window.chatScrolledOnce = true;
     }
 }
 

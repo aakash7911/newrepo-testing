@@ -1888,9 +1888,15 @@ async function renderReels(container) {
                 // MP4 POSTER
                 let posterUrl = p.image || ""; 
 
-                // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
-                if (isYouTube && !videoUrl.includes('enablejsapi=1')) {
-                    videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
+                if (isYouTube) {
+                    // Iframe me commands bhejne ke liye enablejsapi=1 lagana zaroori hai
+                    if (!videoUrl.includes('enablejsapi=1')) {
+                        videoUrl += videoUrl.includes('?') ? '&enablejsapi=1' : '?enablejsapi=1';
+                    }
+                    // 🔥 AUTO-LOOP LOGIC 🔥
+                    if (!videoUrl.includes('loop=1') && ytId) {
+                        videoUrl += `&loop=1&playlist=${ytId}`;
+                    }
                 }
 
                 return `
@@ -1900,7 +1906,8 @@ async function renderReels(container) {
                         <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" ${thumbStyle}>
                             <iframe 
                                 id="yt-iframe-${p._id}"
-                                class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35]" 
+                                class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35] opacity-0 transition-opacity duration-500" 
+                                onload="this.classList.remove('opacity-0');"
                                 data-src="${videoUrl}" 
                                 src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index < 5 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 
                                 allow="autoplay; encrypted-media"

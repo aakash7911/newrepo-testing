@@ -1854,6 +1854,21 @@ async function renderReels(container) {
                     }, 250); // 250ms ka timer taaki pata chale single click hai ya double
                 }
             };
+
+            window.addEventListener('message', (e) => {
+                try {
+                    let data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+                    if (data.event === 'infoDelivery' && data.info && data.info.playerState === 1) {
+                        let iframes = document.querySelectorAll('.youtube-iframe');
+                        iframes.forEach(ifr => {
+                            if (ifr.contentWindow === e.source) {
+                                ifr.classList.remove('opacity-0');
+                                ifr.classList.add('opacity-100');
+                            }
+                        });
+                    }
+                } catch(err) {}
+            });
         }
 
         // Data aane ka wait karo (Tab tak billi khelti rahegi)
@@ -1903,17 +1918,19 @@ async function renderReels(container) {
                 <div class="reel-card" id="reel-${p._id}">
                     
                     ${isYouTube ? `
-                        <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center overflow-hidden" ${thumbStyle}>
-                            <iframe 
-                                id="yt-iframe-${p._id}"
-                                class="youtube-iframe w-full h-full border-none pointer-events-none scale-[1.35] opacity-0 transition-opacity duration-500" 
-                                onload="this.classList.remove('opacity-0');"
-                                data-src="${videoUrl}" 
-                                src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index < 5 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 
-                                allow="autoplay; encrypted-media"
-                                loading="eager"
-                                allowfullscreen>
-                            </iframe>
+                        <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center">
+                            <div class="w-[95%] h-[85%] relative rounded-2xl overflow-hidden shadow-2xl bg-black" ${thumbStyle}>
+                                <iframe 
+                                    id="yt-iframe-${p._id}"
+                                    class="youtube-iframe w-full h-full border-none pointer-events-none opacity-0 transition-opacity duration-500" 
+                                    onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
+                                    data-src="${videoUrl}" 
+                                    src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index < 5 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 
+                                    allow="autoplay; encrypted-media"
+                                    loading="eager"
+                                    allowfullscreen>
+                                </iframe>
+                            </div>
                         </div>
 
                         <div id="yt-mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
@@ -1922,23 +1939,26 @@ async function renderReels(container) {
 
                         <div class="absolute inset-0 z-10 bg-transparent cursor-pointer" onclick="handleYtAction(event, '${p._id}')"></div>
                     ` : `
-                        <div class="absolute inset-0 flex items-center justify-center z-0" id="loader-${p._id}">
-                            <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i>
+                        <div class="absolute inset-0 flex items-center justify-center z-0 bg-black">
+                            <div class="w-[95%] h-[85%] relative rounded-2xl overflow-hidden shadow-2xl bg-black">
+                                <div class="absolute inset-0 flex items-center justify-center z-10" id="loader-${p._id}">
+                                    <i class="fa-solid fa-circle-notch fa-spin text-4xl text-purple-500"></i>
+                                </div>
+                                <video loop muted playsinline webkit-playsinline preload="auto" poster="${posterUrl}"
+                                    class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-20" 
+                                    id="vid-${p._id}"
+                                    onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
+                                    onplaying="document.getElementById('loader-${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
+                                    ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('${p._id}') : null"
+                                    onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
+                                    <source data-src="${videoUrl}" src="${index < 5 ? videoUrl : ''}" type="video/mp4">
+                                </video>
+                            </div>
                         </div>
 
                         <div id="mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
                             <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
                         </div>
-
-                        <video loop muted playsinline webkit-playsinline preload="auto" poster="${posterUrl}"
-                            class="reel-video opacity-0 transition-opacity duration-500 absolute inset-0 w-full h-full object-cover z-0" 
-                            id="vid-${p._id}"
-                            onwaiting="document.getElementById('loader-${p._id}').classList.remove('hidden')"
-                            onplaying="document.getElementById('loader-${p._id}').classList.add('hidden'); this.classList.remove('opacity-0')"
-                            ontimeupdate="typeof updateReelProgress === 'function' ? updateReelProgress('${p._id}') : null"
-                            onclick="typeof handleReelClick === 'function' ? handleReelClick(event, '${p._id}') : null">
-                            <source data-src="${videoUrl}" src="${index < 5 ? videoUrl : ''}" type="video/mp4">
-                        </video>
 
                         <div class="absolute bottom-24 right-4 z-30 bg-black/20 p-2 rounded-full text-white pointer-events-none" id="mini-mute-${p._id}">
                             <i class="fa-solid fa-volume-high text-xs"></i>

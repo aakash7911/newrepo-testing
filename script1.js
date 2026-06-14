@@ -1917,7 +1917,7 @@ async function renderReels(container) {
                                 <iframe 
                                     id="yt-iframe-${p._id}"
                                     class="youtube-iframe absolute left-0 w-full border-none pointer-events-none opacity-0 transition-opacity duration-500" 
-                                    style="height: calc(100% + 140px); top: -70px;"
+                                    style="height: calc(100% + 140px); top: -70px; transform: scale(1.35);"
                                     onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
                                     data-src="${videoUrl}" 
                                     src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index < 5 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 

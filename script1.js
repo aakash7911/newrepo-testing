@@ -1621,9 +1621,12 @@ async function renderChat(c) {
                     <div class="pl-4 pr-2 flex items-center justify-center text-gray-400">
                         <i class="fa-solid fa-search"></i>
                     </div>
-                    <input id="chat-search-input" onkeyup="if(event.key === 'Enter') searchChatUsers(this.value)" placeholder="${txt('search')}..." class="w-full py-2.5 text-sm bg-transparent outline-none pr-3">
+                    <input id="chat-search-input" onkeyup="if(event.key === 'Enter') executeChatSearch()" placeholder="${txt('search')}..." class="w-full py-2.5 text-sm bg-transparent outline-none pr-3">
                 </div>
-                <button onclick="searchChatUsers(document.getElementById('chat-search-input').value)" class="bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md shrink-0">Search</button>
+                <button id="chat-search-btn" onclick="executeChatSearch()" class="bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md shrink-0 flex items-center gap-2">
+                    <span>Search</span>
+                    <i class="fa-solid fa-spinner fa-spin hidden" id="chat-search-loader"></i>
+                </button>
             </div>
         </div>
         <div id="chat-list" class="flex-1 overflow-y-auto bg-white"></div>
@@ -1644,6 +1647,14 @@ async function loadConversations() {
     ).join(''); 
 }
 
+async function executeChatSearch() {
+    const q = document.getElementById('chat-search-input').value;
+    const loader = document.getElementById('chat-search-loader');
+    if (loader) loader.classList.remove('hidden');
+    await searchChatUsers(q);
+    if (loader) loader.classList.add('hidden');
+}
+
 async function searchChatUsers(q) { 
     if(q.length < 1) return loadConversations(); 
     const users = await APIService.chat.search(q); 
@@ -1662,6 +1673,7 @@ async function searchChatUsers(q) {
 async function startChat(id, name, photo) {
     activeChatUser = id;
     window.chatScrolledOnce = false;
+    window.pendingMessages = []; // Reset pending messages for new chat
     document.getElementById('fc-user-name').innerText = name;
     document.getElementById('fc-user-img').src = photo || 'https://placehold.co/30';
     
@@ -1708,41 +1720,31 @@ async function sendMsg() {
     const txt = input.value;
     if(!txt || !activeChatUser) return;
 
-    const chatMsgs = document.getElementById('fc-messages');
     const tempId = 'temp-' + Date.now();
-    const themeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
-
-   
-    const html = `
-        <div class="flex justify-end mb-2" id="${tempId}">
-            <div class="chat-bubble-user ${themeBtn} text-white px-4 py-2 text-sm max-w-[80%] shadow-md opacity-70">
-                ${txt}
-                <div class="text-[9px] opacity-70 text-right mt-1 font-mono flex items-center justify-end gap-1">
-                    Sending... <i class="fa-solid fa-spinner fa-spin text-[8px]"></i>
-                </div>
-            </div>
-        </div>`;
+    const pendingMsg = {
+        _id: tempId,
+        content: txt,
+        senderId: localStorage.getItem("userId"),
+        createdAt: new Date().toISOString(),
+        isPending: true,
+        status: 'sending'
+    };
     
-    chatMsgs.insertAdjacentHTML('beforeend', html);
-    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    if (!window.pendingMessages) window.pendingMessages = [];
+    window.pendingMessages.push(pendingMsg);
+
     input.value = ""; 
     input.focus();
+    
+    await renderMsgsFromCacheAndPending();
 
     try {
         await APIService.chat.send(activeChatUser, txt);
-        const tempEl = document.getElementById(tempId);
-        if(tempEl) {
-            const bubble = tempEl.querySelector('.chat-bubble-user');
-            if(bubble) bubble.classList.remove('opacity-70');
-            const timeEl = tempEl.querySelector('.text-\\[9px\\]');
-            if(timeEl) timeEl.innerHTML = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        }
+        pendingMsg.status = 'sent';
+        await renderMsgsFromCacheAndPending();
     } catch(e) {
-        const tempEl = document.getElementById(tempId);
-        if(tempEl) {
-            const timeEl = tempEl.querySelector('.text-\\[9px\\]');
-            if(timeEl) timeEl.innerHTML = `<span class="text-red-300">Failed</span>`;
-        }
+        pendingMsg.status = 'failed';
+        await renderMsgsFromCacheAndPending();
     }
 }
 
@@ -1787,21 +1789,58 @@ async function uploadChatFile(file) {
 async function loadMsgs() {
     if(!activeChatUser) return;
     const chatMsgs = document.getElementById('fc-messages');
-    
-    // Save current scroll state before modifying innerHTML
-    // Check if user is within 100px from the bottom
-    const isNearBottom = chatMsgs.scrollHeight - chatMsgs.scrollTop - chatMsgs.clientHeight < 100;
+    const isNearBottom = chatMsgs ? (chatMsgs.scrollHeight - chatMsgs.scrollTop - chatMsgs.clientHeight < 100) : true;
     
     const msgs = await APIService.chat.getHistory(activeChatUser);
+    window.lastServerMsgs = msgs;
+    
+    await renderMsgsFromCacheAndPending(isNearBottom);
+}
+
+async function renderMsgsFromCacheAndPending(isNearBottomArg) {
+    const chatMsgs = document.getElementById('fc-messages');
+    if (!chatMsgs) return;
+    
+    const isNearBottom = isNearBottomArg !== undefined ? isNearBottomArg : (chatMsgs.scrollHeight - chatMsgs.scrollTop - chatMsgs.clientHeight < 100);
+    
     const myId = localStorage.getItem("userId");
     const themeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
+    
+    let serverMsgs = window.lastServerMsgs || [];
+    
+    if (window.pendingMessages) {
+        window.pendingMessages = window.pendingMessages.filter(pending => {
+            const existsOnServer = serverMsgs.some(m => 
+                m.content === pending.content && 
+                m.senderId === myId && 
+                Math.abs(new Date(m.createdAt).getTime() - new Date(pending.createdAt).getTime()) < 120000
+            );
+            return !existsOnServer;
+        });
+    }
 
-    chatMsgs.innerHTML = msgs.map(m => {
+    const allMsgs = [...serverMsgs, ...(window.pendingMessages || [])];
+
+    chatMsgs.innerHTML = allMsgs.map(m => {
         let content = m.content;
         if(m.type==='image') { content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; }
+        
         const isMe = m.senderId === myId;
         const bubbleClass = isMe ? `chat-bubble-user ${themeBtn} text-white self-end` : 'chat-bubble-other self-start bg-white/90 backdrop-blur-sm';
-        return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 group">${isMe ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}<div class="${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md">${content}<div class="text-[9px] opacity-70 text-right mt-1 font-mono">${new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div></div></div>`;
+        
+        let statusHtml = new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        let opacityClass = '';
+        
+        if (m.isPending) {
+            if (m.status === 'sending') {
+                statusHtml = `Sending... <i class="fa-solid fa-spinner fa-spin text-[8px]"></i>`;
+                opacityClass = 'opacity-70';
+            } else if (m.status === 'failed') {
+                statusHtml = `<span class="text-red-300">Failed</span>`;
+            }
+        }
+
+        return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 group">${isMe && !m.isPending ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}<div class="${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md ${opacityClass}">${content}<div class="text-[9px] opacity-70 text-right mt-1 font-mono flex items-center justify-end gap-1">${statusHtml}</div></div></div>`;
     }).join('');
     
     if (isNearBottom || !window.chatScrolledOnce) {

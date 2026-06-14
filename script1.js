@@ -1086,7 +1086,10 @@ async function renderFeed(c) {
         const c = document.getElementById('main-content');
         c.innerHTML = '<div class="text-center mt-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-purple-600"></i></div>';
         try {
-            const users = await APIService.chat.search(query);
+            let users = await APIService.chat.search(query);
+            const myId = localStorage.getItem("userId");
+            users = users.filter(u => u._id !== myId);
+            
             let html = `<div class="flex items-center gap-2 mb-4"><button onclick="renderView('feed')" class="text-sm text-gray-500 hover:text-black bg-white/50 px-3 py-1 rounded-full shadow-sm"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="font-bold text-lg">Search Results</h2></div>`;
             if(users.length === 0) { html += '<div class="text-center text-gray-500 mt-10 glass-card p-4">No users found with that name.</div>'; } else {
                 html += users.map(u => `
@@ -1635,7 +1638,9 @@ async function renderChat(c) {
 }
 
 async function loadConversations() { 
-    const users = await APIService.chat.getConversations(); 
+    let users = await APIService.chat.getConversations(); 
+    const myId = localStorage.getItem("userId");
+    users = users.filter(u => u._id !== myId);
     document.getElementById('chat-list').innerHTML = users.map(u => `
         <div onclick="startChat('${u._id}','${u.name}','${u.photo}')" class="p-4 border-b cursor-pointer hover:bg-purple-50 flex gap-4 items-center transition">
             <img src="${u.photo||'https://placehold.co/40'}" class="w-12 h-12 rounded-full border shadow-sm">
@@ -1657,7 +1662,9 @@ async function executeChatSearch() {
 
 async function searchChatUsers(q) { 
     if(q.length < 1) return loadConversations(); 
-    const users = await APIService.chat.search(q); 
+    let users = await APIService.chat.search(q); 
+    const myId = localStorage.getItem("userId");
+    users = users.filter(u => u._id !== myId);
     document.getElementById('chat-list').innerHTML = users.map(u => `
         <div onclick="startChat('${u._id}','${u.name}','${u.photo}')" class="p-4 border-b cursor-pointer hover:bg-purple-50 flex gap-4 items-center transition">
             <img src="${u.photo||'https://placehold.co/40'}" class="w-12 h-12 rounded-full border shadow-sm">

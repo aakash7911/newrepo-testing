@@ -1616,11 +1616,14 @@ async function renderChat(c) {
     c.innerHTML = `
     <div class="glass-card h-[calc(100vh-140px)] relative flex flex-col overflow-hidden p-0 w-full">
         <div class="p-3 border-b bg-white flex items-center shadow-sm z-10 shrink-0">
-            <div class="flex bg-gray-100 rounded-full w-full overflow-hidden border border-gray-200 focus-within:border-purple-400 transition-colors">
-                <div class="pl-4 pr-2 flex items-center justify-center text-gray-400">
-                    <i class="fa-solid fa-search"></i>
+            <div class="flex items-center gap-2 w-full">
+                <div class="flex flex-1 bg-gray-100 rounded-full overflow-hidden border border-gray-200 focus-within:border-purple-400 transition-colors">
+                    <div class="pl-4 pr-2 flex items-center justify-center text-gray-400">
+                        <i class="fa-solid fa-search"></i>
+                    </div>
+                    <input id="chat-search-input" onkeyup="if(event.key === 'Enter') searchChatUsers(this.value)" placeholder="${txt('search')}..." class="w-full py-2.5 text-sm bg-transparent outline-none pr-3">
                 </div>
-                <input onkeyup="searchChatUsers(this.value)" placeholder="${txt('search')}..." class="w-full py-2.5 text-sm bg-transparent outline-none pr-3">
+                <button onclick="searchChatUsers(document.getElementById('chat-search-input').value)" class="bg-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md shrink-0">Search</button>
             </div>
         </div>
         <div id="chat-list" class="flex-1 overflow-y-auto bg-white"></div>
@@ -1727,10 +1730,19 @@ async function sendMsg() {
 
     try {
         await APIService.chat.send(activeChatUser, txt);
-        await loadMsgs();
+        const tempEl = document.getElementById(tempId);
+        if(tempEl) {
+            const bubble = tempEl.querySelector('.chat-bubble-user');
+            if(bubble) bubble.classList.remove('opacity-70');
+            const timeEl = tempEl.querySelector('.text-\\[9px\\]');
+            if(timeEl) timeEl.innerHTML = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        }
     } catch(e) {
         const tempEl = document.getElementById(tempId);
-        if(tempEl) tempEl.querySelector('.text-[9px]').innerHTML = `<span class="text-red-300">Failed</span>`;
+        if(tempEl) {
+            const timeEl = tempEl.querySelector('.text-\\[9px\\]');
+            if(timeEl) timeEl.innerHTML = `<span class="text-red-300">Failed</span>`;
+        }
     }
 }
 

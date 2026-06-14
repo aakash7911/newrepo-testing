@@ -1614,7 +1614,7 @@ async function deleteNotification(e, id) {
 
 async function renderChat(c) {
     c.innerHTML = `
-    <div class="glass-card h-[calc(100vh-190px)] relative flex flex-col overflow-hidden p-0 w-full">
+    <div class="glass-card h-[calc(100vh-210px)] relative flex flex-col overflow-hidden p-0 w-full">
         <div class="p-3 border-b bg-white flex items-center shadow-sm z-10 shrink-0">
             <div class="flex items-center gap-2 w-full">
                 <div class="flex flex-1 bg-gray-100 rounded-full overflow-hidden border border-gray-200 focus-within:border-purple-400 transition-colors">

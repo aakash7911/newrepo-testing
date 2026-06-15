@@ -1214,7 +1214,16 @@ async function renderFeed(c) {
     function openConfirmModal(title, message, actionCallback) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = message; pendingConfirmAction = actionCallback; document.getElementById('universalConfirmModal').style.display = 'flex'; }
     function openAlertModal(title, message) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = message; document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'none'; document.getElementById('modalConfirmBtn').innerText = "OK"; pendingConfirmAction = null; document.getElementById('universalConfirmModal').style.display = 'flex'; }
     function closeConfirmModal() { document.getElementById('universalConfirmModal').style.display = 'none'; pendingConfirmAction = null; document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'block'; document.getElementById('modalConfirmBtn').innerText = "Yes, Proceed"; }
-    async function executeConfirmAction() { if(pendingConfirmAction) { await pendingConfirmAction(); } closeConfirmModal(); }
+    async function executeConfirmAction() { 
+        if(pendingConfirmAction) { 
+            const btn = document.getElementById('modalConfirmBtn');
+            const cancelBtn = document.querySelector('#universalConfirmModal .btn-cancel');
+            if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Wait...';
+            if(cancelBtn) cancelBtn.style.display = 'none';
+            await pendingConfirmAction(); 
+        } 
+        closeConfirmModal(); 
+    }
 
     function deletePost(id) {
         openConfirmModal("Delete Post?", "Are you sure you want to permanently delete this post?", async () => {

@@ -36,17 +36,17 @@ const API_BASE = "https://zobbly.onrender.com";
     let statusInterval = null; 
     const chatThemes = [
         { id: 'default', name: 'Default', bg: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', text: 'text-gray-800', btn: 'bg-purple-600', barColor: 'rgba(255, 255, 255, 0.9)' },
-        { id: 'love', name: '❤️ Love', bg: 'url(https://i.ibb.co/spDGj2Q2/Gemini-Generated-Image-izx0sxizx0sxizx0.png)', text: 'text-white', btn: 'bg-pink-600', barColor: 'rgba(255, 230, 240, 0.95)' },
+        { id: 'love', name: '❤️ Love', bg: 'url(https://images.unsplash.com/photo-1559216406-beda67bab4fb?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)', text: 'text-white', btn: 'bg-pink-600', barColor: 'rgba(255, 230, 240, 0.95)' },
         { id: 'sad', name: '🌧️ Sad / Rain', bg: 'url(https://i.ibb.co/ZsvvCcw/Gemini-Generated-Image-4c7xnb4c7xnb4c7x.png)', text: 'text-white', btn: 'bg-gray-600', barColor: 'rgba(230, 235, 240, 0.95)' },
         { id: 'angry', name: '🔥 Angry / Fire', bg: 'url(https://i.ibb.co/JWWHxzkb/Gemini-Generated-Image-1e28ts1e28ts1e28.png)', text: 'text-white', btn: 'bg-red-700', barColor: 'rgba(255, 230, 230, 0.95)' },
         { id: 'nature', name: '🌿 Nature', bg: 'url(https://plus.unsplash.com/premium_photo-1751294864512-29c9f4ae008a?q=80&w=1287&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)', text: 'text-white', btn: 'bg-green-600', barColor: 'rgba(230, 250, 230, 0.95)' },
-        { id: 'galaxy', name: '🌌 Galaxy', bg: 'url(https://i.ibb.co/JFSC8Dbx/Gemini-Generated-Image-1dmtnl1dmtnl1dmt.png)', text: 'text-white', btn: 'bg-indigo-600', barColor: 'rgba(230, 230, 250, 0.95)' },
+        { id: 'galaxy', name: '🌌 Galaxy', bg: 'url(https://plus.unsplash.com/premium_photo-1676165852024-a4a28f878d2d?q=80&w=1352&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)', text: 'text-white', btn: 'bg-indigo-600', barColor: 'rgba(230, 230, 250, 0.95)' },
         { id: 'happy', name: '☀️ Happy', bg: 'url(https://i.ibb.co/1GFRhMBr/Gemini-Generated-Image-6encea6encea6enc.png)', text: 'text-gray-800', btn: 'bg-yellow-500', barColor: 'rgba(255, 250, 230, 0.95)' },
-        { id: 'night', name: '🌑 Night City', bg: 'url(https://i.ibb.co/wGS6vMf/Gemini-Generated-Image-a27g02a27g02a27g.png)', text: 'text-white', btn: 'bg-blue-900', barColor: 'rgba(200, 210, 230, 0.95)' },
+        { id: 'night', name: '🌑 Night City', bg: 'url(https://images.unsplash.com/photo-1599939571322-792a326991f2?q=80&w=2052&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)', text: 'text-white', btn: 'bg-blue-900', barColor: 'rgba(200, 210, 230, 0.95)' },
         { id: 'ocean', name: '🌊 Ocean', bg: 'url(https://images.unsplash.com/photo-1505118380757-91f5f5632de0?q=80&w=600)', text: 'text-white', btn: 'bg-cyan-600', barColor: 'rgba(220, 245, 255, 0.95)' },
-        { id: 'sunset', name: '🌅 Sunset', bg: 'url(https://i.ibb.co/W4XXhLX8/Gemini-Generated-Image-xo6dpexo6dpexo6d.png)', text: 'text-white', btn: 'bg-orange-600', barColor: 'rgba(255, 240, 230, 0.95)' },
-        { id: 'tech', name: '💻 Cyber', bg: 'url(https://i.ibb.co/KMvTGKm/Gemini-Generated-Image-hhy4sohhy4sohhy4.png)', text: 'text-white', btn: 'bg-blue-600', barColor: 'rgba(220, 230, 255, 0.95)' },
-        { id: 'abstract', name: '🎨 Abstract', bg: 'url(https://i.ibb.co/Lzy1Yfhf/Gemini-Generated-Image-o7z6c6o7z6c6o7z6.png)', text: 'text-white', btn: 'bg-pink-500', barColor: 'rgba(255, 235, 255, 0.95)' }
+        { id: 'sunset', name: '🌅 Sunset', bg: 'url(https://images.unsplash.com/photo-1778244305115-4dd2bf7c8e86?q=80&w=1335&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)', text: 'text-white', btn: 'bg-orange-600', barColor: 'rgba(255, 240, 230, 0.95)' },
+        { id: 'tech', name: '💻 Cyber', bg: 'url(https://images.unsplash.com/photo-1780663092036-0e6d6a960368?q=80&w=927&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)', text: 'text-white', btn: 'bg-blue-600', barColor: 'rgba(220, 230, 255, 0.95)' },
+        { id: 'abstract', name: '🎨 Abstract', bg: 'https://plus.unsplash.com/premium_photo-1769900514785-64a3206b7a1c?q=80&w=1331&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)', text: 'text-white', btn: 'bg-pink-500', barColor: 'rgba(255, 235, 255, 0.95)' }
       
     
     

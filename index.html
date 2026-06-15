@@ -158,34 +158,40 @@
          }
         #chat-theme-menu {
             position: absolute;
-            top: 50px;
-            right: 10px;
-            width: 250px;
+            top: 60px;
+            right: 15px;
+            width: 260px;
             background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 15px 40px -10px rgba(0,0,0,0.2);
             z-index: 100;
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
-            border: 1px solid #eee;
-            transform: scale(0);
+            border: 1px solid rgba(255,255,255,0.8);
+            transform: scale(0.95);
+            opacity: 0;
+            pointer-events: none;
             transform-origin: top right;
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 8px;
          }
         #chat-theme-menu.open {
             transform: scale(1);
+            opacity: 1;
+            pointer-events: auto;
         }
         .theme-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 10px;
+            gap: 12px;
+            padding: 10px 12px;
             cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
+            border-radius: 16px;
+            transition: all 0.2s ease;
          }
-        .theme-item:hover { background: #f9f9f9; }
-        .theme-preview { width: 35px; height: 35px; border-radius: 8px; background-size: cover; background-position: center; border: 1px solid #ddd; }
+        .theme-item:hover { background: rgba(243, 244, 246, 0.8); transform: translateY(-1px); }
+        .theme-preview { width: 40px; height: 40px; border-radius: 12px; background-size: cover; background-position: center; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         #fc-messages {
             background-size: cover;
             background-position: center;
@@ -434,8 +440,8 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
 </div>
 
     <div class="flex items-center gap-2">
-        <button onclick="toggleChatThemeMenu()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-purple-600 hover:bg-purple-100"><i class="fa-solid fa-palette"></i></button>
-        <button onclick="clearChat()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-red-500 hover:bg-red-100"><i class="fa-solid fa-trash"></i></button>
+        <button onclick="toggleChatThemeMenu()" class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-100 to-pink-100 flex items-center justify-center text-purple-600 shadow-sm hover:shadow hover:scale-105 transition-all"><i class="fa-solid fa-palette text-[17px]"></i></button>
+        <button onclick="clearChat()" class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 shadow-sm hover:shadow hover:bg-red-100 hover:scale-105 transition-all"><i class="fa-solid fa-trash text-[17px]"></i></button>
     </div>
         <div id="chat-theme-menu" class="scrollbar-hide"></div>
 </div>
@@ -778,7 +784,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
     <button id="cancel-upload-btn" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold">Cancel Post</button>
 </div>
 
-<script src="script1.js?v=14"></script>
+<script src="script1.js?v=15"></script>
 
 </body>
 </html>

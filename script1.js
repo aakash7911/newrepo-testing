@@ -1211,9 +1211,45 @@ async function renderFeed(c) {
     }
 
     async function toggleFollow(id, btn) { const res = await APIService.user.follow(id); if(res.status === 'followed') { btn.innerText = txt("unfollow"); btn.className = "btn-follow btn-following"; myFollowing.push(id); showToast("Following!"); } else { btn.innerText = txt("follow"); btn.className = "btn-follow btn-not-following"; myFollowing = myFollowing.filter(uid => uid !== id); showToast("Unfollowed"); } updateMyStats(); }
-    function openConfirmModal(title, message, actionCallback) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = message; pendingConfirmAction = actionCallback; document.getElementById('universalConfirmModal').style.display = 'flex'; }
-    function openAlertModal(title, message) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMessage').innerText = message; document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'none'; document.getElementById('modalConfirmBtn').innerText = "OK"; pendingConfirmAction = null; document.getElementById('universalConfirmModal').style.display = 'flex'; }
-    function closeConfirmModal() { document.getElementById('universalConfirmModal').style.display = 'none'; pendingConfirmAction = null; document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'block'; document.getElementById('modalConfirmBtn').innerText = "Yes, Proceed"; }
+    function openConfirmModal(title, message, actionCallback) { 
+        document.getElementById('modalTitle').innerText = title; 
+        document.getElementById('modalMessage').innerText = message; 
+        pendingConfirmAction = actionCallback; 
+        const iconWrap = document.querySelector('#universalConfirmModal .modal-icon-wrap');
+        if(iconWrap) { iconWrap.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>'; iconWrap.style.backgroundColor = ''; }
+        const btn = document.getElementById('modalConfirmBtn');
+        if(btn) { btn.innerText = "Yes, Proceed"; btn.style.backgroundColor = ''; }
+        document.getElementById('universalConfirmModal').style.display = 'flex'; 
+    }
+    
+    function openAlertModal(title, message) { 
+        document.getElementById('modalTitle').innerText = title; 
+        document.getElementById('modalMessage').innerText = message; 
+        document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'none'; 
+        pendingConfirmAction = null; 
+        const iconWrap = document.querySelector('#universalConfirmModal .modal-icon-wrap');
+        const btn = document.getElementById('modalConfirmBtn');
+        if(btn) btn.innerText = "OK"; 
+        
+        if (title.toLowerCase().includes('success')) {
+            if(iconWrap) { iconWrap.innerHTML = '<i class="fa-solid fa-check" style="color: #22c55e;"></i>'; iconWrap.style.backgroundColor = '#dcfce7'; }
+            if(btn) btn.style.backgroundColor = '#22c55e';
+        } else {
+            if(iconWrap) { iconWrap.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>'; iconWrap.style.backgroundColor = ''; }
+            if(btn) btn.style.backgroundColor = '';
+        }
+        document.getElementById('universalConfirmModal').style.display = 'flex'; 
+    }
+    
+    function closeConfirmModal() { 
+        document.getElementById('universalConfirmModal').style.display = 'none'; 
+        pendingConfirmAction = null; 
+        document.querySelector('#universalConfirmModal .btn-cancel').style.display = 'block'; 
+        const btn = document.getElementById('modalConfirmBtn');
+        if(btn) { btn.innerText = "Yes, Proceed"; btn.style.backgroundColor = ''; }
+        const iconWrap = document.querySelector('#universalConfirmModal .modal-icon-wrap');
+        if(iconWrap) { iconWrap.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>'; iconWrap.style.backgroundColor = ''; }
+    }
     async function executeConfirmAction() { 
         if(pendingConfirmAction) { 
             const btn = document.getElementById('modalConfirmBtn');

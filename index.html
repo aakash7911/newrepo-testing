@@ -596,61 +596,91 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
             <h2 id="lbl-settings" class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-pink-600" data-key="settings">Settings</h2>
             <button onclick="toggleSidePanel()" class="text-2xl text-gray-500 hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="space-y-4">
-           <button onclick="openEditProfile()" class="w-full text-left p-4 hover:bg-white/50 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-pen-to-square text-purple-500"></i> <span id="lbl-edit-profile">Edit Profile</span></button>
+        <div class="space-y-3 px-1">
+            <button onclick="openEditProfile()" class="w-full bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] border border-gray-50 text-left p-3.5 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-11 h-11 rounded-full bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 group-hover:scale-110 transition-all">
+                    <i class="fa-solid fa-pen-to-square text-purple-600 text-lg"></i>
+                </div>
+                <span id="lbl-edit-profile" class="font-bold text-gray-700 text-[15px]">Edit Profile</span>
+                <i class="fa-solid fa-chevron-right ml-auto text-gray-300 text-xs"></i>
+            </button>
         
 <script>
-   
     function badalDoUI() {
         const isCurrentIndex1 = window.location.pathname.includes("index1.html");
-        
         if (isCurrentIndex1) {
-          
             localStorage.setItem("Zobbly_UI", "index.html");
             window.location.href = "index.html";
         } else {
-          
             localStorage.setItem("Zobbly_UI", "index1.html");
             window.location.href = "index1.html";
         }
     }
 </script>
+
+            <div onclick="toggleThemeMenu()" class="w-full bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] border border-gray-50 text-left p-3.5 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
+                <div class="w-11 h-11 rounded-full bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:scale-110 transition-all">
+                    <i class="fa-solid fa-palette text-indigo-600 text-lg"></i> 
+                </div>
+                <span class="font-bold text-gray-700 text-[15px]">Change Theme</span>
+                <i class="fa-solid fa-chevron-down text-xs text-gray-300 ml-auto transition-transform group-hover:text-indigo-400"></i>
+            </div>
             
+            <div id="theme-options" class="hidden grid grid-cols-2 gap-2 mt-1 mb-2">
+                <button onclick="changeTheme('default')" class="p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-100 text-xs font-bold text-purple-700 hover:shadow-md hover:-translate-y-0.5 transition-all text-center">🌈 Default</button>
+                <button onclick="changeTheme('dark')" class="p-3 bg-gradient-to-br from-gray-800 to-black rounded-xl border border-gray-700 text-xs font-bold text-white hover:shadow-md hover:-translate-y-0.5 transition-all text-center">🌑 Dark</button>
+                <button onclick="changeTheme('pink')" class="p-3 bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl border border-pink-200 text-xs font-bold text-pink-700 hover:shadow-md hover:-translate-y-0.5 transition-all text-center">🌸 Pink</button>
+                <button onclick="changeTheme('red')" class="p-3 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border border-red-200 text-xs font-bold text-red-700 hover:shadow-md hover:-translate-y-0.5 transition-all text-center">🔴 Red</button>
+            </div>
 
-            <div onclick="toggleThemeMenu()" class="w-full text-left p-4 hover:bg-white/50 rounded-xl flex items-center gap-4 transition cursor-pointer">
-    <i class="fa-solid fa-palette text-purple-600"></i> 
-    <span class="font-medium text-gray-700">Change Theme</span>
-    <i class="fa-solid fa-chevron-down text-xs text-gray-400 ml-auto"></i>
-</div>
-
-<div id="theme-options" class="hidden flex flex-col gap-2 pl-14 pr-4 pb-4">
-    <button onclick="changeTheme('default')" class="w-full text-left p-2 rounded-lg hover:bg-purple-100 text-sm font-medium transition text-gray-600">
-        🌈 Default (Gradient)
-    </button>
-    <button onclick="changeTheme('dark')" class="w-full text-left p-2 rounded-lg hover:bg-gray-800 hover:text-white text-sm font-medium transition text-gray-600">
-        🌑 Dark Mode
-    </button>
-    <button onclick="changeTheme('pink')" class="w-full text-left p-2 rounded-lg hover:bg-pink-100 text-sm font-medium transition text-gray-600">
-        🌸 Pink Mode
-    </button>
-    <button onclick="changeTheme('red')" class="w-full text-left p-2 rounded-lg hover:bg-red-100 text-sm font-medium transition text-gray-600">
-        🔴 Red Mode
-    </button>
-</div>
-
-
-<button onclick="renderDocuments()" class="mt-4 w-full bg-purple-50 text-purple-700 font-bold py-2 rounded-xl border border-purple-100 flex items-center justify-center gap-2"><i class="fa-solid fa-vault"></i> My Documents Vault</button>
-
-
-             <button onclick="backupData()" class="w-full text-left p-4 hover:bg-white/50 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-cloud-arrow-down text-blue-500"></i> <span id="lbl-backup">Backup Data</span></button>
-            <div class="h-px bg-gray-300 my-4"></div>
-            <button onclick="deleteAccount()" class="w-full text-left p-4 text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-trash"></i> <span id="lbl-delete">Delete Account</span></button>
-            <button onclick="APIService.auth.logout()" class="w-full text-left p-4 text-gray-600 hover:bg-gray-100 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-right-from-bracket"></i> <span id="lbl-logout">Logout</span></button>
-            <button onclick="window.open('https://doc-hosting.flycricket.io/zobbly-terms-of-use/d1ee1b3a-65d2-4457-8036-ba6a90e58bbb/terms', '_blank')" class="w-full text-left p-4 text-gray-600 hover:bg-gray-100 rounded-xl flex items-center gap-4 transition"><i class="fa-solid fa-file-contract"></i> <span>Privacy Policy</span></button>
-            <button onclick="badalDoUI()" class="w-full text-left p-4 bg-purple-50 text-purple-700 hover:bg-purple-100 rounded-xl flex items-center gap-4 transition font-bold border border-purple-200 shadow-sm">
-                <i class="fa-solid fa-wand-magic-sparkles text-lg"></i> <span>Change UI Version</span>
+            <button onclick="renderDocuments()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_8px_20px_-6px_rgba(147,51,234,0.4)] hover:shadow-[0_12px_25px_-6px_rgba(147,51,234,0.5)] text-left p-3.5 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md border border-white/30 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-vault text-white text-lg"></i>
+                </div>
+                <span class="font-bold text-[15px] tracking-wide">My Documents Vault</span>
+                <i class="fa-solid fa-chevron-right ml-auto text-white/60 text-xs"></i>
             </button>
-                                                                                                                                                                                                                                                                                                                                            
+
+            <button onclick="backupData()" class="w-full bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.1)] border border-gray-50 text-left p-3.5 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 group">
+                <div class="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 group-hover:scale-110 transition-all">
+                    <i class="fa-solid fa-cloud-arrow-down text-blue-500 text-lg"></i>
+                </div>
+                <span id="lbl-backup" class="font-bold text-gray-700 text-[15px]">Backup Data</span>
+                <i class="fa-solid fa-chevron-right ml-auto text-gray-300 text-xs"></i>
+            </button>
+            
+            <div class="h-[1px] bg-gradient-to-r from-transparent via-gray-200 to-transparent my-5"></div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="window.open('https://doc-hosting.flycricket.io/zobbly-terms-of-use/d1ee1b3a-65d2-4457-8036-ba6a90e58bbb/terms', '_blank')" class="bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-lg border border-gray-50 p-4 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 group">
+                    <div class="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center group-hover:bg-teal-100 group-hover:scale-110 transition-all">
+                        <i class="fa-solid fa-file-contract text-teal-600 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-[13px] text-gray-600">Privacy Policy</span>
+                </button>
+                <button onclick="APIService.auth.logout()" class="bg-white shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)] hover:shadow-lg border border-gray-50 p-4 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-300 hover:-translate-y-1 group">
+                    <div class="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-red-50 group-hover:scale-110 transition-all">
+                        <i class="fa-solid fa-right-from-bracket text-gray-500 group-hover:text-red-500 text-xl transition-colors"></i>
+                    </div>
+                    <span id="lbl-logout" class="font-bold text-[13px] text-gray-600 group-hover:text-red-500 transition-colors">Logout</span>
+                </button>
+            </div>
+
+            <button onclick="deleteAccount()" class="w-full bg-red-50/50 border border-red-100 text-left p-3.5 rounded-2xl flex items-center gap-4 transition-all duration-300 mt-2 hover:bg-red-100 hover:shadow-md group">
+                <div class="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-sm text-red-500 group-hover:scale-110 transition-transform">
+                    <i class="fa-solid fa-trash"></i>
+                </div>
+                <span id="lbl-delete" class="font-bold text-red-600 text-[15px]">Delete Account</span>
+            </button>
+
+            <button onclick="badalDoUI()" class="w-full mt-6 bg-gradient-to-r from-pink-500 via-rose-500 to-orange-500 text-white shadow-[0_8px_20px_-6px_rgba(244,63,94,0.4)] hover:shadow-[0_12px_25px_-6px_rgba(244,63,94,0.6)] text-left p-4 rounded-2xl flex items-center gap-4 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 w-24 h-24 bg-white/20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md shadow-inner border border-white/20 relative z-10 group-hover:rotate-12 transition-transform">
+                    <i class="fa-solid fa-wand-magic-sparkles text-white text-xl"></i>
+                </div>
+                <span class="font-bold text-[16px] tracking-wide relative z-10">Change UI Version</span>
+                <i class="fa-solid fa-arrow-right ml-auto text-white/70 text-sm relative z-10 group-hover:translate-x-1 transition-transform"></i>
+            </button>
         </div>
     </div>
 </div>
@@ -738,7 +768,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
     <button id="cancel-upload-btn" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold">Cancel Post</button>
 </div>
 
-<script src="script1.js?v=11"></script>
+<script src="script1.js?v=12"></script>
 
 </body>
 </html>

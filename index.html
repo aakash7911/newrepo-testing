@@ -686,20 +686,30 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
 </div>
 
 <div id="postModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="glass-card w-11/12 p-6 relative shadow-2xl animate-pop-view" style="background:white">
-        <button onclick="document.getElementById('postModal').classList.add('hidden')" class="absolute top-4 right-4 text-xl"><i class="fa-solid fa-xmark"></i></button>
-        <h2 id="lbl-create-post" class="text-xl font-bold mb-4" data-key="createPost">Create Post</h2>
-        <textarea id="postContent" class="w-full bg-gray-50 p-4 rounded-xl mb-4 outline-none focus:ring-2 ring-purple-200" rows="4" placeholder="What's happening?"></textarea>
-        <div class="mb-4">
-            <div class="flex items-center bg-gray-50 rounded-xl px-3 border border-transparent focus-within:border-purple-300 focus-within:ring-2 ring-purple-100 transition">
-         <i class="fa-solid fa-link text-gray-400 mr-2"></i>
-         <input id="postLink" class="w-full bg-transparent p-3 outline-none text-sm" placeholder="Paste link here (http://...)">
-    </div>
- </div>
+    <div class="glass-card w-11/12 max-w-md p-6 relative shadow-2xl animate-pop-view border border-purple-100/50" style="background:white; border-radius: 24px;">
+        <button onclick="document.getElementById('postModal').classList.add('hidden')" class="absolute top-5 right-5 text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+        
+        <h2 id="lbl-create-post" class="text-2xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600" data-key="createPost">Create Post</h2>
+        
+        <div class="relative mb-4">
+            <textarea id="postContent" class="w-full bg-purple-50/50 border border-purple-100/50 p-4 rounded-2xl outline-none focus:ring-2 ring-purple-400 focus:bg-white transition-all resize-none text-gray-700 placeholder-gray-400" rows="4" placeholder="What's on your mind?"></textarea>
+        </div>
 
-        <div class="flex justify-between items-center">
-            <input type="file" id="postImage" class="text-sm text-gray-500 w-1/2">
-            <button id="lbl-btn-post" onclick="submitPost()" class="btn-zobbly px-6 py-2 rounded-full font-bold text-sm" data-key="post">Post</button>
+        <div class="mb-5">
+            <div class="flex items-center bg-purple-50/50 rounded-2xl px-4 border border-purple-100/50 focus-within:border-purple-400 focus-within:ring-2 ring-purple-100 focus-within:bg-white transition-all overflow-hidden">
+                <i class="fa-solid fa-link text-purple-400 mr-2"></i>
+                <input id="postLink" class="w-full bg-transparent py-3.5 outline-none text-sm text-gray-700 placeholder-gray-400" placeholder="Paste a link here (http://...)">
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+            <label for="postImage" class="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-full font-bold text-[13px] transition-colors border border-indigo-100">
+                <i class="fa-regular fa-image text-lg"></i>
+                <span id="postImageName">Add Photo</span>
+            </label>
+            <input type="file" id="postImage" class="hidden" accept="image/*" onchange="document.getElementById('postImageName').innerText = this.files[0] ? this.files[0].name.substring(0, 12) + '...' : 'Add Photo'">
+            
+            <button id="lbl-btn-post" onclick="submitPost()" class="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_8px_20px_-6px_rgba(147,51,234,0.5)] hover:shadow-[0_12px_25px_-6px_rgba(147,51,234,0.6)] hover:-translate-y-0.5 transition-all text-white px-8 py-2.5 rounded-full font-bold text-sm" data-key="post">Post</button>
         </div>
     </div>
 </div>
@@ -768,7 +778,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
     <button id="cancel-upload-btn" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold">Cancel Post</button>
 </div>
 
-<script src="script1.js?v=13"></script>
+<script src="script1.js?v=14"></script>
 
 </body>
 </html>

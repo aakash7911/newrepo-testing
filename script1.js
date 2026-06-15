@@ -1168,6 +1168,8 @@ async function renderFeed(c) {
     document.getElementById('postContent').value = "";
     document.getElementById('postLink').value = "";
     document.getElementById('postImage').value = "";
+    const pin = document.getElementById('postImageName');
+    if(pin) pin.innerText = "Add Photo";
     
     renderView('feed');
 }

@@ -47,6 +47,9 @@ const API_BASE = "https://zobbly.onrender.com";
         { id: 'sunset', name: '🌅 Sunset', bg: 'url(https://i.ibb.co/W4XXhLX8/Gemini-Generated-Image-xo6dpexo6dpexo6d.png)', text: 'text-white', btn: 'bg-orange-600', barColor: 'rgba(255, 240, 230, 0.95)' },
         { id: 'tech', name: '💻 Cyber', bg: 'url(https://i.ibb.co/KMvTGKm/Gemini-Generated-Image-hhy4sohhy4sohhy4.png)', text: 'text-white', btn: 'bg-blue-600', barColor: 'rgba(220, 230, 255, 0.95)' },
         { id: 'abstract', name: '🎨 Abstract', bg: 'url(https://i.ibb.co/Lzy1Yfhf/Gemini-Generated-Image-o7z6c6o7z6c6o7z6.png)', text: 'text-white', btn: 'bg-pink-500', barColor: 'rgba(255, 235, 255, 0.95)' }
+        {id: 'nature', name: 'https://images.unsplash.com/photo-1781018907948-89cd0aa4bedc?q=80&w=1280&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)',  text: 'text-white', btn: 'bg-green-600', barColor: 'rqba(230' 250' 0.95)'},
+    
+    
     ];
    function receiveFcmToken(token) {
         localStorage.setItem("fcmToken", token);

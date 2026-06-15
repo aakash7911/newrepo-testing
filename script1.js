@@ -1,5 +1,30 @@
 
 const API_BASE = "https://zobbly.onrender.com";
+    window.keywordInteractions = window.keywordInteractions || {};
+    window.preferredKeyword = window.preferredKeyword || null;
+
+    window.trackInteraction = function(postId) {
+        if (window.preferredKeyword) return;
+        if (!window.allPosts) return;
+
+        const post = window.allPosts.find(p => p._id === postId);
+        if (post && post.keywords && Array.isArray(post.keywords)) {
+            post.keywords.forEach(kw => {
+                if (!kw) return;
+                const key = kw.toLowerCase().trim();
+                window.keywordInteractions[key] = (window.keywordInteractions[key] || 0) + 1;
+                
+                if (window.keywordInteractions[key] >= 3 && !window.preferredKeyword) {
+                    window.preferredKeyword = key;
+                    console.log("Preferred keyword set to:", key);
+                    if (document.getElementById('feed-container')) {
+                        renderView('feed');
+                    }
+                }
+            });
+        }
+    };
+
     let activeChatUser = null;
     let myFollowers = [];
     let myFollowing = [];
@@ -314,9 +339,15 @@ const API_BASE = "https://zobbly.onrender.com";
         feed: {
             create: async(fd) => fetch(`${API_BASE}/api/posts/create`, {method:"POST", headers: { "x-auth-token": localStorage.getItem("token") }, body:fd}),
             getAll: async() => {
-                const res = await fetch(`${API_BASE}/api/posts?t=${new Date().getTime()}`, {headers: getHeaders()});
+                let url = `${API_BASE}/api/posts?t=${new Date().getTime()}`;
+                if (window.preferredKeyword) {
+                    url += `&preferredKeyword=${encodeURIComponent(window.preferredKeyword)}`;
+                }
+                const res = await fetch(url, {headers: getHeaders()});
                 if(!res.ok) throw new Error("Feed Error");
-                return res.json();
+                const data = await res.json();
+                window.allPosts = data;
+                return data;
             },
             getMyPosts: async() => (await fetch(`${API_BASE}/api/my-posts`, {headers:getHeaders()})).json(),
             like: async(id) => fetch(`${API_BASE}/api/posts/like/${id}`, {method:"PUT", headers:getHeaders()}),
@@ -1143,6 +1174,7 @@ async function renderFeed(c) {
 
 
     async function toggleLike(id) {
+        window.trackInteraction(id);
         const icon = document.getElementById(`like-icon-${id}`);
         const countSpan = document.getElementById(`like-cnt-${id}`);
         if (icon && countSpan) {
@@ -1155,6 +1187,7 @@ async function renderFeed(c) {
     function toggleComment(id) { document.getElementById(`comments-${id}`).classList.toggle('hidden'); }
 
     async function postComment(id) {
+        window.trackInteraction(id);
         const input = document.getElementById(`inp-${id}`);
         const text = input.value;
         if(!text) return;
@@ -2182,6 +2215,7 @@ async function loadReelComments(postId) {
 }
 
 async function postReelComment(postId) {
+    window.trackInteraction(postId);
     const inp = document.getElementById('reel-cmt-input');
     if(!inp.value) return;
     try {
@@ -2217,6 +2251,7 @@ async function handleReelFollow(userId, postId) {
 
 
 async function toggleReelLike(postId) {
+    window.trackInteraction(postId);
     const icon = document.getElementById(`rlike-icon-${postId}`);
     const countSpan = document.getElementById(`rlike-cnt-${postId}`);
     let count = parseInt(countSpan.innerText);

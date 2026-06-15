@@ -277,6 +277,7 @@
     scroll-snap-type: y mandatory; 
     height: 100vh !important;
     background: #000; 
+}
 .reels-wrapper {
     height: 100vh; 
     width: 100%;
@@ -784,7 +785,23 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
     <button id="cancel-upload-btn" class="bg-red-500 text-white px-6 py-2 rounded-full font-bold">Cancel Post</button>
 </div>
 
-<script src="script1.js?v=15"></script>
+<!-- Reels Comment Modal -->
+<div id="reelsCommentModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex flex-col justify-end">
+    <div class="w-full h-[70vh] bg-white rounded-t-[30px] p-5 flex flex-col relative animate-pop-view shadow-2xl">
+        <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-800">Comments</h2>
+            <button onclick="closeReelComments()" class="text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="reel-cmts-list" class="flex-1 overflow-y-auto space-y-4 mb-4"></div>
+        <div class="flex gap-2 items-center bg-gray-50 p-2 rounded-full border border-gray-200 focus-within:border-purple-300 focus-within:ring-2 ring-purple-100 transition">
+            <input id="reel-cmt-input" placeholder="Add a comment..." class="flex-1 bg-transparent px-3 outline-none text-sm text-gray-700">
+            <button id="reel-cmt-btn" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-transform hover:-translate-y-0.5"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+        </div>
+    </div>
+</div>
+
+<script src="script1.js?v=16"></script>
 
 </body>
 </html>

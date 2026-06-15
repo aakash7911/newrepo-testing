@@ -2231,6 +2231,17 @@ async function renderReels(container) {
     }
 }
 
+function openReelComments(postId) {
+    document.getElementById('reelsCommentModal').classList.remove('hidden');
+    document.getElementById('reel-cmt-btn').setAttribute('onclick', `postReelComment('${postId}')`);
+    document.getElementById('reel-cmts-list').innerHTML = `<div class="flex justify-center py-10"><i class="fa-solid fa-spinner fa-spin text-purple-500 text-2xl"></i></div>`;
+    loadReelComments(postId);
+}
+
+function closeReelComments() {
+    document.getElementById('reelsCommentModal').classList.add('hidden');
+}
+
 async function loadReelComments(postId) {
     const list = document.getElementById('reel-cmts-list');
     try {

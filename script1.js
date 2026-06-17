@@ -1826,15 +1826,15 @@ async function sendMsg() {
     input.value = ""; 
     input.focus();
     
-    await renderMsgsFromCacheAndPending();
+    await renderMsgsFromCacheAndPending(true);
 
     try {
         await APIService.chat.send(activeChatUser, txt);
         pendingMsg.status = 'sent';
-        await renderMsgsFromCacheAndPending();
+        await renderMsgsFromCacheAndPending(true);
     } catch(e) {
         pendingMsg.status = 'failed';
-        await renderMsgsFromCacheAndPending();
+        await renderMsgsFromCacheAndPending(true);
     }
 }
 

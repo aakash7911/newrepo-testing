@@ -1911,6 +1911,12 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
 
     const allMsgs = [...serverMsgs, ...(window.pendingMessages || [])];
 
+    const stateString = JSON.stringify(allMsgs) + themeBtn;
+    if (window.lastRenderedChatState === stateString) {
+        return; // Prevent flickering by not updating DOM if state hasn't changed
+    }
+    window.lastRenderedChatState = stateString;
+
     chatMsgs.innerHTML = allMsgs.map(m => {
         let content = m.content;
         if(m.type==='image') { content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; }

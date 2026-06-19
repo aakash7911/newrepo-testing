@@ -49,8 +49,8 @@ const API_BASE = "https://zobbly.onrender.com";
         { id: 'abstract', name: '🎨', bg: 'url(https://plus.unsplash.com/premium_photo-1769900514785-64a3206b7a1c?q=80&w=1331&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)', text: 'text-white', btn: 'bg-pink-500', barColor: 'rgba(255, 235, 255, 0.95)' }
       
     
-    
     ];
+    let currentTheme = chatThemes.find(t => t.id === localStorage.getItem('savedChatThemeId')) || chatThemes[0];
    function receiveFcmToken(token) {
         localStorage.setItem("fcmToken", token);
         if (localStorage.getItem("token")) APIService.user.updateFcm(token);
@@ -699,6 +699,7 @@ function renderView(view) {
 
     function setChatTheme(themeId) {
         currentTheme = chatThemes.find(t => t.id === themeId) || chatThemes[0];
+        localStorage.setItem('savedChatThemeId', currentTheme.id);
         document.getElementById('chat-theme-menu').classList.remove('open');
 
         
@@ -1808,6 +1809,10 @@ async function startChat(id, name, photo) {
     activeChatUser = id;
     window.chatScrolledOnce = false;
     window.pendingMessages = []; // Reset pending messages for new chat
+    
+    // Apply saved theme automatically
+    setChatTheme(currentTheme.id);
+
     document.getElementById('fc-user-name').innerText = name;
     document.getElementById('fc-user-img').src = photo || 'https://placehold.co/30';
     

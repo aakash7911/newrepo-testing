@@ -305,6 +305,8 @@ const API_BASE = "https://zobbly.onrender.com";
     }, // <-- NOTIFICATIONS BLOCK YAHAN CLOSE HUA (Agar iske aage aur code jaise 'user: {}' hai toh yahan comma (,) laga dena)
 
         user: {
+            getShareFreq: async () => (await fetch(`${API_BASE}/api/user/get-share-freq`, { headers: getHeaders() })).json(),
+            updateShareFreq: async (targetUserId) => { await fetch(`${API_BASE}/api/user/update-share-freq`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ targetUserId }) }); },
             getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}`)).json(),
             getFollowers: async (id) => (await fetch(`${API_BASE}/api/user/followers/${id}`, { headers: getHeaders() })).json(),
             getFollowing: async (id) => (await fetch(`${API_BASE}/api/user/following/${id}`, { headers: getHeaders() })).json(),
@@ -3069,7 +3071,7 @@ setInterval(() => loadConversations(true), 5000);
 let currentShareReel = null;
 let shareUsersList = [];
 let selectedShareUsers = new Set();
-let shareFreqMap = JSON.parse(localStorage.getItem('reelShareFreq') || '{}');
+let shareFreqMap = {};
 
 async function openReelShareModal(reelId, poster, videoUrl, isYouTube) {
     currentShareReel = { id: reelId, poster, videoUrl, isYouTube };
@@ -3080,9 +3082,21 @@ async function openReelShareModal(reelId, poster, videoUrl, isYouTube) {
     document.getElementById('reelsShareModal').classList.remove('hidden');
 
     try {
+        // Fetch users from conversations
         let users = await APIService.chat.getConversations();
         const myId = localStorage.getItem("userId");
         shareUsersList = users.filter(u => u._id !== myId);
+        
+        // Fetch share frequency from backend API instead of local storage
+        try {
+            const freqRes = await APIService.user.getShareFreq();
+            if(freqRes.success && freqRes.data) {
+                shareFreqMap = freqRes.data;
+            }
+        } catch(e) {
+            console.log("Fallback to local storage for share freq");
+            shareFreqMap = JSON.parse(localStorage.getItem('reelShareFreq') || '{}');
+        }
         
         shareUsersList.sort((a, b) => {
             const freqA = shareFreqMap[a._id] || 0;
@@ -3204,10 +3218,14 @@ async function sendSharedReel() {
     for (let userId of selectedShareUsers) {
         try {
             await APIService.chat.send(userId, payload);
+            
+            // Update frequency in backend API
             shareFreqMap[userId] = (shareFreqMap[userId] || 0) + 1;
+            APIService.user.updateShareFreq(userId).catch(e=>console.log(e));
         } catch(e) {}
     }
     
+    // Backup locally
     localStorage.setItem('reelShareFreq', JSON.stringify(shareFreqMap));
     
     showToast("Reel shared successfully!");

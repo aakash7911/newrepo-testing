@@ -125,12 +125,7 @@ const API_BASE = "https://zobbly.onrender.com";
 
     const getHeaders = (isFormData = false) => {
         const token = localStorage.getItem("token");
-        const headers = { 
-            "x-auth-token": token,
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            "Pragma": "no-cache",
-            "Expires": "0"
-        };
+        const headers = { "x-auth-token": token };
         if (!isFormData) headers["Content-Type"] = "application/json";
         return headers;
     };
@@ -312,7 +307,7 @@ const API_BASE = "https://zobbly.onrender.com";
         user: {
             getShareFreq: async () => (await fetch(`${API_BASE}/api/user/get-share-freq`, { headers: getHeaders() })).json(),
             updateShareFreq: async (targetUserId) => { await fetch(`${API_BASE}/api/user/update-share-freq`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ targetUserId }) }); },
-            getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}`, { headers: getHeaders() })).json(),
+            getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}`)).json(),
             getFollowers: async (id) => (await fetch(`${API_BASE}/api/user/followers/${id}`, { headers: getHeaders() })).json(),
             getFollowing: async (id) => (await fetch(`${API_BASE}/api/user/following/${id}`, { headers: getHeaders() })).json(),
             follow: async (id) => (await fetch(`${API_BASE}/api/user/follow/${id}`, { method: "PUT", headers: getHeaders() })).json(),

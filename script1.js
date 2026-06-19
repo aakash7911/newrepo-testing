@@ -1720,19 +1720,46 @@ async function renderChat(c) {
     loadConversations();
 }
 
-async function loadConversations() { 
+window.unreadChatUsers = window.unreadChatUsers || new Set();
+
+async function loadConversations(isPolling = false) { 
+    if(isPolling && (currentView !== 'chat' || isChatOpen)) return;
+    
     let users = await APIService.chat.getConversations(); 
     const myId = localStorage.getItem("userId");
     users = users.filter(u => u._id !== myId);
-    document.getElementById('chat-list').innerHTML = users.map(u => `
-        <div onclick="startChat('${u._id}','${u.name}','${u.photo}')" class="p-4 border-b cursor-pointer hover:bg-purple-50 flex gap-4 items-center transition">
+    
+    try {
+        const notifs = await APIService.notifications.getAll();
+        const unreadMsgs = notifs.filter(n => !n.isRead && n.type === 'message');
+        unreadMsgs.forEach(n => {
+            const actor = n.fromUser || n.sender || n.user || n.userId || {};
+            const actorId = actor._id || actor;
+            if (actorId) window.unreadChatUsers.add(actorId);
+        });
+    } catch(e) {}
+
+    const list = document.getElementById('chat-list');
+    if (!list) return;
+    
+    list.innerHTML = users.map(u => {
+        const isUnread = window.unreadChatUsers && window.unreadChatUsers.has(u._id);
+        const bgClass = isUnread ? 'bg-purple-50 border-l-4 border-purple-600' : 'hover:bg-purple-50 border-b border-gray-100';
+        const dotHtml = isUnread ? `<span class="w-2.5 h-2.5 bg-purple-600 rounded-full"></span>` : '';
+        const nameClass = isUnread ? 'text-sm font-black text-purple-900' : 'text-sm font-bold text-gray-800';
+        const textClass = isUnread ? 'text-xs font-bold text-purple-600 animate-pulse' : 'text-xs text-gray-500';
+        
+        return `<div onclick="startChat('${u._id}','${u.name}','${u.photo}')" class="p-4 cursor-pointer flex gap-4 items-center transition ${bgClass}">
             <img src="${u.photo||'https://placehold.co/40'}" class="w-12 h-12 rounded-full border shadow-sm">
-            <div>
-                <div class="text-sm font-bold text-gray-800">${u.name}</div>
-                <div class="text-xs text-gray-500">Tap to chat</div>
+            <div class="flex-1 flex justify-between items-center">
+                <div>
+                    <div class="${nameClass}">${u.name}</div>
+                    <div class="${textClass}">${isUnread ? 'New message!' : 'Tap to chat'}</div>
+                </div>
+                ${dotHtml}
             </div>
-        </div>`
-    ).join(''); 
+        </div>`;
+    }).join(''); 
 }
 
 async function executeChatSearch() {
@@ -1761,6 +1788,7 @@ async function searchChatUsers(q) {
 
 
 async function startChat(id, name, photo) {
+    if (window.unreadChatUsers) window.unreadChatUsers.delete(id);
     activeChatUser = id;
     window.chatScrolledOnce = false;
     window.pendingMessages = []; // Reset pending messages for new chat
@@ -1830,6 +1858,24 @@ async function sendMsg() {
 
     try {
         await APIService.chat.send(activeChatUser, txt);
+        pendingMsg.status = 'sent';
+        await renderMsgsFromCacheAndPending(true);
+    } catch(e) {
+        pendingMsg.status = 'failed';
+        await renderMsgsFromCacheAndPending(true);
+    }
+}
+
+async function retryMsg(tempId) {
+    if (!window.pendingMessages) return;
+    const pendingMsg = window.pendingMessages.find(m => m._id === tempId);
+    if (!pendingMsg) return;
+
+    pendingMsg.status = 'sending';
+    await renderMsgsFromCacheAndPending(true);
+
+    try {
+        await APIService.chat.send(activeChatUser, pendingMsg.content);
         pendingMsg.status = 'sent';
         await renderMsgsFromCacheAndPending(true);
     } catch(e) {
@@ -1932,7 +1978,7 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
                 statusHtml = `Sending... <i class="fa-solid fa-spinner fa-spin text-[8px]"></i>`;
                 opacityClass = 'opacity-70';
             } else if (m.status === 'failed') {
-                statusHtml = `<span class="text-red-300">Failed</span>`;
+                statusHtml = `<span class="text-red-300 font-bold">Failed</span> <button onclick="retryMsg('${m._id}')" class="text-white bg-red-500 hover:bg-red-600 px-1.5 py-0.5 rounded ml-1 transition">Retry <i class="fa-solid fa-rotate-right ml-0.5 text-[8px]"></i></button>`;
             }
         }
 
@@ -2992,4 +3038,6 @@ window.addEventListener('popstate', function (event) {
         window.history.back();
     }
 });
+
+setInterval(() => loadConversations(true), 5000);
 

@@ -1965,7 +1965,26 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
 
     chatMsgs.innerHTML = allMsgs.map(m => {
         let content = m.content;
-        if(m.type==='image') { content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; }
+        if(m.type==='image') { 
+            content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; 
+        } else if(content && content.startsWith('ZOBBLY_REEL_SHARE||')) {
+            const parts = content.split('||');
+            const rId = parts[1];
+            const rPoster = parts[2] && parts[2] !== 'undefined' && parts[2] !== 'null' && parts[2] !== '' ? parts[2] : 'https://placehold.co/200x300?text=Reel';
+            content = `
+            <div onclick="openSharedReel('${rId}')" class="relative w-40 h-60 rounded-xl overflow-hidden cursor-pointer shadow-[0_0_15px_rgba(0,0,0,0.2)] border border-white/50 group mt-1">
+                <img src="${rPoster}" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:bg-black/20 transition-all flex items-center justify-center">
+                    <div class="w-12 h-12 bg-white/30 backdrop-blur-md rounded-full flex items-center justify-center border border-white/50 shadow-lg group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-play text-white text-xl ml-1"></i>
+                    </div>
+                </div>
+                <div class="absolute bottom-3 left-3 flex items-center gap-2">
+                    <i class="fa-solid fa-clapperboard text-white text-sm"></i>
+                    <span class="text-white text-[11px] font-bold drop-shadow-md">Watch Reel</span>
+                </div>
+            </div>`;
+        }
         
         const isMe = m.senderId === myId;
         const bubbleClass = isMe ? `chat-bubble-user ${themeBtn} text-white self-end` : 'chat-bubble-other self-start bg-white/90 backdrop-blur-sm';
@@ -2168,6 +2187,11 @@ async function renderReels(container) {
 
                         <div class="flex flex-col items-center mb-4" onclick="reportUser('${p.userId?._id}', '${p.userId?.username}')">
                             <i class="fa-solid fa-flag text-2xl text-white/80"></i>
+                        </div>
+
+                        <!-- Reel Share Button -->
+                        <div class="flex flex-col items-center mb-4" onclick="openReelShareModal('${p._id}', '${posterUrl}', '${videoUrl}', ${isYouTube})">
+                            <i class="fa-solid fa-paper-plane text-2xl text-white transition-transform active:-translate-y-2 active:scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]"></i>
                         </div>
 
                         <div class="flex flex-col items-center" onclick="${isYouTube ? `alert('YouTube reels direct download nahi ho sakti.')` : `downloadReelWithProgress('${videoUrl}', '${p._id}')`}">
@@ -3040,4 +3064,171 @@ window.addEventListener('popstate', function (event) {
 });
 
 setInterval(() => loadConversations(true), 5000);
+
+// --- REEL SHARE LOGIC ---
+let currentShareReel = null;
+let shareUsersList = [];
+let selectedShareUsers = new Set();
+let shareFreqMap = JSON.parse(localStorage.getItem('reelShareFreq') || '{}');
+
+async function openReelShareModal(reelId, poster, videoUrl, isYouTube) {
+    currentShareReel = { id: reelId, poster, videoUrl, isYouTube };
+    selectedShareUsers.clear();
+    updateShareCountBadge();
+    document.getElementById('share-search-input').value = '';
+    document.getElementById('share-search-results').classList.add('hidden');
+    document.getElementById('reelsShareModal').classList.remove('hidden');
+
+    try {
+        let users = await APIService.chat.getConversations();
+        const myId = localStorage.getItem("userId");
+        shareUsersList = users.filter(u => u._id !== myId);
+        
+        shareUsersList.sort((a, b) => {
+            const freqA = shareFreqMap[a._id] || 0;
+            const freqB = shareFreqMap[b._id] || 0;
+            return freqB - freqA;
+        });
+
+        renderShareCircle();
+    } catch(e) {}
+}
+
+function closeReelShare() {
+    document.getElementById('reelsShareModal').classList.add('hidden');
+}
+
+function renderShareCircle() {
+    const container = document.getElementById('share-circle-container');
+    container.innerHTML = '';
+    
+    const topUsers = shareUsersList.slice(0, 5);
+    const outerUsers = shareUsersList.slice(5, 13);
+    
+    const radiusIn = 65; 
+    const radiusOut = 140; 
+
+    const renderNode = (u, radius, sizeClass, index, total) => {
+        const angle = (index / total) * (2 * Math.PI) - Math.PI / 2;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+        
+        const isSelected = selectedShareUsers.has(u._id);
+        const ringClass = isSelected ? 'border-4 border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.8)]' : 'border border-white/30';
+        const checkHtml = isSelected ? `<div class="absolute -bottom-1 -right-1 bg-pink-500 rounded-full w-5 h-5 flex items-center justify-center text-white text-[10px] border-2 border-black z-10"><i class="fa-solid fa-check"></i></div>` : '';
+
+        return `<div onclick="toggleShareUser('${u._id}')" class="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all cursor-pointer hover:scale-110 active:scale-95 z-20" style="left: calc(50% + ${x}px); top: calc(50% + ${y}px);">
+            <div class="relative rounded-full ${sizeClass} ${ringClass} transition-all duration-300 bg-black">
+                <img src="${u.photo || 'https://placehold.co/40'}" class="w-full h-full rounded-full object-cover">
+                ${checkHtml}
+            </div>
+            <div class="text-[9px] text-white/90 font-bold text-center mt-1 truncate w-14 absolute left-1/2 -translate-x-1/2 bg-black/60 px-1.5 py-0.5 rounded-full backdrop-blur-sm shadow-md">${u.name.split(' ')[0]}</div>
+        </div>`;
+    };
+
+    let html = '';
+    topUsers.forEach((u, i) => html += renderNode(u, radiusIn, 'w-14 h-14', i, topUsers.length));
+    outerUsers.forEach((u, i) => html += renderNode(u, radiusOut, 'w-10 h-10', i, outerUsers.length));
+
+    container.innerHTML = html;
+}
+
+function toggleShareUser(id) {
+    if (selectedShareUsers.has(id)) selectedShareUsers.delete(id);
+    else selectedShareUsers.add(id);
+    
+    renderShareCircle();
+    updateShareCountBadge();
+    
+    // Update search results UI if open
+    const q = document.getElementById('share-search-input').value;
+    if(q.length > 0) filterShareUsers();
+}
+
+function updateShareCountBadge() {
+    const badge = document.getElementById('share-count-badge');
+    const btn = document.getElementById('send-shared-reel-btn');
+    badge.innerText = selectedShareUsers.size;
+    
+    if (selectedShareUsers.size > 0) {
+        btn.classList.remove('hidden');
+        btn.classList.add('animate-pop-view');
+    } else {
+        btn.classList.add('hidden');
+        btn.classList.remove('animate-pop-view');
+    }
+}
+
+async function filterShareUsers() {
+    const q = document.getElementById('share-search-input').value.toLowerCase();
+    const resContainer = document.getElementById('share-search-results');
+    
+    if (q.length < 1) {
+        resContainer.classList.add('hidden');
+        return;
+    }
+    
+    let filtered = shareUsersList.filter(u => u.name.toLowerCase().includes(q) || (u.username && u.username.toLowerCase().includes(q)));
+    
+    if (filtered.length === 0) {
+        resContainer.innerHTML = `<div class="p-3 text-center text-white/50 text-xs font-bold">No users found</div>`;
+    } else {
+        resContainer.innerHTML = filtered.map(u => {
+            const isSelected = selectedShareUsers.has(u._id);
+            const ringClass = isSelected ? 'border-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)]' : 'border-transparent';
+            const checkIcon = isSelected ? `<i class="fa-solid fa-circle-check text-pink-500 text-lg"></i>` : `<i class="fa-regular fa-circle text-white/30 text-lg"></i>`;
+            return `
+            <div onclick="toggleShareUser('${u._id}')" class="flex items-center justify-between p-2.5 hover:bg-white/10 rounded-xl cursor-pointer transition">
+                <div class="flex items-center gap-3">
+                    <img src="${u.photo || 'https://placehold.co/40'}" class="w-10 h-10 rounded-full border-2 ${ringClass} object-cover">
+                    <div>
+                        <div class="text-sm font-bold text-white">${u.name}</div>
+                        <div class="text-xs text-white/50">@${u.username || 'user'}</div>
+                    </div>
+                </div>
+                ${checkIcon}
+            </div>`;
+        }).join('');
+    }
+    resContainer.classList.remove('hidden');
+}
+
+async function sendSharedReel() {
+    if (!currentShareReel || selectedShareUsers.size === 0) return;
+    
+    const btn = document.getElementById('send-shared-reel-btn');
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> SENDING...`;
+    
+    const payload = `ZOBBLY_REEL_SHARE||${currentShareReel.id}||${currentShareReel.poster}||${currentShareReel.videoUrl}||${currentShareReel.isYouTube}`;
+    
+    for (let userId of selectedShareUsers) {
+        try {
+            await APIService.chat.send(userId, payload);
+            shareFreqMap[userId] = (shareFreqMap[userId] || 0) + 1;
+        } catch(e) {}
+    }
+    
+    localStorage.setItem('reelShareFreq', JSON.stringify(shareFreqMap));
+    
+    showToast("Reel shared successfully!");
+    closeReelShare();
+    
+    btn.innerHTML = `SEND <span id="share-count-badge" class="bg-white text-pink-600 text-xs px-2 py-0.5 rounded-full shadow-inner">0</span>`;
+}
+
+function openSharedReel(reelId) {
+    closeFullChat();
+    renderView('reels');
+    
+    // Wait for DOM to render reels, then scroll
+    setTimeout(() => {
+        const el = document.getElementById('reel-' + reelId);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            showToast("Reel is loading or deleted. Please scroll to find it.");
+        }
+    }, 600);
+}
+
 

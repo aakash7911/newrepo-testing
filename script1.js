@@ -1298,11 +1298,11 @@ async function renderFeed(c) {
     
     
     let content = document.getElementById('postContent').value;
-    const linkVal = document.getElementById('postLink').value;
+    let linkVal = document.getElementById('postLink').value;
     
-   
     if(linkVal) {
-        content += " " + linkVal; 
+        if (!linkVal.startsWith('http')) linkVal = 'https://' + linkVal;
+        fd.append('link', linkVal);
     }
     
     fd.append('content', content);
@@ -1324,10 +1324,7 @@ async function renderFeed(c) {
                 fd.append('postImages', croppedBlobs[i], selectedImages[i].name);
             }
         }
-        // Append first one to 'postImage' (for backward compatibility if backend not updated yet)
-        if (croppedBlobs[0]) {
-            fd.append('postImage', croppedBlobs[0], selectedImages[0].name);
-        }
+
     } else {
         // Fallback if cropper was bypassed
         const f = document.getElementById('postImage').files[0];

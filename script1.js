@@ -2117,6 +2117,16 @@ async function renderReels(container) {
         // 🔥 REELS KO RANDOM/SHUFFLE KARNE KA LOGIC
         videoPosts = videoPosts.sort(() => Math.random() - 0.5);
 
+        // 🔥 IF OPENING A SHARED REEL, MOVE IT TO TOP 🔥
+        if (window.targetReelToOpen) {
+            const targetIndex = videoPosts.findIndex(p => p._id === window.targetReelToOpen);
+            if (targetIndex !== -1) {
+                const targetReel = videoPosts.splice(targetIndex, 1)[0];
+                videoPosts.unshift(targetReel); // Put it at index 0
+            }
+            window.targetReelToOpen = null; // Clear it
+        }
+
         const myId = localStorage.getItem("userId");
 
         // 🔥 Yahan par naya content aate hi loader automatic hat jayega (kyunki innerHTML overwrite ho jayega)
@@ -3252,17 +3262,8 @@ async function sendSharedReel() {
 
 function openSharedReel(reelId) {
     closeFullChat();
+    window.targetReelToOpen = reelId;
     renderView('reels');
-    
-    // Wait for DOM to render reels, then scroll
-    setTimeout(() => {
-        const el = document.getElementById('reel-' + reelId);
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
-        } else {
-            showToast("Reel is loading or deleted. Please scroll to find it.");
-        }
-    }, 600);
 }
 
 

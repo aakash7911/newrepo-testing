@@ -367,7 +367,8 @@ const API_BASE = "https://zobbly.onrender.com";
             getHistory: async(id) => (await fetch(`${API_BASE}/api/messages/${id}`, { headers: getHeaders() })).json(),
             deleteMsg: async (id) => { await fetch(`${API_BASE}/api/messages/${id}`, { method: "DELETE", headers: getHeaders() }); },
             clearChat: async (id) => { await fetch(`${API_BASE}/api/messages/clear/${id}`, { method: "DELETE", headers: getHeaders() }); },
-            getConversations: async() => (await fetch(`${API_BASE}/api/chat/conversations`, { headers: getHeaders() })).json()
+            getConversations: async() => (await fetch(`${API_BASE}/api/chat/conversations`, { headers: getHeaders() })).json(),
+            reactToMsg: async (id, emoji) => fetch(`${API_BASE}/api/messages/react/${id}`, { method:"PUT", headers:getHeaders(), body:JSON.stringify({ emoji }) })
         },
         notifications: {
             getAll: async () => (await fetch(`${API_BASE}/api/notifications`, { headers: getHeaders() })).json(),
@@ -2008,7 +2009,8 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
         let opacityClass = '';
         
         const reactState = JSON.parse(localStorage.getItem('chatReactions') || '{}');
-        const myReaction = reactState[m._id] || '';
+        // m.reaction backend se aayega, agar nahi aaya to fallback localStorage
+        const myReaction = m.reaction || reactState[m._id] || '';
         let reactionBadge = myReaction ? `<div class="absolute -bottom-2 -right-2 bg-white rounded-full px-1.5 shadow-[0_2px_5px_rgba(0,0,0,0.1)] border border-gray-100 text-[14px] transform hover:scale-110 transition-transform">${myReaction}</div>` : '';
         
         if (m.isPending) {
@@ -2088,14 +2090,17 @@ function reactToMsg(msgId, emoji) {
     let reactions = JSON.parse(localStorage.getItem('chatReactions') || '{}');
     if (reactions[msgId] === emoji) {
         delete reactions[msgId]; // toggle off if same
+        emoji = null; // null means removed
     } else {
         reactions[msgId] = emoji;
     }
     localStorage.setItem('chatReactions', JSON.stringify(reactions));
     loadMsgs(); // Re-render chat
     
-    // Fallback: Notify backend API if you ever add it in the future
-    // APIService.chat.react(msgId, emoji).catch(e => console.log(e));
+    // Backend API Call
+    if (APIService.chat.reactToMsg) {
+        APIService.chat.reactToMsg(msgId, emoji).catch(e => console.log(e));
+    }
 }
 
 

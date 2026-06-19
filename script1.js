@@ -307,9 +307,9 @@ const API_BASE = "https://zobbly.onrender.com";
         user: {
             getShareFreq: async () => (await fetch(`${API_BASE}/api/user/get-share-freq`, { headers: getHeaders() })).json(),
             updateShareFreq: async (targetUserId) => { await fetch(`${API_BASE}/api/user/update-share-freq`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ targetUserId }) }); },
-            getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}?c=${Math.floor(Date.now() / 7200000)}`)).json(),
-            getFollowers: async (id) => (await fetch(`${API_BASE}/api/user/followers/${id}?c=${Math.floor(Date.now() / 7200000)}`, { headers: getHeaders() })).json(),
-            getFollowing: async (id) => (await fetch(`${API_BASE}/api/user/following/${id}?c=${Math.floor(Date.now() / 7200000)}`, { headers: getHeaders() })).json(),
+            getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}?t=${Date.now()}`)).json(),
+            getFollowers: async (id) => (await fetch(`${API_BASE}/api/user/followers/${id}?t=${Date.now()}`, { headers: getHeaders() })).json(),
+            getFollowing: async (id) => (await fetch(`${API_BASE}/api/user/following/${id}?t=${Date.now()}`, { headers: getHeaders() })).json(),
             follow: async (id) => (await fetch(`${API_BASE}/api/user/follow/${id}`, { method: "PUT", headers: getHeaders() })).json(),
             update: async (name, headline) => { await fetch(`${API_BASE}/api/user/update`, { method: "PUT", headers: getHeaders(), body: JSON.stringify({name, headline}) }); },
             delete: async () => { await fetch(`${API_BASE}/api/user/delete`, { method: "DELETE", headers: getHeaders() }); },
@@ -367,17 +367,17 @@ const API_BASE = "https://zobbly.onrender.com";
             deleteComment: async(postId, commentId) => fetch(`${API_BASE}/api/posts/comment/${postId}/${commentId}`, { method: "DELETE", headers: getHeaders() })
         },
         chat: {
-            search: async (q) => (await fetch(`${API_BASE}/api/search?q=${q}`, { headers: getHeaders() })).json(),
+            search: async (q) => (await fetch(`${API_BASE}/api/search?q=${q}&t=${Date.now()}`, { headers: getHeaders() })).json(),
             send: async (rid, txt) => fetch(`${API_BASE}/api/messages`, { method:"POST", headers:getHeaders(), body:JSON.stringify({receiverId:rid, content:txt}) }),
             upload: async (fd) => fetch(`${API_BASE}/api/messages/upload`, { method: "POST", headers: { "x-auth-token": localStorage.getItem("token") }, body: fd }),
-            getHistory: async(id) => (await fetch(`${API_BASE}/api/messages/${id}`, { headers: getHeaders() })).json(),
+            getHistory: async(id) => (await fetch(`${API_BASE}/api/messages/${id}?t=${Date.now()}`, { headers: getHeaders() })).json(),
             deleteMsg: async (id) => { await fetch(`${API_BASE}/api/messages/${id}`, { method: "DELETE", headers: getHeaders() }); },
             clearChat: async (id) => { await fetch(`${API_BASE}/api/messages/clear/${id}`, { method: "DELETE", headers: getHeaders() }); },
-            getConversations: async() => (await fetch(`${API_BASE}/api/chat/conversations`, { headers: getHeaders() })).json(),
+            getConversations: async() => (await fetch(`${API_BASE}/api/chat/conversations?t=${Date.now()}`, { headers: getHeaders() })).json(),
             reactToMsg: async (id, emoji) => fetch(`${API_BASE}/api/messages/react/${id}`, { method:"PUT", headers:getHeaders(), body:JSON.stringify({ emoji }) })
         },
         notifications: {
-            getAll: async () => (await fetch(`${API_BASE}/api/notifications`, { headers: getHeaders() })).json(),
+            getAll: async () => (await fetch(`${API_BASE}/api/notifications?t=${Date.now()}`, { headers: getHeaders() })).json(),
             delete: async (id) => {
                 const res = await fetch(`${API_BASE}/api/notifications/${id}`, { method: "DELETE", headers: getHeaders() });
                 if (!res.ok) throw new Error("Delete failed");
@@ -529,24 +529,7 @@ appScreen.addEventListener('touchstart', (e) => {
         } catch(e){}
     }
 
-    // 2-hour interval to take an update of accounts and refresh app state
-    setInterval(() => {
-        if (localStorage.getItem("token")) {
-            console.log("2-hour account update triggered");
-            // Refetch all posts
-            APIService.feed.getAll().then(posts => {
-                if (document.querySelector('.nav-active') && document.querySelector('.nav-active').id === 'nav-feed') {
-                    renderView('feed');
-                }
-            }).catch(e => console.error("Error updating accounts", e));
-            
-            // Refresh conversations and share users
-            APIService.chat.getConversations().then(users => {
-                const myId = localStorage.getItem("userId");
-                shareUsersList = users.filter(u => u._id !== myId);
-            }).catch(e => {});
-        }
-    }, 2 * 60 * 60 * 1000);
+
 
     function switchAuth(id) { document.querySelectorAll('.auth-form').forEach(e=>e.classList.add('hidden-screen')); document.getElementById(id).classList.remove('hidden-screen'); }
     function toggleSidePanel() { document.getElementById('side-panel').classList.toggle('open'); }

@@ -307,9 +307,9 @@ const API_BASE = "https://zobbly.onrender.com";
         user: {
             getShareFreq: async () => (await fetch(`${API_BASE}/api/user/get-share-freq`, { headers: getHeaders() })).json(),
             updateShareFreq: async (targetUserId) => { await fetch(`${API_BASE}/api/user/update-share-freq`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ targetUserId }) }); },
-            getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}`)).json(),
-            getFollowers: async (id) => (await fetch(`${API_BASE}/api/user/followers/${id}`, { headers: getHeaders() })).json(),
-            getFollowing: async (id) => (await fetch(`${API_BASE}/api/user/following/${id}`, { headers: getHeaders() })).json(),
+            getProfile: async (id) => (await fetch(`${API_BASE}/api/user/profile/${id}?c=${Math.floor(Date.now() / 7200000)}`)).json(),
+            getFollowers: async (id) => (await fetch(`${API_BASE}/api/user/followers/${id}?c=${Math.floor(Date.now() / 7200000)}`, { headers: getHeaders() })).json(),
+            getFollowing: async (id) => (await fetch(`${API_BASE}/api/user/following/${id}?c=${Math.floor(Date.now() / 7200000)}`, { headers: getHeaders() })).json(),
             follow: async (id) => (await fetch(`${API_BASE}/api/user/follow/${id}`, { method: "PUT", headers: getHeaders() })).json(),
             update: async (name, headline) => { await fetch(`${API_BASE}/api/user/update`, { method: "PUT", headers: getHeaders(), body: JSON.stringify({name, headline}) }); },
             delete: async () => { await fetch(`${API_BASE}/api/user/delete`, { method: "DELETE", headers: getHeaders() }); },
@@ -528,6 +528,25 @@ appScreen.addEventListener('touchstart', (e) => {
             if(unread > 0) { document.getElementById('notif-badge').classList.remove('hidden'); document.getElementById('notif-badge-static').classList.remove('hidden'); } else { document.getElementById('notif-badge').classList.add('hidden'); document.getElementById('notif-badge-static').classList.add('hidden'); }
         } catch(e){}
     }
+
+    // 2-hour interval to take an update of accounts and refresh app state
+    setInterval(() => {
+        if (localStorage.getItem("token")) {
+            console.log("2-hour account update triggered");
+            // Refetch all posts
+            APIService.feed.getAll().then(posts => {
+                if (document.querySelector('.nav-active') && document.querySelector('.nav-active').id === 'nav-feed') {
+                    renderView('feed');
+                }
+            }).catch(e => console.error("Error updating accounts", e));
+            
+            // Refresh conversations and share users
+            APIService.chat.getConversations().then(users => {
+                const myId = localStorage.getItem("userId");
+                shareUsersList = users.filter(u => u._id !== myId);
+            }).catch(e => {});
+        }
+    }, 2 * 60 * 60 * 1000);
 
     function switchAuth(id) { document.querySelectorAll('.auth-form').forEach(e=>e.classList.add('hidden-screen')); document.getElementById(id).classList.remove('hidden-screen'); }
     function toggleSidePanel() { document.getElementById('side-panel').classList.toggle('open'); }

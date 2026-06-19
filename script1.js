@@ -1340,7 +1340,21 @@ async function renderFeed(c) {
         }
     }
     try {
-        await APIService.feed.create(fd);
+        const progressModal = document.getElementById('uploadProgressModal');
+        if(progressModal) progressModal.classList.remove('hidden');
+        
+        currentUploadTask = axios.CancelToken.source();
+
+        const res = await axios.post(`${API_BASE}/api/posts/create`, fd, {
+            headers: { 'x-auth-token': localStorage.getItem("token") },
+            cancelToken: currentUploadTask.token,
+            onUploadProgress: (p) => {
+                const perc = Math.round((p.loaded * 100) / p.total);
+                const percEl = document.getElementById('uploadPercentage');
+                if(percEl) percEl.innerText = perc + "%";
+            }
+        });
+
         document.getElementById('postModal').classList.add('hidden');
         document.getElementById('postContent').value = "";
         document.getElementById('postLink').value = "";
@@ -1352,10 +1366,18 @@ async function renderFeed(c) {
         selectedImages = [];
         croppedBlobs = [];
         
+        if(progressModal) progressModal.classList.add('hidden');
+        showToast("Post Uploaded!");
         renderView('feed');
     } catch (e) {
         console.error(e);
-        alert("Upload failed. If you uploaded multiple photos, make sure your backend is updated to support 'postImages' array, or try uploading just 1 photo.");
+        const progressModal = document.getElementById('uploadProgressModal');
+        if(progressModal) progressModal.classList.add('hidden');
+        if (axios.isCancel(e)) {
+            showToast("Upload Cancelled");
+        } else {
+            alert("Upload failed. If you uploaded multiple photos, make sure your backend is updated to support 'postImages' array, or try uploading just 1 photo.");
+        }
     }
 }
 
@@ -2863,25 +2885,7 @@ async function saveProfile() {
 let currentUploadTask = null;
 let currentFilter = 'none';
 
-document.getElementById('postImage').onchange = function(e) {
-    const file = e.target.files[0];
-    if(!file) return;
-    
-    const reader = new FileReader();
-    const previewBox = document.getElementById('mediaPreviewBox');
-    
-    reader.onload = function(event) {
-        document.getElementById('postModal').classList.add('hidden');
-        document.getElementById('postEditorModal').classList.remove('hidden');
-        
-        if(file.type.startsWith('video')) {
-            previewBox.innerHTML = `<video id="previewMedia" src="${event.target.result}" loop muted autoplay class="max-w-full max-h-[70vh]"></video>`;
-        } else {
-            previewBox.innerHTML = `<img id="previewMedia" src="${event.target.result}" class="max-w-full max-h-[70vh] object-contain">`;
-        }
-    };
-    reader.readAsDataURL(file);
-};
+
 
 function applyFilter(filter) {
     currentFilter = filter;

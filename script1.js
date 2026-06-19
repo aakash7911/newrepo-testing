@@ -3490,8 +3490,11 @@ function updateShareCountBadge() {
     }
 }
 
+let shareSearchTimeout = null;
+let currentShareSearchQuery = '';
+
 async function filterShareUsers() {
-    const q = document.getElementById('share-search-input').value.toLowerCase();
+    const q = document.getElementById('share-search-input').value.trim().toLowerCase();
     const resContainer = document.getElementById('share-search-results');
     
     if (q.length < 1) {
@@ -3501,27 +3504,62 @@ async function filterShareUsers() {
     
     let filtered = shareUsersList.filter(u => u.name.toLowerCase().includes(q) || (u.username && u.username.toLowerCase().includes(q)));
     
-    if (filtered.length === 0) {
-        resContainer.innerHTML = `<div class="p-3 text-center text-white/50 text-xs font-bold">No users found</div>`;
-    } else {
-        resContainer.innerHTML = filtered.map(u => {
-            const isSelected = selectedShareUsers.has(u._id);
-            const ringClass = isSelected ? 'border-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)]' : 'border-transparent';
-            const checkIcon = isSelected ? `<i class="fa-solid fa-circle-check text-pink-500 text-lg"></i>` : `<i class="fa-regular fa-circle text-white/30 text-lg"></i>`;
-            return `
-            <div onclick="toggleShareUser('${u._id}')" class="flex items-center justify-between p-2.5 hover:bg-white/10 rounded-xl cursor-pointer transition">
-                <div class="flex items-center gap-3">
-                    <img src="${u.photo || 'https://placehold.co/40'}" class="w-10 h-10 rounded-full border-2 ${ringClass} object-cover">
-                    <div>
-                        <div class="text-sm font-bold text-white">${u.name}</div>
-                        <div class="text-xs text-white/50">@${u.username || 'user'}</div>
+    const renderResults = (results) => {
+        if (results.length === 0) {
+            resContainer.innerHTML = `<div class="p-3 text-center text-white/50 text-xs font-bold">No users found</div>`;
+        } else {
+            resContainer.innerHTML = results.map(u => {
+                const isSelected = selectedShareUsers.has(u._id);
+                const ringClass = isSelected ? 'border-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.5)]' : 'border-transparent';
+                const checkIcon = isSelected ? `<i class="fa-solid fa-circle-check text-pink-500 text-lg"></i>` : `<i class="fa-regular fa-circle text-white/30 text-lg"></i>`;
+                return `
+                <div onclick="toggleShareUser('${u._id}')" class="flex items-center justify-between p-2.5 hover:bg-white/10 rounded-xl cursor-pointer transition">
+                    <div class="flex items-center gap-3">
+                        <img src="${u.photo || 'https://placehold.co/40'}" class="w-10 h-10 rounded-full border-2 ${ringClass} object-cover">
+                        <div>
+                            <div class="text-sm font-bold text-white">${u.name}</div>
+                            <div class="text-xs text-white/50">@${u.username || 'user'}</div>
+                        </div>
                     </div>
-                </div>
-                ${checkIcon}
-            </div>`;
-        }).join('');
+                    ${checkIcon}
+                </div>`;
+            }).join('');
+        }
+        resContainer.classList.remove('hidden');
+    };
+
+    renderResults(filtered);
+
+    if (q.length >= 2) {
+        if (shareSearchTimeout) clearTimeout(shareSearchTimeout);
+        currentShareSearchQuery = q;
+        shareSearchTimeout = setTimeout(async () => {
+            if (currentShareSearchQuery !== q) return;
+            try {
+                const globalRes = await APIService.chat.search(q);
+                if (currentShareSearchQuery !== q) return;
+                
+                if (globalRes && globalRes.length > 0) {
+                    const existingIds = new Set(filtered.map(u => u._id));
+                    const myId = localStorage.getItem("userId");
+                    let newUsersFound = false;
+                    for (let gu of globalRes) {
+                        if (!existingIds.has(gu._id) && gu._id !== myId) {
+                            filtered.push(gu);
+                            existingIds.add(gu._id);
+                            newUsersFound = true;
+                            if (!shareUsersList.find(x => x._id === gu._id)) {
+                                shareUsersList.push(gu);
+                            }
+                        }
+                    }
+                    if (newUsersFound) {
+                        renderResults(filtered);
+                    }
+                }
+            } catch(e) {}
+        }, 500);
     }
-    resContainer.classList.remove('hidden');
 }
 
 async function sendSharedReel() {

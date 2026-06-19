@@ -827,7 +827,25 @@ function renderView(view) {
             const isVideo = p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i));
             let mediaHtml = '';
             
-            if (mediaUrl) {
+            if (p.images && p.images.length > 0) {
+                if (p.images.length === 1) {
+                    mediaHtml = `<img src="${p.images[0]}" class="w-full rounded-xl mb-3 object-cover max-h-96 shadow-sm mt-2">`;
+                } else {
+                    mediaHtml = `
+                    <div class="relative w-full rounded-xl mb-3 mt-2 overflow-hidden shadow-sm">
+                        <div class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide hide-scroll-bar" onscroll="updateDots(this, '${p._id}')" style="scrollbar-width: none; -ms-overflow-style: none;">
+                            ${p.images.map((imgUrl, idx) => `
+                                <div class="w-full flex-shrink-0 snap-center relative">
+                                    <img src="${imgUrl}" class="w-full object-cover max-h-96">
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div id="dots-${p._id}" class="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+                            ${p.images.map((_, idx) => `<div class="w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-white' : 'bg-white/50'} shadow-sm transition-colors"></div>`).join('')}
+                        </div>
+                    </div><style>.hide-scroll-bar::-webkit-scrollbar { display: none; }</style>`;
+                }
+            } else if (mediaUrl) {
                 if (isVideo) {
                     mediaHtml = `<video src="${mediaUrl}" controls playsinline class="w-full rounded-xl mb-3 object-cover max-h-96 shadow-sm mt-2 bg-black"></video>`;
                 } else {
@@ -1015,7 +1033,25 @@ async function renderFeed(c) {
                     const isVideo = p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i));
                     let mediaHtml = '';
                     
-                    if (mediaUrl) {
+                    if (p.images && p.images.length > 0) {
+                        if (p.images.length === 1) {
+                            mediaHtml = `<img src="${p.images[0]}" class="w-full rounded-xl mb-3 object-cover max-h-80 shadow-sm mt-2">`;
+                        } else {
+                            mediaHtml = `
+                            <div class="relative w-full rounded-xl mb-3 mt-2 overflow-hidden shadow-sm">
+                                <div class="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide hide-scroll-bar" onscroll="updateDots(this, '${p._id}')" style="scrollbar-width: none; -ms-overflow-style: none;">
+                                    ${p.images.map((imgUrl, idx) => `
+                                        <div class="w-full flex-shrink-0 snap-center relative">
+                                            <img src="${imgUrl}" class="w-full object-cover max-h-80">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <div id="dots-${p._id}" class="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5 pointer-events-none">
+                                    ${p.images.map((_, idx) => `<div class="w-1.5 h-1.5 rounded-full ${idx === 0 ? 'bg-white' : 'bg-white/50'} shadow-sm transition-colors"></div>`).join('')}
+                                </div>
+                            </div><style>.hide-scroll-bar::-webkit-scrollbar { display: none; }</style>`;
+                        }
+                    } else if (mediaUrl) {
                         if (isVideo) {
                             mediaHtml = `<video src="${mediaUrl}" controls playsinline class="w-full rounded-xl mb-3 object-cover max-h-80 shadow-sm mt-2 bg-black"></video>`;
                         } else {
@@ -1151,7 +1187,110 @@ async function renderFeed(c) {
         document.getElementById('genericModal').classList.remove('hidden');
     }
 
-   
+    // --- CROPPER LOGIC START ---
+    let cropperInstance = null;
+    let selectedImages = []; // raw files
+    let croppedBlobs = []; // final blobs to upload
+    let currentCropIndex = 0;
+
+    function handleMultiImageSelect(input) {
+        if (!input.files || input.files.length === 0) return;
+        const maxImages = 10;
+        const files = Array.from(input.files).slice(0, maxImages);
+        
+        selectedImages = files;
+        croppedBlobs = new Array(files.length).fill(null);
+        currentCropIndex = 0;
+        
+        document.getElementById('cropperModal').classList.remove('hidden');
+        renderCropperThumbnails();
+        loadCropperForIndex(currentCropIndex);
+    }
+
+    function renderCropperThumbnails() {
+        const container = document.getElementById('cropperThumbnails');
+        container.innerHTML = selectedImages.map((file, i) => {
+            const url = URL.createObjectURL(file);
+            return `<div onclick="switchCropIndex(${i})" class="w-16 h-16 flex-shrink-0 cursor-pointer rounded-md overflow-hidden border-2 ${i === currentCropIndex ? 'border-blue-500' : 'border-transparent'} opacity-${i === currentCropIndex ? '100' : '50'} transition-all">
+                <img src="${url}" class="w-full h-full object-cover">
+            </div>`;
+        }).join('');
+    }
+
+    function switchCropIndex(index) {
+        // Save current crop before switching if possible
+        if (cropperInstance) {
+            cropperInstance.getCroppedCanvas({ width: 1080, height: 1080 }).toBlob((blob) => {
+                croppedBlobs[currentCropIndex] = blob;
+                currentCropIndex = index;
+                renderCropperThumbnails();
+                loadCropperForIndex(currentCropIndex);
+            }, 'image/jpeg', 0.85);
+        }
+    }
+
+    function loadCropperForIndex(index) {
+        document.getElementById('cropperStatus').innerText = `${index + 1} of ${selectedImages.length}`;
+        const imgEl = document.getElementById('cropperImage');
+        if (cropperInstance) {
+            cropperInstance.destroy();
+            cropperInstance = null;
+        }
+        imgEl.src = URL.createObjectURL(selectedImages[index]);
+        imgEl.onload = () => {
+            cropperInstance = new Cropper(imgEl, {
+                aspectRatio: 1, // Instagram square
+                viewMode: 1,
+                dragMode: 'move',
+                background: false,
+                autoCropArea: 1,
+                cropBoxMovable: false,
+                cropBoxResizable: false,
+                guides: true,
+                center: true
+            });
+        };
+    }
+
+    function cancelCropping() {
+        if (cropperInstance) {
+            cropperInstance.destroy();
+            cropperInstance = null;
+        }
+        document.getElementById('cropperModal').classList.add('hidden');
+        document.getElementById('postImage').value = ""; // reset input
+        selectedImages = [];
+        croppedBlobs = [];
+        document.getElementById('postImageName').innerText = "Add Photo";
+    }
+
+    function confirmCrop() {
+        if (!cropperInstance) return;
+        cropperInstance.getCroppedCanvas({ width: 1080, height: 1080 }).toBlob((blob) => {
+            croppedBlobs[currentCropIndex] = blob;
+            
+            // Move to next image or finish
+            if (currentCropIndex < selectedImages.length - 1) {
+                currentCropIndex++;
+                renderCropperThumbnails();
+                loadCropperForIndex(currentCropIndex);
+            } else {
+                // Done with all images
+                finishCropping();
+            }
+        }, 'image/jpeg', 0.85);
+    }
+
+    function finishCropping() {
+        if (cropperInstance) {
+            cropperInstance.destroy();
+            cropperInstance = null;
+        }
+        document.getElementById('cropperModal').classList.add('hidden');
+        document.getElementById('postImageName').innerText = `${croppedBlobs.length} Photos Ready`;
+    }
+    // --- CROPPER LOGIC END ---
+
     async function submitPost() {
     const fd = new FormData();
     
@@ -1166,9 +1305,37 @@ async function renderFeed(c) {
     
     fd.append('content', content);
 
-    const f = document.getElementById('postImage').files[0];
-    if(f) {
-        fd.append('postImage', f);
+    // Multi-image handling
+    if (croppedBlobs && croppedBlobs.length > 0) {
+        let totalSize = 0;
+        for (let blob of croppedBlobs) {
+            if (blob) totalSize += blob.size;
+        }
+        if (totalSize > 49 * 1024 * 1024) {
+            alert("Total size of images exceeds 49MB. Please reduce the number of images.");
+            return;
+        }
+        
+        // Append all to 'postImages' (for updated backend)
+        for (let i = 0; i < croppedBlobs.length; i++) {
+            if (croppedBlobs[i]) {
+                fd.append('postImages', croppedBlobs[i], selectedImages[i].name);
+            }
+        }
+        // Append first one to 'postImage' (for backward compatibility if backend not updated yet)
+        if (croppedBlobs[0]) {
+            fd.append('postImage', croppedBlobs[0], selectedImages[0].name);
+        }
+    } else {
+        // Fallback if cropper was bypassed
+        const f = document.getElementById('postImage').files[0];
+        if(f) {
+            if (f.size > 49 * 1024 * 1024) {
+                alert("Image size exceeds 49MB.");
+                return;
+            }
+            fd.append('postImage', f);
+        }
     }
     await APIService.feed.create(fd);
     document.getElementById('postModal').classList.add('hidden');
@@ -1420,12 +1587,15 @@ function togglePostMenu(postId, event) {
                         <div class="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer group" onclick="toggleComment('${p._id}')">
                             
                             ${isMe ? `<button onclick="event.stopPropagation(); deletePost('${p._id}')" class="absolute top-2 right-2 z-20 bg-black/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition shadow-md backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
-                            ${mediaUrl ? 
+                            ${(p.images && p.images.length > 0) ?
+                                `<img src="${p.images[0]}" class="w-full h-full object-cover block">
+                                 ${p.images.length > 1 ? `<div class="absolute top-2 right-2 bg-black/50 text-white p-1 rounded"><i class="fa-solid fa-clone text-xs"></i></div>` : ''}`
+                            : (mediaUrl ? 
                                 (isVideo ? 
                                     `<video src="${mediaUrl}" class="w-full h-full object-cover block" preload="metadata" muted playsinline></video>
                                      <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><i class="fa-solid fa-play text-white/80 text-xl shadow-sm"></i></div>` : 
                                     `<img src="${mediaUrl}" class="w-full h-full object-cover block">`) 
-                                : `<div class="w-full h-full flex items-center justify-center p-2 bg-purple-100 text-[10px] text-gray-700 font-bold text-center break-words">${p.content.substring(0, 50)}</div>`
+                                : `<div class="w-full h-full flex items-center justify-center p-2 bg-purple-100 text-[10px] text-gray-700 font-bold text-center break-words">${p.content.substring(0, 50)}</div>`)
                             }
                             <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3 text-white font-bold text-xs pointer-events-none">
                                 <span><i class="fa-solid fa-heart"></i> ${p.likes.length}</span>

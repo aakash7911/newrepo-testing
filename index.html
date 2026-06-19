@@ -25,6 +25,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <style>
         html, body
 {
@@ -714,10 +716,25 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
                 <i class="fa-regular fa-image text-lg"></i>
                 <span id="postImageName">Add Photo</span>
             </label>
-            <input type="file" id="postImage" class="hidden" accept="image/*" onchange="document.getElementById('postImageName').innerText = this.files[0] ? this.files[0].name.substring(0, 12) + '...' : 'Add Photo'">
+            <input type="file" id="postImage" class="hidden" accept="image/*" multiple onchange="handleMultiImageSelect(this)">
             
             <button id="lbl-btn-post" onclick="submitPost()" class="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_8px_20px_-6px_rgba(147,51,234,0.5)] hover:shadow-[0_12px_25px_-6px_rgba(147,51,234,0.6)] hover:-translate-y-0.5 transition-all text-white px-8 py-2.5 rounded-full font-bold text-sm" data-key="post">Post</button>
         </div>
+    </div>
+</div>
+
+<!-- Cropper Modal -->
+<div id="cropperModal" class="fixed inset-0 bg-black z-[60] hidden flex flex-col">
+    <div class="flex justify-between items-center p-4 bg-black text-white">
+        <button onclick="cancelCropping()" class="text-white hover:text-gray-300 text-[15px] font-medium"><i class="fa-solid fa-xmark mr-1"></i> Cancel</button>
+        <span class="font-bold text-[15px]" id="cropperStatus">1 of 1</span>
+        <button onclick="confirmCrop()" class="text-blue-500 font-bold hover:text-blue-400 text-[15px]">Next <i class="fa-solid fa-arrow-right ml-1"></i></button>
+    </div>
+    <div class="flex-1 relative bg-black flex items-center justify-center overflow-hidden" id="cropperContainer">
+        <img id="cropperImage" src="" class="max-w-full max-h-full block">
+    </div>
+    <div class="h-24 bg-gray-900 flex items-center overflow-x-auto px-4 gap-3 border-t border-gray-800" id="cropperThumbnails">
+        <!-- Thumbnails of selected images -->
     </div>
 </div>
 
@@ -840,7 +857,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
     </div>
 </div>
 
-<script src="script1.js?v=27"></script>
+<script src="script1.js?v=28"></script>
 
 </body>
 </html>

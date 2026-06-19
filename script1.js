@@ -1211,14 +1211,15 @@ async function renderFeed(c) {
         const container = document.getElementById('cropperThumbnails');
         container.innerHTML = selectedImages.map((file, i) => {
             const url = URL.createObjectURL(file);
-            return `<div onclick="switchCropIndex(${i})" class="w-16 h-16 flex-shrink-0 cursor-pointer rounded-md overflow-hidden border-2 ${i === currentCropIndex ? 'border-blue-500' : 'border-transparent'} opacity-${i === currentCropIndex ? '100' : '50'} transition-all">
+            const opacity = i === currentCropIndex ? '1' : '0.4';
+            const borderColor = i === currentCropIndex ? '#3b82f6' : 'transparent';
+            return `<div onclick="switchCropIndex(${i})" class="w-16 h-16 flex-shrink-0 cursor-pointer rounded-md overflow-hidden border-2 transition-all" style="opacity: ${opacity}; border-color: ${borderColor};">
                 <img src="${url}" class="w-full h-full object-cover">
             </div>`;
         }).join('');
     }
 
     function switchCropIndex(index) {
-        // Save current crop before switching if possible
         if (cropperInstance) {
             cropperInstance.getCroppedCanvas({ width: 1080, height: 1080 }).toBlob((blob) => {
                 croppedBlobs[currentCropIndex] = blob;
@@ -1236,8 +1237,9 @@ async function renderFeed(c) {
             cropperInstance.destroy();
             cropperInstance = null;
         }
-        imgEl.src = URL.createObjectURL(selectedImages[index]);
+        
         imgEl.onload = () => {
+            if(cropperInstance) cropperInstance.destroy(); // just in case
             cropperInstance = new Cropper(imgEl, {
                 aspectRatio: 1, // Instagram square
                 viewMode: 1,
@@ -1250,6 +1252,8 @@ async function renderFeed(c) {
                 center: true
             });
         };
+        // Set src after onload is bound
+        imgEl.src = URL.createObjectURL(selectedImages[index]);
     }
 
     function cancelCropping() {
@@ -1258,7 +1262,7 @@ async function renderFeed(c) {
             cropperInstance = null;
         }
         document.getElementById('cropperModal').classList.add('hidden');
-        document.getElementById('postImage').value = ""; // reset input
+        document.getElementById('postImage').value = ""; 
         selectedImages = [];
         croppedBlobs = [];
         document.getElementById('postImageName').innerText = "Add Photo";
@@ -1269,13 +1273,11 @@ async function renderFeed(c) {
         cropperInstance.getCroppedCanvas({ width: 1080, height: 1080 }).toBlob((blob) => {
             croppedBlobs[currentCropIndex] = blob;
             
-            // Move to next image or finish
             if (currentCropIndex < selectedImages.length - 1) {
                 currentCropIndex++;
                 renderCropperThumbnails();
                 loadCropperForIndex(currentCropIndex);
             } else {
-                // Done with all images
                 finishCropping();
             }
         }, 'image/jpeg', 0.85);
@@ -1337,15 +1339,24 @@ async function renderFeed(c) {
             fd.append('postImage', f);
         }
     }
-    await APIService.feed.create(fd);
-    document.getElementById('postModal').classList.add('hidden');
-    document.getElementById('postContent').value = "";
-    document.getElementById('postLink').value = "";
-    document.getElementById('postImage').value = "";
-    const pin = document.getElementById('postImageName');
-    if(pin) pin.innerText = "Add Photo";
-    
-    renderView('feed');
+    try {
+        await APIService.feed.create(fd);
+        document.getElementById('postModal').classList.add('hidden');
+        document.getElementById('postContent').value = "";
+        document.getElementById('postLink').value = "";
+        document.getElementById('postImage').value = "";
+        const pin = document.getElementById('postImageName');
+        if(pin) pin.innerText = "Add Photo";
+        
+        // Reset cropper globals
+        selectedImages = [];
+        croppedBlobs = [];
+        
+        renderView('feed');
+    } catch (e) {
+        console.error(e);
+        alert("Upload failed. If you uploaded multiple photos, make sure your backend is updated to support 'postImages' array, or try uploading just 1 photo.");
+    }
 }
 
 

@@ -350,11 +350,17 @@ const API_BASE = "https://zobbly.onrender.com";
                 }
                 const res = await fetch(url, {headers: getHeaders()});
                 if(!res.ok) throw new Error("Feed Error");
-                const data = await res.json();
+                let data = await res.json();
+                let deleted = JSON.parse(sessionStorage.getItem('deletedPosts') || '[]');
+                data = data.filter(p => !deleted.includes(p._id));
                 window.allPosts = data;
                 return data;
             },
-            getMyPosts: async() => (await fetch(`${API_BASE}/api/my-posts`, {headers:getHeaders()})).json(),
+            getMyPosts: async() => {
+                let data = await (await fetch(`${API_BASE}/api/my-posts`, {headers:getHeaders()})).json();
+                let deleted = JSON.parse(sessionStorage.getItem('deletedPosts') || '[]');
+                return data.filter(p => !deleted.includes(p._id));
+            },
             like: async(id) => fetch(`${API_BASE}/api/posts/like/${id}`, {method:"PUT", headers:getHeaders()}),
             comment: async(id, text) => fetch(`${API_BASE}/api/posts/comment/${id}`, {method:"POST", headers:getHeaders(), body:JSON.stringify({text})}),
             delete: async(id) => fetch(`${API_BASE}/api/posts/${id}`, {method:"DELETE", headers:getHeaders()}),
@@ -1469,9 +1475,30 @@ async function renderFeed(c) {
 
     function deletePost(id) {
         openConfirmModal("Delete Post?", "Are you sure you want to permanently delete this post?", async () => {
+            let deleted = JSON.parse(sessionStorage.getItem('deletedPosts') || '[]');
+            deleted.push(id);
+            sessionStorage.setItem('deletedPosts', JSON.stringify(deleted));
+
+            if (window.allPosts) {
+                window.allPosts = window.allPosts.filter(p => p._id !== id);
+            }
+
             const el = document.getElementById(`post-container-${id}`);
             if(el) { el.style.transition = "all 0.3s"; el.style.opacity = "0"; setTimeout(() => el.remove(), 300); }
-            try { await APIService.feed.delete(id); showToast("Post Deleted"); } catch(e) { showToast("Error deleting post"); }
+            
+            const elProf = document.getElementById(`post-wrapper-${id}`);
+            if(elProf) { elProf.style.transition = "all 0.3s"; elProf.style.opacity = "0"; setTimeout(() => elProf.remove(), 300); }
+
+            const elCmt = document.getElementById(`comments-${id}`);
+            if(elCmt) { elCmt.remove(); }
+
+            try { 
+                await APIService.feed.delete(id); 
+                showToast("Post Deleted"); 
+                if (document.getElementById('single-post-view')) {
+                     renderView('feed');
+                }
+            } catch(e) { showToast("Error deleting post"); }
         });
     }
 
@@ -1555,7 +1582,9 @@ function togglePostMenu(postId, event) {
     
     const data = await APIService.user.getProfile(id);
     const u = data.user; 
-    const posts = data.posts; 
+    let posts = data.posts; 
+    let deleted = JSON.parse(sessionStorage.getItem('deletedPosts') || '[]');
+    posts = posts.filter(p => !deleted.includes(p._id));
     const exps = u.experience || [];
     const myId = localStorage.getItem("userId");
     const isMe = id === myId;

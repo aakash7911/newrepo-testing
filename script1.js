@@ -1723,6 +1723,7 @@ async function renderChat(c) {
 }
 
 window.unreadChatUsers = window.unreadChatUsers || new Set();
+window.readChatTimestamps = window.readChatTimestamps || {};
 
 async function loadConversations(isPolling = false) { 
     if(isPolling && (currentView !== 'chat' || isChatOpen)) return;
@@ -1734,10 +1735,21 @@ async function loadConversations(isPolling = false) {
     try {
         const notifs = await APIService.notifications.getAll();
         const unreadMsgs = notifs.filter(n => !n.isRead && n.type === 'message');
+        
+        // Reset unread set for recalculation
+        window.unreadChatUsers.clear();
+        
         unreadMsgs.forEach(n => {
             const actor = n.fromUser || n.sender || n.user || n.userId || {};
             const actorId = actor._id || actor;
-            if (actorId) window.unreadChatUsers.add(actorId);
+            const notifTime = new Date(n.createdAt || Date.now()).getTime();
+            
+            if (actorId) {
+                // If we haven't read this chat AFTER the notification was created
+                if (!window.readChatTimestamps[actorId] || window.readChatTimestamps[actorId] < notifTime) {
+                    window.unreadChatUsers.add(actorId);
+                }
+            }
         });
     } catch(e) {}
 
@@ -1791,6 +1803,7 @@ async function searchChatUsers(q) {
 
 async function startChat(id, name, photo) {
     if (window.unreadChatUsers) window.unreadChatUsers.delete(id);
+    if (window.readChatTimestamps) window.readChatTimestamps[id] = Date.now();
     activeChatUser = id;
     window.chatScrolledOnce = false;
     window.pendingMessages = []; // Reset pending messages for new chat

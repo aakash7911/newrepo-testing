@@ -2007,6 +2007,10 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
         let statusHtml = new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         let opacityClass = '';
         
+        const reactState = JSON.parse(localStorage.getItem('chatReactions') || '{}');
+        const myReaction = reactState[m._id] || '';
+        let reactionBadge = myReaction ? `<div class="absolute -bottom-2 -right-2 bg-white rounded-full px-1.5 shadow-[0_2px_5px_rgba(0,0,0,0.1)] border border-gray-100 text-[14px] transform hover:scale-110 transition-transform">${myReaction}</div>` : '';
+        
         if (m.isPending) {
             if (m.status === 'sending') {
                 statusHtml = `Sending... <i class="fa-solid fa-spinner fa-spin text-[8px]"></i>`;
@@ -2016,7 +2020,7 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
             }
         }
 
-        return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 group">${isMe && !m.isPending ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}<div class="${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md ${opacityClass}">${content}<div class="text-[9px] opacity-70 text-right mt-1 font-mono flex items-center justify-end gap-1">${statusHtml}</div></div></div>`;
+        return `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-2 group">${isMe && !m.isPending ? `<button onclick="deleteSingleMsg('${m._id}')" class="text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition text-[10px] mr-2"><i class="fa-solid fa-trash"></i></button>` : ''}<div class="relative ${bubbleClass} px-4 py-2 text-sm max-w-[80%] shadow-md ${opacityClass}" oncontextmenu="handleMsgLongPress(event, '${m._id}')">${content}<div class="text-[9px] opacity-70 text-right mt-1 font-mono flex items-center justify-end gap-1">${statusHtml}</div>${reactionBadge}</div></div>`;
     }).join('');
     
     if (isNearBottom || !window.chatScrolledOnce) {
@@ -2029,6 +2033,70 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
 
 async function clearChat() { openConfirmModal("Clear Chat?", "Are you sure?", async () => { await APIService.chat.clearChat(activeChatUser); loadMsgs(); }); }
 async function deleteSingleMsg(id) { openConfirmModal("Delete?", "Delete message?", async () => { await APIService.chat.deleteMsg(id); loadMsgs(); }); }
+
+function handleMsgLongPress(e, msgId) {
+    e.preventDefault(); // Prevent standard right-click menu
+    showReactionsModal(e, msgId);
+}
+
+function showReactionsModal(e, msgId) {
+    if(navigator.vibrate) navigator.vibrate(50); // Haptic feedback on long press
+    
+    // Remove existing modal if any
+    const existing = document.getElementById('chat-reaction-modal');
+    if (existing) existing.remove();
+
+    const emojis = ['❤️', '😂', '😮', '😢', '🔥', '👏'];
+    const modal = document.createElement('div');
+    modal.id = 'chat-reaction-modal';
+    modal.className = 'fixed z-[9999] bg-white/95 backdrop-blur-xl rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.15)] border border-gray-200/50 px-4 py-3 flex gap-4 transform -translate-x-1/2 -translate-y-full';
+    
+    let x = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : window.innerWidth/2);
+    let y = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : window.innerHeight/2);
+    
+    // Keep within bounds
+    x = Math.max(120, Math.min(x, window.innerWidth - 120));
+    
+    modal.style.left = x + 'px';
+    modal.style.top = (y - 30) + 'px';
+    modal.style.animation = 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+    
+    emojis.forEach(emo => {
+        const span = document.createElement('span');
+        span.innerText = emo;
+        span.className = 'text-3xl cursor-pointer hover:scale-150 hover:-translate-y-2 transition-all duration-200 drop-shadow-sm';
+        span.onclick = () => {
+            reactToMsg(msgId, emo);
+            modal.remove();
+        };
+        modal.appendChild(span);
+    });
+    
+    document.body.appendChild(modal);
+    
+    setTimeout(() => {
+        window.addEventListener('click', function closeMenu(ev) {
+            if (!modal.contains(ev.target)) {
+                modal.remove();
+                window.removeEventListener('click', closeMenu);
+            }
+        });
+    }, 100);
+}
+
+function reactToMsg(msgId, emoji) {
+    let reactions = JSON.parse(localStorage.getItem('chatReactions') || '{}');
+    if (reactions[msgId] === emoji) {
+        delete reactions[msgId]; // toggle off if same
+    } else {
+        reactions[msgId] = emoji;
+    }
+    localStorage.setItem('chatReactions', JSON.stringify(reactions));
+    loadMsgs(); // Re-render chat
+    
+    // Fallback: Notify backend API if you ever add it in the future
+    // APIService.chat.react(msgId, emoji).catch(e => console.log(e));
+}
 
 
 async function renderReels(container) {

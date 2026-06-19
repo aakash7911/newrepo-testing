@@ -2123,6 +2123,9 @@ async function renderReels(container) {
                 
                 // MP4 POSTER
                 let posterUrl = p.image || ""; 
+                if (isYouTube && ytId) {
+                    posterUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+                }
 
                 if (isYouTube && ytId) {
                     // Force the clean embed URL to avoid the giant Shorts logo and heavy page load

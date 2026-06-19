@@ -805,24 +805,24 @@ function renderView(view) {
             
             const liked = p.likes.includes(myId);
             const isMe = p.userId?._id === myId;
-            const isLongText = p.content.length > 200 || (p.content.match(/\n/g) || []).length > 4;
-            const contentId = `post-content-${p._id}`;
-            
-           
+            let displayContent = p.content || '';
             let linkHtml = '';
             if (p.link) {
-                 const displayLink = p.link.length > 40 ? p.link.substring(0, 40) + '...' : p.link;
-                 linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${displayLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
+                 displayContent = displayContent.replace(p.link, '').trim();
+                 linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
             } else {
                 const urlRegex = /(https?:\/\/[^\s]+)/g;
-                const detectedLinks = p.content.match(urlRegex);
+                const detectedLinks = displayContent.match(urlRegex);
                 if(detectedLinks && detectedLinks.length > 0) {
                       const firstLink = detectedLinks[0];
-                      linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${firstLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
+                      displayContent = displayContent.replace(firstLink, '').trim();
+                      linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
                 }
             }
 
-           
+            const isLongText = displayContent.length > 200 || (displayContent.match(/\n/g) || []).length > 4;
+            const contentId = `post-content-${p._id}`;
+
             const mediaUrl = p.video || p.image;
             const isVideo = p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i));
             let mediaHtml = '';
@@ -877,7 +877,7 @@ function renderView(view) {
                                 </div>
                             </div>
                         </div>
-                        <div id="${contentId}" class="text-gray-800 mb-2 text-sm whitespace-pre-line break-words ${isLongText ? 'line-clamp-custom' : ''}">${p.content}</div>
+                        <div id="${contentId}" class="text-gray-800 mb-2 text-sm whitespace-pre-line break-words ${isLongText ? 'line-clamp-custom' : ''}">${displayContent}</div>
                         ${isLongText ? `<button onclick="toggleSeeMore('${contentId}', this)" class="text-purple-600 text-xs font-bold mb-2 hover:underline">See more...</button>` : ''}
                         
                         ${mediaHtml}
@@ -1008,24 +1008,24 @@ async function renderFeed(c) {
                     const liked = p.likes.includes(myId);
                     const isMe = userId === myId;
                     const isFollowing = myFollowing.includes(userId);
-                    const isLongText = p.content.length > 200 || (p.content.match(/\n/g) || []).length > 4;
-                    const contentId = `post-content-${p._id}`;
-                    
-                  
+                    let displayContent = p.content || '';
                     let linkHtml = '';
                    
                     if (p.link) {
-                         const displayLink = p.link.length > 40 ? p.link.substring(0, 40) + '...' : p.link;
-                         linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${displayLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
+                         displayContent = displayContent.replace(p.link, '').trim();
+                         linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
                     } else {
-                    
                         const urlRegex = /(https?:\/\/[^\s]+)/g;
-                        const detectedLinks = p.content.match(urlRegex);
+                        const detectedLinks = displayContent.match(urlRegex);
                         if(detectedLinks && detectedLinks.length > 0) {
                             const firstLink = detectedLinks[0];
-                             linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${firstLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
+                            displayContent = displayContent.replace(firstLink, '').trim();
+                            linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
                         }
                     }
+
+                    const isLongText = displayContent.length > 200 || (displayContent.match(/\n/g) || []).length > 4;
+                    const contentId = `post-content-${p._id}`;
                 
                     const userHandle = p.userId.username ? `@${p.userId.username}` : '';
                     const userCountry = p.userId.country ? `<span class="ml-1 text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500"><i class="fa-solid fa-earth-americas"></i> ${p.userId.country}</span>` : '';
@@ -1088,7 +1088,7 @@ async function renderFeed(c) {
                                 </div>
                             </div>
                         </div>
-                        <div id="${contentId}" class="text-gray-800 mb-2 text-sm whitespace-pre-line break-words ${isLongText ? 'line-clamp-custom' : ''}">${p.content}</div>
+                        <div id="${contentId}" class="text-gray-800 mb-2 text-sm whitespace-pre-line break-words ${isLongText ? 'line-clamp-custom' : ''}">${displayContent}</div>
                         ${isLongText ? `<button onclick="toggleSeeMore('${contentId}', this)" class="text-purple-600 text-xs font-bold mb-2 hover:underline">See more...</button>` : ''}
                         
                         ${mediaHtml} 
@@ -1599,16 +1599,18 @@ function togglePostMenu(postId, event) {
                ${posts.length === 0 ? '<p class="col-span-3 text-center text-gray-400 text-sm py-10">No posts yet.</p>' : posts.map(p => {
                     const mediaUrl = p.video || p.image;
                     const isVideo = (p.video) || (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext)));
+                    let displayContent = p.content || '';
                     let linkHtml = '';
                     if (p.link) {
-                         const displayLink = p.link.length > 40 ? p.link.substring(0, 40) + '...' : p.link;
-                         linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${displayLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
+                         displayContent = displayContent.replace(p.link, '').trim();
+                         linkHtml = `<button onclick="openLink('${p.link}')" class="w-full mt-2 mb-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
                     } else {
                         const urlRegex = /(https?:\/\/[^\s]+)/g;
-                        const detectedLinks = p.content.match(urlRegex);
+                        const detectedLinks = displayContent.match(urlRegex);
                         if(detectedLinks && detectedLinks.length > 0) {
                               const firstLink = detectedLinks[0];
-                              linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:bg-purple-100 text-purple-700 p-3 rounded-xl text-sm text-left truncate border border-purple-100 transition flex items-center shadow-sm"><div class="bg-purple-200 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-purple-600"><i class="fa-solid fa-link"></i></div><div class="flex-1 overflow-hidden"><div class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Open Link</div><div class="truncate font-medium">${firstLink}</div></div><i class="fa-solid fa-chevron-right text-gray-400"></i></button>`;
+                              displayContent = displayContent.replace(firstLink, '').trim();
+                              linkHtml = `<button onclick="openLink('${firstLink}')" class="w-full mt-2 mb-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
                         }
                     }
 
@@ -1616,7 +1618,7 @@ function togglePostMenu(postId, event) {
                     <div id="post-wrapper-${p._id}" class="contents">
                         <div class="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer group" onclick="toggleComment('${p._id}')">
                             
-                            ${isMe ? `<button onclick="event.stopPropagation(); deletePost('${p._id}')" class="absolute top-2 right-2 z-20 bg-black/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition shadow-md backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+                             ${isMe ? `<button onclick="event.stopPropagation(); deletePost('${p._id}')" class="absolute top-2 right-2 z-20 bg-black/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition shadow-md backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
                             ${(p.images && p.images.length > 0) ?
                                 `<img src="${p.images[0]}" class="w-full h-full object-cover block">
                                  ${p.images.length > 1 ? `<div class="absolute top-2 right-2 bg-black/50 text-white p-1 rounded"><i class="fa-solid fa-clone text-xs"></i></div>` : ''}`
@@ -1625,7 +1627,7 @@ function togglePostMenu(postId, event) {
                                     `<video src="${mediaUrl}" class="w-full h-full object-cover block" preload="metadata" muted playsinline></video>
                                      <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><i class="fa-solid fa-play text-white/80 text-xl shadow-sm"></i></div>` : 
                                     `<img src="${mediaUrl}" class="w-full h-full object-cover block">`) 
-                                : `<div class="w-full h-full flex items-center justify-center p-2 bg-purple-100 text-[10px] text-gray-700 font-bold text-center break-words">${p.content.substring(0, 50)}</div>`)
+                                : `<div class="w-full h-full flex items-center justify-center p-2 bg-purple-100 text-[10px] text-gray-700 font-bold text-center break-words">${displayContent.substring(0, 50)}</div>`)
                             }
                             <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3 text-white font-bold text-xs pointer-events-none">
                                 <span><i class="fa-solid fa-heart"></i> ${p.likes.length}</span>
@@ -1653,7 +1655,7 @@ function togglePostMenu(postId, event) {
                             </div>
 
                             <div class="p-4 bg-white">
-                                <p class="text-sm text-gray-700 mb-2 whitespace-pre-line">${p.content}</p>
+                                <p class="text-sm text-gray-700 mb-2 whitespace-pre-line">${displayContent}</p>
                                 
                                 ${linkHtml}
                                 

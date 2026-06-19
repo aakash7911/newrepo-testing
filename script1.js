@@ -1302,7 +1302,7 @@ async function renderFeed(c) {
     
     if(linkVal) {
         if (!linkVal.startsWith('http')) linkVal = 'https://' + linkVal;
-        fd.append('link', linkVal);
+        content += "\n" + linkVal;
     }
     
     fd.append('content', content);

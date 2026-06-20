@@ -3056,7 +3056,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-const SECRET_KEY = window.APP_VAULT_SECRET;
+const SECRET_KEY = "Zobbly_Secure_Lock_99";
 
 
 function encrypt(data) {

@@ -2425,6 +2425,16 @@ async function renderReels(container) {
                             }
                         });
                     }
+                    // Loop YouTube videos automatically when they end (playerState === 0)
+                    if (data.event === 'infoDelivery' && data.info && data.info.playerState === 0) {
+                        let iframes = document.querySelectorAll('.youtube-iframe');
+                        iframes.forEach(ifr => {
+                            if (ifr.contentWindow === e.source) {
+                                ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'seekTo', args: [0, true]}), '*');
+                                ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+                            }
+                        });
+                    }
                 } catch(err) {}
             });
         }
@@ -2468,15 +2478,18 @@ async function renderReels(container) {
                 let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&]+)/)?.[1] : null;
                 let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
                 
-                // MP4 POSTER
+                // MP4/Cloudinary POSTER
                 let posterUrl = p.image || ""; 
                 if (isYouTube && ytId) {
                     posterUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+                } else if (!isYouTube && videoUrl && videoUrl.includes('res.cloudinary.com/')) {
+                    posterUrl = videoUrl.replace(/\.(mp4|webm|mov)$/i, '.jpg');
                 }
 
                 if (isYouTube && ytId) {
                     // Force the clean embed URL to avoid the giant Shorts logo and heavy page load
-                    videoUrl = `https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&loop=1&playlist=${ytId}&autoplay=0&playsinline=1&iv_load_policy=3&disablekb=1`;
+                    // Removed playlist and loop=1 to prevent the annoying Previous/Next buttons from showing on pause
+                    videoUrl = `https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&autoplay=0&playsinline=1&iv_load_policy=3&disablekb=1`;
                 }
 
                 return `

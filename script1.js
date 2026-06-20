@@ -1206,6 +1206,19 @@ async function renderFeed(c) {
         const maxImages = 10;
         const files = Array.from(input.files).slice(0, maxImages);
         
+        let hasVideo = false;
+        for (let f of files) {
+            if (f.type.startsWith('video/')) hasVideo = true;
+        }
+
+        if (hasVideo) {
+            selectedImages = files;
+            croppedBlobs = [...files];
+            document.getElementById('postImageName').innerText = `${files.length} Media Ready`;
+            showToast("Media selected. Video detected, cropper bypassed.");
+            return;
+        }
+
         selectedImages = files;
         croppedBlobs = new Array(files.length).fill(null);
         currentCropIndex = 0;

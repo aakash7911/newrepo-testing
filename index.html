@@ -716,7 +716,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
                 <i class="fa-regular fa-image text-lg"></i>
                 <span id="postImageName">Add Photo</span>
             </label>
-            <input type="file" id="postImage" class="hidden" accept="image/*" multiple onchange="handleMultiImageSelect(this)">
+            <input type="file" id="postImage" class="hidden" accept="image/*,video/*" multiple onchange="handleMultiImageSelect(this)">
             
             <button id="lbl-btn-post" onclick="submitPost()" class="bg-gradient-to-r from-purple-600 to-indigo-600 shadow-[0_8px_20px_-6px_rgba(147,51,234,0.5)] hover:shadow-[0_12px_25px_-6px_rgba(147,51,234,0.6)] hover:-translate-y-0.5 transition-all text-white px-8 py-2.5 rounded-full font-bold text-sm" data-key="post">Post</button>
         </div>
@@ -857,7 +857,7 @@ body.theme-dark .glass-card, body.theme-dark .bg-white {
     </div>
 </div>
 
-<script src="script1.js?v=42"></script>
+<script src="script1.js?v=43"></script>
 
 </body>
 </html>

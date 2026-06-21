@@ -118,9 +118,17 @@ const API_BASE = "https://zobbly.onrender.com";
     function generateLinkHtml(url) {
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         if (ytMatch && ytMatch[1]) {
+            const ytId = ytMatch[1];
             return `
-            <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm bg-black relative">
-                <iframe class="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm bg-black relative group">
+                <iframe class="absolute inset-0 w-full h-full" data-src="https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&controls=1&iv_load_policy=3&autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                <div class="absolute inset-0 z-10 cursor-pointer bg-cover bg-center flex items-center justify-center transition-opacity duration-300" 
+                     style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');"
+                     onclick="this.style.pointerEvents='none'; this.style.opacity='0'; this.previousElementSibling.src = this.previousElementSibling.getAttribute('data-src');">
+                     <div class="w-14 h-14 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all transform group-hover:scale-110 shadow-xl border border-white/20">
+                         <i class="fa-solid fa-play text-xl ml-1 drop-shadow-md"></i>
+                     </div>
+                </div>
             </div>`;
         }
         return `<button onclick="openLink('${url}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;

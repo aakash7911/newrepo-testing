@@ -121,17 +121,36 @@ const API_BASE = "https://zobbly.onrender.com";
             const ytId = ytMatch[1];
             return `
             <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm bg-black relative group">
-                <iframe class="absolute inset-0 w-full h-full" data-src="https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&controls=1&iv_load_policy=3&autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                <div class="absolute inset-0 z-10 cursor-pointer bg-cover bg-center flex items-center justify-center transition-opacity duration-300" 
-                     style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');"
-                     onclick="this.style.pointerEvents='none'; this.style.opacity='0'; this.previousElementSibling.src = this.previousElementSibling.getAttribute('data-src');">
-                     <div class="w-14 h-14 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all transform group-hover:scale-110 shadow-xl border border-white/20">
-                         <i class="fa-solid fa-play text-xl ml-1 drop-shadow-md"></i>
+                <iframe class="youtube-iframe absolute inset-0 w-full h-full pointer-events-none" src="https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&controls=0&iv_load_policy=3&enablejsapi=1&autoplay=1&mute=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                <!-- Top Gradient to obscure title -->
+                <div class="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/80 to-transparent z-10 pointer-events-none"></div>
+                <!-- Bottom Gradient to obscure logo -->
+                <div class="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
+                <!-- Click Overlay to Unmute/Mute -->
+                <div class="absolute inset-0 z-20 cursor-pointer flex items-center justify-center" onclick="toggleYouTubeAudio(this, '${ytId}')">
+                     <div class="w-12 h-12 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 yt-audio-btn">
+                         <i class="fa-solid fa-volume-xmark text-lg"></i>
                      </div>
                 </div>
             </div>`;
         }
         return `<button onclick="openLink('${url}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
+    }
+
+    function toggleYouTubeAudio(btn, ytId) {
+        const iframe = btn.parentElement.parentElement.querySelector('iframe');
+        const icon = btn.querySelector('i');
+        if (iframe && iframe.contentWindow) {
+            if (icon.classList.contains('fa-volume-xmark')) {
+                iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'unMute', args: []}), '*');
+                icon.classList.remove('fa-volume-xmark');
+                icon.classList.add('fa-volume-high');
+            } else {
+                iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'mute', args: []}), '*');
+                icon.classList.remove('fa-volume-high');
+                icon.classList.add('fa-volume-xmark');
+            }
+        }
     }
 
     function shuffleArray(array) {
@@ -1017,11 +1036,34 @@ async function renderFeed(c) {
             
             let feedOnlyPosts = posts.filter(p => p.category !== 'reel' && p.category !== 'youtube_reel');
 
+            let preferredCategories = [];
+            try {
+                preferredCategories = JSON.parse(localStorage.getItem('preferredCategories')) || [];
+            } catch(e){}
+
             let validPosts = feedOnlyPosts.filter(p => { if(!p.userId) return false; const pUserId = p.userId._id || p.userId; return !safeBlockedList.includes(pUserId); });
+            
+            validPosts.forEach(p => {
+                p.matchScore = 0;
+                if (preferredCategories.length > 0 && p.content) {
+                    let contentLower = p.content.toLowerCase();
+                    preferredCategories.forEach(cat => {
+                        if (contentLower.includes(cat)) {
+                            p.matchScore++;
+                        }
+                    });
+                }
+            });
+
             let localPosts = validPosts.filter(p => p.userId.country === myCountry);
             let globalPosts = validPosts.filter(p => p.userId.country !== myCountry);
+            
             localPosts = shuffleArray(localPosts);
             globalPosts = shuffleArray(globalPosts);
+            
+            localPosts.sort((a,b) => b.matchScore - a.matchScore);
+            globalPosts.sort((a,b) => b.matchScore - a.matchScore);
+
             let mixedPosts = [...localPosts, ...globalPosts];
 
             if (mixedPosts.length === 0) {
@@ -1086,7 +1128,7 @@ async function renderFeed(c) {
                         }
                     }
                     
-                     return `<div id="post-container-${p._id}" data-userid="${userId}" class="glass-card mb-4 p-4 relative transition-all duration-300">
+                     return `<div id="post-container-${p._id}" data-userid="${userId}" data-post-id="${p._id}" class="post-container glass-card mb-4 p-4 relative transition-all duration-300">
                         <div class="flex justify-between items-start mb-3">
                             <div class="flex items-center gap-3">
                                 <img src="${userPhoto}" class="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm cursor-pointer" onclick="viewUserProfile('${userId}')">
@@ -1173,7 +1215,82 @@ async function renderFeed(c) {
         if (errLoader) errLoader.remove();
         c.innerHTML += '<p class="text-center text-red-500 text-sm mt-4">Error loading feed.</p>'; 
     }
+    observeFeedVideos();
     applyTranslations();
+}
+
+let feedObserver = null;
+function observeFeedVideos() {
+    if (feedObserver) feedObserver.disconnect();
+    feedObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const iframe = entry.target.querySelector('.youtube-iframe');
+            const v = entry.target.querySelector('video');
+
+            if (entry.isIntersecting) {
+                // Pause other videos
+                document.querySelectorAll('#main-content video').forEach(vid => {
+                    if (vid !== v) vid.pause();
+                });
+                document.querySelectorAll('#main-content .youtube-iframe').forEach(ifr => {
+                    if (ifr !== iframe && ifr.getAttribute('src')) {
+                        ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+                    }
+                });
+
+                if (v) {
+                    v.muted = true;
+                    v.play().catch(e => console.log('Autoplay prevented:', e));
+                }
+                if (iframe && iframe.getAttribute('src')) {
+                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+                    
+                    if (!iframe.watchTimer) {
+                        iframe.watchSeconds = 0;
+                        iframe.watchTimer = setInterval(() => {
+                            iframe.watchSeconds++;
+                            if (iframe.watchSeconds >= 60 && !iframe.tracked) {
+                                iframe.tracked = true;
+                                trackCategoryFromPost(entry.target.getAttribute('data-post-id'));
+                            }
+                        }, 1000);
+                    }
+                }
+            } else {
+                if (v) v.pause();
+                if (iframe && iframe.getAttribute('src')) {
+                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+                    if (iframe.watchTimer) {
+                        clearInterval(iframe.watchTimer);
+                        iframe.watchTimer = null;
+                    }
+                }
+            }
+        });
+    }, { threshold: 0.6 });
+
+    document.querySelectorAll('#main-content .post-container').forEach(post => {
+        feedObserver.observe(post);
+    });
+}
+
+function trackCategoryFromPost(postId) {
+    const postEl = document.getElementById(`post-content-${postId}`);
+    if (postEl) {
+        let text = postEl.innerText || "";
+        text = text.replace(/https?:\/\/[^\s]+/g, '').replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase();
+        let words = text.split(/\s+/).filter(w => w.length > 3);
+        if (words.length > 0) {
+            let preferred = [];
+            try { preferred = JSON.parse(localStorage.getItem('preferredCategories')) || []; } catch(e){}
+            words.forEach(w => {
+                if (!preferred.includes(w)) preferred.push(w);
+            });
+            if (preferred.length > 50) preferred = preferred.slice(preferred.length - 50);
+            localStorage.setItem('preferredCategories', JSON.stringify(preferred));
+            console.log("Tracked watch time for post:", postId, "Added categories:", words);
+        }
+    }
 }
     
     function toggleSeeMore(elementId, btn) {

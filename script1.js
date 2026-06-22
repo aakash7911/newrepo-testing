@@ -118,9 +118,18 @@ const API_BASE = "https://zobbly.onrender.com";
     function generateLinkHtml(url) {
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         if (ytMatch && ytMatch[1]) {
+            const ytId = ytMatch[1];
             return `
             <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm bg-black relative group">
-                <video class="w-full h-full object-cover feed-html-video cursor-pointer" controls playsinline muted src="https://zobbly.onrender.com/api/stream/youtube?url=${encodeURIComponent(url)}" onclick="this.paused ? this.play() : this.pause()"></video>
+                <iframe 
+                    class="youtube-iframe absolute inset-0 w-full h-full"
+                    src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&enablejsapi=1&mute=1"
+                    style="width: 100%; height: 100%; border: none;"
+                    allow="autoplay; encrypted-media"
+                    allowfullscreen>
+                </iframe>
+                <!-- Click Overlay to Play/Pause on single click -->
+                <div class="absolute inset-0 z-20 cursor-pointer" onclick="const ifr=this.previousElementSibling; ifr.isPaused=!ifr.isPaused; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: ifr.isPaused ? 'pauseVideo' : 'playVideo', args: []}), '*');"></div>
             </div>`;
         }
         return `<button onclick="openLink('${url}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;

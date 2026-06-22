@@ -120,7 +120,7 @@ const API_BASE = "https://zobbly.onrender.com";
         if (ytMatch && ytMatch[1]) {
             const ytId = ytMatch[1];
             return `
-            <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm bg-black relative group">
+            <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center" style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');">
                 <iframe 
                     class="youtube-iframe absolute inset-0 w-full h-full"
                     src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&enablejsapi=1&mute=1"
@@ -128,8 +128,8 @@ const API_BASE = "https://zobbly.onrender.com";
                     allow="autoplay; encrypted-media"
                     allowfullscreen>
                 </iframe>
-                <!-- Click Overlay to Play/Pause on single click -->
-                <div class="absolute inset-0 z-20 cursor-pointer" onclick="const ifr=this.previousElementSibling; ifr.isPaused=!ifr.isPaused; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: ifr.isPaused ? 'pauseVideo' : 'playVideo', args: []}), '*');"></div>
+                <!-- Click Overlay to Play/Pause on single click (Leaves bottom 20% open for Skip Ad button) -->
+                <div class="absolute top-0 left-0 right-0 h-[80%] z-20 cursor-pointer" onclick="const ifr=this.previousElementSibling; ifr.isPaused=!ifr.isPaused; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: ifr.isPaused ? 'pauseVideo' : 'playVideo', args: []}), '*');"></div>
             </div>`;
         }
         return `<button onclick="openLink('${url}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;

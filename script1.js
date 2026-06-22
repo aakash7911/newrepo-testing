@@ -119,15 +119,27 @@ window.addEventListener("message", function(e) {
     if (e.origin === "https://www.youtube-nocookie.com" || e.origin === "https://www.youtube.com") {
         try {
             const data = JSON.parse(e.data);
-            if (data.event === "infoDelivery" && data.info) {
-                if (data.info.playerState === 1 || data.info.playerState === 2 || data.info.playerState === 3) { // 1=playing, 2=paused, 3=buffering
-                    document.querySelectorAll('.youtube-iframe').forEach(ifr => {
-                        if (ifr.contentWindow === e.source) {
-                            ifr.style.opacity = '1';
-                            ifr.style.pointerEvents = 'auto';
-                        }
-                    });
+            
+            // Show iframe if state is playing (1), paused (2), buffering (3) or ended (0)
+            let shouldShow = false;
+            
+            if (data.event === "infoDelivery" && data.info && data.info.playerState !== undefined) {
+                if (data.info.playerState !== -1 && data.info.playerState !== 5) {
+                    shouldShow = true;
                 }
+            } else if (data.event === "onStateChange" && data.info !== undefined) {
+                if (data.info !== -1 && data.info !== 5) {
+                    shouldShow = true;
+                }
+            }
+
+            if (shouldShow) {
+                document.querySelectorAll('.youtube-iframe').forEach(ifr => {
+                    if (ifr.contentWindow === e.source) {
+                        ifr.style.opacity = '1';
+                        ifr.style.pointerEvents = 'auto';
+                    }
+                });
             }
         } catch(err) {}
     }

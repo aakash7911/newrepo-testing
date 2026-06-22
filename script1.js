@@ -121,65 +121,10 @@ const API_BASE = "https://zobbly.onrender.com";
             const ytId = ytMatch[1];
             return `
             <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm bg-black relative group">
-                <iframe class="youtube-iframe absolute inset-0 w-full h-full pointer-events-none" src="https://www.youtube.com/embed/${ytId}?rel=0&modestbranding=1&controls=0&iv_load_policy=3&enablejsapi=1&autoplay=1&mute=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                <!-- Top Gradient to obscure title -->
-                <div class="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/80 to-transparent z-10 pointer-events-none"></div>
-                <!-- Bottom Gradient to obscure logo -->
-                <div class="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none"></div>
-                <!-- Click Overlay to Unmute/Mute (Single) and Play/Pause (Double) -->
-                <div class="absolute inset-0 z-20 cursor-pointer flex items-center justify-center" onclick="handleYouTubeClick(this, '${ytId}')">
-                     <div class="w-12 h-12 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white backdrop-blur-md transition-all opacity-0 group-hover:opacity-100 yt-audio-btn">
-                         <i class="fa-solid fa-volume-xmark text-lg"></i>
-                     </div>
-                </div>
+                <video class="w-full h-full object-cover feed-html-video" controls playsinline muted src="https://zobbly.onrender.com/api/stream/youtube?url=https://youtube.com/watch?v=${ytId}"></video>
             </div>`;
         }
         return `<button onclick="openLink('${url}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
-    }
-
-    function handleYouTubeClick(btn, ytId) {
-        if (!btn.clickCount) btn.clickCount = 0;
-        btn.clickCount++;
-        
-        if (btn.clickCount === 1) {
-            btn.clickTimer = setTimeout(() => {
-                btn.clickCount = 0;
-                // Single Click: Toggle Mute
-                const iframe = btn.parentElement.parentElement.querySelector('iframe');
-                const icon = btn.querySelector('i');
-                if (iframe && iframe.contentWindow) {
-                    if (icon.classList.contains('fa-volume-xmark') || icon.classList.contains('fa-play')) {
-                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'unMute', args: []}), '*');
-                        icon.classList.remove('fa-volume-xmark', 'fa-play');
-                        icon.classList.add('fa-volume-high');
-                    } else {
-                        iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'mute', args: []}), '*');
-                        icon.classList.remove('fa-volume-high', 'fa-pause');
-                        icon.classList.add('fa-volume-xmark');
-                    }
-                }
-            }, 250);
-        } else if (btn.clickCount === 2) {
-            clearTimeout(btn.clickTimer);
-            btn.clickCount = 0;
-            // Double Click: Toggle Play/Pause
-            const iframe = btn.parentElement.parentElement.querySelector('iframe');
-            const icon = btn.querySelector('i');
-            if (iframe && iframe.contentWindow) {
-                if (!iframe.isPausedManually) {
-                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
-                    iframe.isPausedManually = true;
-                    icon.className = 'fa-solid fa-play text-xl ml-1';
-                } else {
-                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
-                    iframe.isPausedManually = false;
-                    icon.className = 'fa-solid fa-pause text-xl';
-                    setTimeout(() => {
-                        icon.className = 'fa-solid fa-volume-high text-lg'; // Revert back to volume icon
-                    }, 1000);
-                }
-            }
-        }
     }
 
     function shuffleArray(array) {
@@ -1267,32 +1212,37 @@ function observeFeedVideos() {
                     }
                 });
 
-                if (v) {
-                    v.muted = true;
-                    v.play().catch(e => console.log('Autoplay prevented:', e));
-                }
-                if (iframe && iframe.getAttribute('src')) {
-                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
-                    
-                    if (!iframe.watchTimer) {
-                        iframe.watchSeconds = 0;
-                        iframe.watchTimer = setInterval(() => {
-                            iframe.watchSeconds++;
-                            if (iframe.watchSeconds >= 60 && !iframe.tracked) {
-                                iframe.tracked = true;
+                // Track Watch Time (Generic function for both video and iframe)
+                const startWatchTracking = (element) => {
+                    if (!element.watchTimer) {
+                        element.watchSeconds = 0;
+                        element.watchTimer = setInterval(() => {
+                            element.watchSeconds++;
+                            if (element.watchSeconds >= 60 && !element.tracked) {
+                                element.tracked = true;
                                 trackCategoryFromPost(entry.target.getAttribute('data-post-id'));
                             }
                         }, 1000);
                     }
+                };
+
+                if (v) {
+                    v.muted = true;
+                    v.play().catch(e => console.log('Autoplay prevented:', e));
+                    startWatchTracking(v);
+                }
+                if (iframe && iframe.getAttribute('src')) {
+                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+                    startWatchTracking(iframe);
                 }
             } else {
-                if (v) v.pause();
+                if (v) {
+                    v.pause();
+                    if (v.watchTimer) { clearInterval(v.watchTimer); v.watchTimer = null; }
+                }
                 if (iframe && iframe.getAttribute('src')) {
                     iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
-                    if (iframe.watchTimer) {
-                        clearInterval(iframe.watchTimer);
-                        iframe.watchTimer = null;
-                    }
+                    if (iframe.watchTimer) { clearInterval(iframe.watchTimer); iframe.watchTimer = null; }
                 }
             }
         });

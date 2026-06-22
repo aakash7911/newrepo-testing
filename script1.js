@@ -128,8 +128,15 @@ const API_BASE = "https://zobbly.onrender.com";
                     allow="autoplay; encrypted-media"
                     allowfullscreen>
                 </iframe>
+                
+                <!-- Top Overlay to obscure channel title and logo -->
+                <div class="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div>
+                
+                <!-- Bottom Overlay to obscure youtube logo and related videos -->
+                <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div>
+                
                 <!-- Click Overlay to Play/Pause on single click (Leaves bottom 20% open for Skip Ad button) -->
-                <div class="absolute top-0 left-0 right-0 h-[80%] z-20 cursor-pointer flex items-center justify-center" onclick="const ifr=this.previousElementSibling; ifr.isPaused=!ifr.isPaused; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: ifr.isPaused ? 'pauseVideo' : 'playVideo', args: []}), '*');">
+                <div class="absolute top-0 left-0 right-0 h-[80%] z-20 cursor-pointer flex items-center justify-center" onclick="const ifr=this.parentElement.querySelector('iframe'); ifr.isPaused=!ifr.isPaused; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: ifr.isPaused ? 'pauseVideo' : 'playVideo', args: []}), '*');">
                 </div>
             </div>`;
         }

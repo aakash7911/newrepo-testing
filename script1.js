@@ -115,17 +115,38 @@ const API_BASE = "https://zobbly.onrender.com";
         return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
     }
 
+window.addEventListener("message", function(e) {
+    if (e.origin === "https://www.youtube-nocookie.com" || e.origin === "https://www.youtube.com") {
+        try {
+            const data = JSON.parse(e.data);
+            if (data.event === "infoDelivery" && data.info) {
+                if (data.info.playerState === 1 || data.info.playerState === 2 || data.info.playerState === 3) { // 1=playing, 2=paused, 3=buffering
+                    document.querySelectorAll('.youtube-iframe').forEach(ifr => {
+                        if (ifr.contentWindow === e.source) {
+                            ifr.style.opacity = '1';
+                            ifr.style.pointerEvents = 'auto';
+                        }
+                    });
+                }
+            }
+        } catch(err) {}
+    }
+});
+
     function generateLinkHtml(url) {
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         if (ytMatch && ytMatch[1]) {
             const ytId = ytMatch[1];
             return `
-            <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center" style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');">
+            <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center cursor-pointer" 
+                 style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');"
+                 onclick="const ifr=this.querySelector('iframe'); ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');">
                 <iframe 
-                    class="youtube-iframe absolute inset-0 w-full h-full"
+                    class="youtube-iframe absolute inset-0 w-full h-full opacity-0 pointer-events-none transition-opacity duration-300"
                     src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
-                    style="width: 100%; height: 100%; border: none;"
+                    style="border: none;"
                     allow="autoplay; encrypted-media; fullscreen"
+                    onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
                     allowfullscreen>
                 </iframe>
             </div>`;

@@ -118,10 +118,9 @@ const API_BASE = "https://zobbly.onrender.com";
     function generateLinkHtml(url) {
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         if (ytMatch && ytMatch[1]) {
-            const ytId = ytMatch[1];
             return `
             <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm bg-black relative group">
-                <video class="w-full h-full object-cover feed-html-video cursor-pointer" controls playsinline muted src="https://zobbly.onrender.com/api/stream/youtube?url=https://youtube.com/watch?v=${ytId}" onclick="this.paused ? this.play() : this.pause()"></video>
+                <video class="w-full h-full object-cover feed-html-video cursor-pointer" controls playsinline muted src="https://zobbly.onrender.com/api/stream/youtube?url=${encodeURIComponent(url)}" onclick="this.paused ? this.play() : this.pause()"></video>
             </div>`;
         }
         return `<button onclick="openLink('${url}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;

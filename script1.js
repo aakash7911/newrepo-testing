@@ -115,34 +115,11 @@ const API_BASE = "https://zobbly.onrender.com";
         return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
     }
 
-window.addEventListener("message", function(e) {
-    if (e.origin === "https://www.youtube-nocookie.com" || e.origin === "https://www.youtube.com") {
-        try {
-            const data = JSON.parse(e.data);
-            
-            // Show iframe if state is playing (1), paused (2), buffering (3) or ended (0)
-            let shouldShow = false;
-            
-            if (data.event === "infoDelivery" && data.info && data.info.playerState !== undefined) {
-                if (data.info.playerState !== -1 && data.info.playerState !== 5) {
-                    shouldShow = true;
-                }
-            } else if (data.event === "onStateChange" && data.info !== undefined) {
-                if (data.info !== -1 && data.info !== 5) {
-                    shouldShow = true;
-                }
-            }
-
-            if (shouldShow) {
-                document.querySelectorAll('.youtube-iframe').forEach(ifr => {
-                    if (ifr.contentWindow === e.source) {
-                        ifr.style.opacity = '1';
-                        ifr.style.pointerEvents = 'auto';
-                    }
-                });
-            }
-        } catch(err) {}
-    }
+window.hasInteracted = false;
+['scroll', 'click', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, () => {
+        window.hasInteracted = true;
+    }, { once: true, passive: true });
 });
 
     function generateLinkHtml(url) {
@@ -152,13 +129,12 @@ window.addEventListener("message", function(e) {
             return `
             <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center cursor-pointer" 
                  style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');"
-                 onclick="const ifr=this.querySelector('iframe'); ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');">
+                 onclick="const ifr=this.querySelector('iframe'); ifr.style.opacity='1'; ifr.style.pointerEvents='auto'; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');">
                 <iframe 
                     class="youtube-iframe absolute inset-0 w-full h-full opacity-0 pointer-events-none transition-opacity duration-300"
                     src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
                     style="border: none;"
                     allow="autoplay; encrypted-media; fullscreen"
-                    onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
                     allowfullscreen>
                 </iframe>
             </div>`;
@@ -1271,8 +1247,11 @@ function observeFeedVideos() {
                     startWatchTracking(v);
                 }
                 if (iframe && iframe.getAttribute('src')) {
+                    if (window.hasInteracted) {
+                        iframe.style.opacity = '1';
+                        iframe.style.pointerEvents = 'auto';
+                    }
                     iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
-                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'unMute', args: []}), '*');
                     startWatchTracking(iframe);
                 }
             } else {

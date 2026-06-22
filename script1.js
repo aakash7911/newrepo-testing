@@ -123,20 +123,17 @@ const API_BASE = "https://zobbly.onrender.com";
             <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center" style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');">
                 <iframe 
                     class="youtube-iframe absolute inset-0 w-full h-full"
-                    src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&enablejsapi=1"
+                    src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1&mute=1"
                     style="width: 100%; height: 100%; border: none;"
-                    allow="autoplay; encrypted-media"
+                    allow="autoplay; encrypted-media; fullscreen"
                     allowfullscreen>
                 </iframe>
                 
                 <!-- Top Overlay to obscure channel title and logo -->
-                <div class="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div>
+                <div class="absolute top-0 left-0 right-0 h-16 bg-black z-10 pointer-events-none"></div>
                 
-                <!-- Bottom Overlay to obscure youtube logo and related videos -->
-                <div class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 pointer-events-none"></div>
-                
-                <!-- Click Overlay to Play/Pause on single click (Leaves bottom 20% open for Skip Ad button) -->
-                <div class="absolute top-0 left-0 right-0 h-[80%] z-20 cursor-pointer flex items-center justify-center" onclick="const ifr=this.parentElement.querySelector('iframe'); ifr.isPaused=!ifr.isPaused; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: ifr.isPaused ? 'pauseVideo' : 'playVideo', args: []}), '*');">
+                <!-- Click Overlay to Play/Pause on single click (Leaves bottom 20% open for YouTube controls like Scrubbing & Fullscreen) -->
+                <div class="absolute top-16 left-0 right-0 bottom-[20%] z-20 cursor-pointer flex items-center justify-center" onclick="const ifr=this.parentElement.querySelector('iframe'); ifr.isPaused=!ifr.isPaused; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: ifr.isPaused ? 'pauseVideo' : 'playVideo', args: []}), '*');">
                 </div>
             </div>`;
         }

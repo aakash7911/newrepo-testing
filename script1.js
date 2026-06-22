@@ -128,9 +128,6 @@ const API_BASE = "https://zobbly.onrender.com";
                     allow="autoplay; encrypted-media; fullscreen"
                     allowfullscreen>
                 </iframe>
-                
-                <!-- Top Overlay to obscure channel title and logo -->
-                <div class="absolute top-0 left-0 right-0 h-16 bg-black z-10 pointer-events-none"></div>
             </div>`;
         }
         return `<button onclick="openLink('${url}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;

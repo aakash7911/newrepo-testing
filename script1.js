@@ -987,14 +987,14 @@ function renderView(view) {
 
 
 async function renderFeed(c) {
-    const topBar = `<div id="feed-top-bar" class="glass-card p-3 mb-4 flex gap-2 items-center fixed top-[56px] left-0 right-0 mx-auto max-w-md z-30 w-full border-t border-gray-100 transition-transform duration-300" style="backdrop-filter: blur(20px);">
+    const topBar = `<div id="feed-top-bar" class="glass-card p-3 mb-4 flex gap-2 items-center fixed top-[60px] left-0 right-0 mx-auto max-w-md z-30 w-full border-t border-gray-100 transition-transform duration-300" style="backdrop-filter: blur(20px);">
                         <button onclick="document.getElementById('postModal').classList.remove('hidden')" class="w-10 h-10 bg-gradient-to-r from-purple-50 to-pink-500 rounded-full flex-shrink-0 flex items-center justify-center text-white shadow-md active:scale-95 transition"><i class="fa-solid fa-pen-nib"></i></button>
                         <div class="flex-1 relative">
                             <input id="feedSearchInput" type="text" placeholder="${txt('search')}..." class="w-full bg-white/50 border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 transition" onkeypress="handleEnterSearch(event)">
                         </div>
                         <button onclick="searchUsersFromFeed()" class="w-10 h-10 bg-gray-100 text-purple-600 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm hover:bg-purple-100 transition"><i class="fa-solid fa-magnifying-glass"></i></button>
                     </div>
-                    <div style="height: 80px;"></div>`;
+                    <div style="height: 60px;"></div>`;
                     
     // 🔥 LOADER TEXT CHANGED TO ENGLISH
     c.innerHTML = topBar + `

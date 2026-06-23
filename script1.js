@@ -132,7 +132,7 @@ window.hasInteracted = false;
                  onclick="const ifr=this.querySelector('iframe'); ifr.style.opacity='1'; ifr.style.pointerEvents='auto'; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');">
                 <iframe 
                     class="youtube-iframe absolute inset-0 w-full h-full opacity-0 pointer-events-none transition-opacity duration-300"
-                    src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
+                    src="https://www.youtube-nocookie.com/embed/${ytId}?modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
                     style="border: none;"
                     allow="autoplay; encrypted-media; fullscreen"
                     allowfullscreen>
@@ -1744,7 +1744,7 @@ function togglePostMenu(postId, event) {
         <div id="profile-view" class="glass-card p-6 mb-4 text-center relative overflow-hidden">
             <button onclick="renderView('feed')" class="absolute top-4 left-4 text-white z-10 bg-black/20 hover:bg-black/40 p-2 rounded-full backdrop-blur-sm transition"><i class="fa-solid fa-arrow-left"></i></button>
             ${!isMe ? `<div class="absolute top-4 right-4 z-20"><button onclick="document.getElementById('profile-menu').classList.toggle('hidden')" class="text-white bg-black/20 hover:bg-black/40 p-2 rounded-full backdrop-blur-sm transition"><i class="fa-solid fa-ellipsis-vertical"></i></button><div id="profile-menu" class="hidden absolute right-0 top-10 bg-white shadow-xl rounded-lg w-32 overflow-hidden border z-30"><button onclick="blockUser('${u._id}', '${u.username}')" class="w-full text-left p-3 text-sm hover:bg-gray-100 text-red-600 border-b"><i class="fa-solid fa-ban mr-2"></i>${isBlocked ? txt('unblock') : txt('block')}</button><button onclick="reportUser('${u._id}', '${u.username}')" class="w-full text-left p-3 text-sm hover:bg-gray-100 text-gray-700"><i class="fa-solid fa-flag mr-2"></i>${txt('report')}</button></div></div>` : ''}
-            <div class="absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-purple-400 to-pink-400 opacity-50"></div>
+            <div class="profile-banner absolute top-0 left-0 w-full h-20 bg-gradient-to-r from-purple-400 to-pink-400 opacity-50 transition-all duration-300"></div>
             <img src="${(u.photo ? u.photo + '?t=' + Date.now() : 'https://placehold.co/100')}" class="relative w-24 h-24 rounded-full mx-auto mb-2 object-cover border-4 border-white shadow-xl" ${isMe ? 'onclick="document.getElementById(\'photoInput\').click()"' : ''}>
             ${isMe ? '<input type="file" id="photoInput" class="hidden" onchange="APIService.user.uploadPhoto(this.files[0])">' : ''}
             <h1 class="text-2xl font-black text-gray-800">${u.name}</h1>

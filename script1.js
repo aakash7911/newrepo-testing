@@ -122,7 +122,7 @@ window.hasInteracted = false;
     }, { once: true, passive: true });
 });
 
-    function generateLinkHtml(url, isAutoplay = true) {
+    function generateLinkHtml(url, isAutoplay = false) {
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         if (ytMatch && ytMatch[1]) {
             const ytId = ytMatch[1];
@@ -1248,11 +1248,7 @@ function observeFeedVideos() {
                     startWatchTracking(v);
                 }
                 if (iframe && iframe.getAttribute('src')) {
-                    if (window.hasInteracted) {
-                        iframe.style.opacity = '1';
-                        iframe.style.pointerEvents = 'auto';
-                    }
-                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+                    // Autoplay disabled: User must tap to play
                     startWatchTracking(iframe);
                 }
             } else {

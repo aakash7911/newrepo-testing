@@ -122,17 +122,18 @@ window.hasInteracted = false;
     }, { once: true, passive: true });
 });
 
-    function generateLinkHtml(url) {
+    function generateLinkHtml(url, isAutoplay = true) {
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         if (ytMatch && ytMatch[1]) {
             const ytId = ytMatch[1];
+            const autoParam = isAutoplay ? "autoplay=1&" : "";
             return `
             <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center cursor-pointer" 
                  style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');"
                  onclick="const ifr=this.querySelector('iframe'); ifr.style.opacity='1'; ifr.style.pointerEvents='auto'; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');">
                 <iframe 
                     class="youtube-iframe absolute inset-0 w-full h-full opacity-0 pointer-events-none transition-opacity duration-300"
-                    src="https://www.youtube-nocookie.com/embed/${ytId}?modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
+                    src="https://www.youtube-nocookie.com/embed/${ytId}?${autoParam}modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
                     style="border: none;"
                     allow="autoplay; encrypted-media; fullscreen"
                     allowfullscreen>
@@ -844,14 +845,14 @@ function renderView(view) {
             let linkHtml = '';
             if (p.link) {
                  displayContent = displayContent.replace(p.link, '').trim();
-                 linkHtml = generateLinkHtml(p.link);
+                 linkHtml = generateLinkHtml(p.link, false);
             } else {
                 const urlRegex = /(https?:\/\/[^\s]+)/g;
                 const detectedLinks = displayContent.match(urlRegex);
                 if(detectedLinks && detectedLinks.length > 0) {
                       const firstLink = detectedLinks[0];
                       displayContent = displayContent.replace(firstLink, '').trim();
-                      linkHtml = generateLinkHtml(firstLink);
+                      linkHtml = generateLinkHtml(firstLink, false);
                 }
             }
 
@@ -1781,14 +1782,14 @@ function togglePostMenu(postId, event) {
                     let linkHtml = '';
                     if (p.link) {
                          displayContent = displayContent.replace(p.link, '').trim();
-                         linkHtml = generateLinkHtml(p.link);
+                         linkHtml = generateLinkHtml(p.link, false);
                     } else {
                         const urlRegex = /(https?:\/\/[^\s]+)/g;
                         const detectedLinks = displayContent.match(urlRegex);
                         if(detectedLinks && detectedLinks.length > 0) {
                               const firstLink = detectedLinks[0];
                               displayContent = displayContent.replace(firstLink, '').trim();
-                              linkHtml = generateLinkHtml(firstLink);
+                              linkHtml = generateLinkHtml(firstLink, false);
                         }
                     }
 

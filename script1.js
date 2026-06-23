@@ -122,18 +122,40 @@ window.hasInteracted = false;
     }, { once: true, passive: true });
 });
 
+    window.playYoutubeVideo = function(container) {
+        document.querySelectorAll('.youtube-iframe').forEach(otherIfr => {
+            if (otherIfr.getAttribute('src')) {
+                otherIfr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+            }
+        });
+        document.querySelectorAll('video').forEach(vid => vid.pause());
+
+        const ifr = container.querySelector('iframe');
+        if (!ifr.getAttribute('src')) {
+            ifr.setAttribute('src', ifr.getAttribute('data-src'));
+        } else {
+            ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');
+        }
+        ifr.style.opacity = '1';
+        ifr.style.pointerEvents = 'auto';
+    };
+
     function generateLinkHtml(url, isAutoplay = false) {
         const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
         if (ytMatch && ytMatch[1]) {
             const ytId = ytMatch[1];
-            const autoParam = isAutoplay ? "autoplay=1&" : "";
+            // We always use autoplay=1 in data-src so that when we inject it on click, it auto-starts.
+            // If isAutoplay is true (not used anymore but kept for compat), we could inject into src immediately.
+            const initialSrc = isAutoplay ? `src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"` : `src=""`;
+            
             return `
             <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center cursor-pointer" 
                  style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');"
-                 onclick="const ifr=this.querySelector('iframe'); ifr.style.opacity='1'; ifr.style.pointerEvents='auto'; ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'playVideo', args: []}), '*');">
+                 onclick="window.playYoutubeVideo(this)">
                 <iframe 
                     class="youtube-iframe absolute inset-0 w-full h-full opacity-0 pointer-events-none transition-opacity duration-300"
-                    src="https://www.youtube-nocookie.com/embed/${ytId}?${autoParam}modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
+                    data-src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
+                    ${initialSrc}
                     style="border: none;"
                     allow="autoplay; encrypted-media; fullscreen"
                     allowfullscreen>

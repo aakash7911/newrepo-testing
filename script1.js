@@ -201,9 +201,13 @@ window.toggleCustomFullscreen = function(id) {
         }
 
         if(mediaObj) {
+            mediaObj.style.position = '';
+            mediaObj.style.top = '';
+            mediaObj.style.left = '';
             mediaObj.style.width = '';
             mediaObj.style.height = '';
             mediaObj.style.transform = '';
+            mediaObj.style.margin = '';
             mediaObj.setAttribute('data-rot', '0');
         }
 
@@ -243,18 +247,34 @@ window.toggleCustomFullscreen = function(id) {
                 currentRot = (currentRot + 90) % 360;
                 mediaObj.setAttribute('data-rot', currentRot);
                 
+                mediaObj.style.position = 'absolute';
+                mediaObj.style.top = '50%';
+                mediaObj.style.left = '50%';
+                mediaObj.style.margin = '0';
+
                 if (currentRot === 90 || currentRot === 270) {
                     mediaObj.style.width = '100vh';
                     mediaObj.style.height = '100vw';
-                    mediaObj.style.transform = `rotate(${currentRot}deg)`;
+                    mediaObj.style.transform = `translate(-50%, -50%) rotate(${currentRot}deg)`;
                 } else {
-                    mediaObj.style.width = '100%';
-                    mediaObj.style.height = '100%';
-                    mediaObj.style.transform = `rotate(${currentRot}deg)`;
+                    mediaObj.style.width = '100vw';
+                    mediaObj.style.height = '100vh';
+                    mediaObj.style.transform = `translate(-50%, -50%) rotate(${currentRot}deg)`;
                 }
             }
         };
         el.appendChild(rotateBtn);
+        
+        // Ensure media is positioned correctly when entering fullscreen
+        if(mediaObj) {
+            mediaObj.style.position = 'absolute';
+            mediaObj.style.top = '50%';
+            mediaObj.style.left = '50%';
+            mediaObj.style.margin = '0';
+            mediaObj.style.width = '100vw';
+            mediaObj.style.height = '100vh';
+            mediaObj.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+        }
     }
 };
 

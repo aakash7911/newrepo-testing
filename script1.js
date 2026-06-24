@@ -2657,7 +2657,7 @@ async function renderReels(container) {
                                     style="height: calc(100% + 140px); top: -70px; transform: scale(1.35);"
                                     onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
                                     data-src="${videoUrl}" 
-                                    src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index < 5 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 
+                                    src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index === 1 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 
                                     allow="autoplay; encrypted-media"
                                     loading="eager"
                                     allowfullscreen>
@@ -2794,7 +2794,7 @@ async function renderReels(container) {
                     for (let i = 0; i < 5 && nextCard; i++) {
                         // YouTube Preload in Push condition (paused/muted)
                         let nextIframe = nextCard.querySelector('.youtube-iframe');
-                        if (nextIframe && !nextIframe.getAttribute('src')) {
+                        if (nextIframe && !nextIframe.getAttribute('src') && i < 1) { // ONLY PRELOAD 1 YOUTUBE REEL!
                             nextIframe.setAttribute('src', nextIframe.getAttribute('data-src').replace('autoplay=1', 'autoplay=0'));
                         }
                         

@@ -176,11 +176,17 @@ window.toggleCustomFullscreen = function(id) {
     
     const isFs = el.classList.contains('custom-fullscreen');
     const mediaObj = el.querySelector('iframe') || el.querySelector('video');
+    const postContainer = el.closest('.post-container');
     
     if (isFs) {
         el.classList.remove('custom-fullscreen');
         document.body.style.overflow = 'auto';
         
+        if (postContainer) {
+            postContainer.style.zIndex = '';
+            postContainer.style.position = '';
+        }
+
         const closeBtn = el.querySelector('.fs-close-btn');
         if(closeBtn) closeBtn.remove();
         const rotateBtn = el.querySelector('.fs-rotate-btn');
@@ -205,6 +211,11 @@ window.toggleCustomFullscreen = function(id) {
         el.classList.add('custom-fullscreen');
         document.body.style.overflow = 'hidden';
         
+        if (postContainer) {
+            postContainer.style.zIndex = '999999';
+            postContainer.style.position = 'relative';
+        }
+
         if (id.startsWith('yt-wrap-')) {
             el.classList.remove('aspect-video', 'rounded-xl', 'mt-2', 'mb-3');
         } else {

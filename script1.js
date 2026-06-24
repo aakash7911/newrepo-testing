@@ -149,9 +149,14 @@ window.hasInteracted = false;
             const initialSrc = isAutoplay ? `src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"` : `src=""`;
             
             return `
-            <div class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center cursor-pointer" 
+            <div id="yt-wrap-${ytId}" class="w-full aspect-video rounded-xl overflow-hidden mt-2 mb-3 shadow-sm relative group bg-cover bg-center cursor-pointer" 
                  style="background-image: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg');"
                  onclick="window.playYoutubeVideo(this)">
+                 
+                <button onclick="event.stopPropagation(); if(window.toggleCustomFullscreen) window.toggleCustomFullscreen('yt-wrap-${ytId}')" class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded-full flex items-center justify-center z-20 shadow-md">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+
                 <iframe 
                     class="youtube-iframe absolute inset-0 w-full h-full opacity-0 pointer-events-none transition-opacity duration-300"
                     data-src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=1&controls=1&disablekb=1&enablejsapi=1"
@@ -164,6 +169,88 @@ window.hasInteracted = false;
         }
         return `<button onclick="openLink('${url}')" class="w-full mt-2 mb-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white p-3 rounded-xl text-sm font-bold transition flex items-center justify-center shadow-lg transform hover:-translate-y-0.5"><i class="fa-solid fa-link mr-2"></i> Visit Link</button>`;
     }
+
+window.toggleCustomFullscreen = function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    
+    const isFs = el.classList.contains('custom-fullscreen');
+    const mediaObj = el.querySelector('iframe') || el.querySelector('video');
+    
+    if (isFs) {
+        el.classList.remove('custom-fullscreen');
+        document.body.style.overflow = 'auto';
+        
+        const closeBtn = el.querySelector('.fs-close-btn');
+        if(closeBtn) closeBtn.remove();
+        const rotateBtn = el.querySelector('.fs-rotate-btn');
+        if(rotateBtn) rotateBtn.remove();
+        
+        if (id.startsWith('yt-wrap-')) {
+            el.classList.add('aspect-video', 'rounded-xl', 'mt-2', 'mb-3');
+        } else {
+            el.classList.add('rounded-xl', 'mb-3', 'mt-2');
+            const vid = el.querySelector('video');
+            if(vid) vid.classList.add('max-h-80');
+        }
+
+        if(mediaObj) {
+            mediaObj.style.width = '';
+            mediaObj.style.height = '';
+            mediaObj.style.transform = '';
+            mediaObj.setAttribute('data-rot', '0');
+        }
+
+    } else {
+        el.classList.add('custom-fullscreen');
+        document.body.style.overflow = 'hidden';
+        
+        if (id.startsWith('yt-wrap-')) {
+            el.classList.remove('aspect-video', 'rounded-xl', 'mt-2', 'mb-3');
+        } else {
+            el.classList.remove('rounded-xl', 'mb-3', 'mt-2');
+            const vid = el.querySelector('video');
+            if(vid) vid.classList.remove('max-h-80');
+        }
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'fs-close-btn absolute top-6 right-6 bg-black/70 text-white w-12 h-12 rounded-full flex items-center justify-center z-[9999] shadow-lg text-xl';
+        closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            window.toggleCustomFullscreen(id);
+        };
+        el.appendChild(closeBtn);
+
+        const rotateBtn = document.createElement('button');
+        rotateBtn.className = 'fs-rotate-btn absolute top-6 left-6 bg-black/70 text-white w-12 h-12 rounded-full flex items-center justify-center z-[9999] shadow-lg text-xl';
+        rotateBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
+        rotateBtn.onclick = (e) => {
+            e.stopPropagation();
+            if(mediaObj) {
+                let currentRot = parseInt(mediaObj.getAttribute('data-rot') || '0');
+                currentRot = (currentRot + 90) % 360;
+                mediaObj.setAttribute('data-rot', currentRot);
+                
+                if (currentRot === 90 || currentRot === 270) {
+                    mediaObj.style.width = '100vh';
+                    mediaObj.style.height = '100vw';
+                    mediaObj.style.transform = `rotate(${currentRot}deg)`;
+                } else {
+                    mediaObj.style.width = '100%';
+                    mediaObj.style.height = '100%';
+                    mediaObj.style.transform = `rotate(${currentRot}deg)`;
+                }
+            }
+        };
+        el.appendChild(rotateBtn);
+    }
+};
+
+window.onload = function() {
+    checkLoginStatus();
+    switchTheme(localStorage.getItem('theme') || 'default');
+};
 
     function shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
@@ -1134,7 +1221,13 @@ async function renderFeed(c) {
                         }
                     } else if (mediaUrl) {
                         if (isVideo) {
-                            mediaHtml = `<video src="${mediaUrl}" controls playsinline class="w-full rounded-xl mb-3 object-cover max-h-80 shadow-sm mt-2 bg-black"></video>`;
+                            mediaHtml = `
+                            <div id="vid-wrap-${p._id}" class="relative w-full rounded-xl mb-3 mt-2 overflow-hidden shadow-sm bg-black group flex items-center justify-center">
+                                <button onclick="if(window.toggleCustomFullscreen) window.toggleCustomFullscreen('vid-wrap-${p._id}')" class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded-full flex items-center justify-center z-20 shadow-md">
+                                    <i class="fa-solid fa-expand"></i>
+                                </button>
+                                <video src="${mediaUrl}" controls playsinline class="w-full object-contain max-h-80"></video>
+                            </div>`;
                         } else {
                             mediaHtml = `<img src="${mediaUrl}" class="w-full rounded-xl mb-3 object-cover max-h-80 shadow-sm mt-2">`;
                         }

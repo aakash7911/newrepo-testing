@@ -177,6 +177,14 @@ window.toggleCustomFullscreen = function(id) {
     const isFs = el.classList.contains('custom-fullscreen');
     const mediaObj = el.querySelector('iframe') || el.querySelector('video');
     const postContainer = el.closest('.post-container');
+
+    if (!isFs) {
+        document.querySelectorAll('.custom-fullscreen').forEach(otherEl => {
+            if (otherEl.id !== id) {
+                window.toggleCustomFullscreen(otherEl.id);
+            }
+        });
+    }
     
     if (isFs) {
         el.classList.remove('custom-fullscreen');

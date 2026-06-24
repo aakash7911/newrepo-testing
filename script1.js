@@ -1798,16 +1798,29 @@ function togglePostMenu(postId, event) {
                     const isVideo = (p.video) || (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext)));
                     let displayContent = p.content || '';
                     let linkHtml = '';
+                    let detectedLinks = [];
                     if (p.link) {
                          displayContent = displayContent.replace(p.link, '').trim();
                          linkHtml = generateLinkHtml(p.link, false);
                     } else {
                         const urlRegex = /(https?:\/\/[^\s]+)/g;
-                        const detectedLinks = displayContent.match(urlRegex);
-                        if(detectedLinks && detectedLinks.length > 0) {
+                        detectedLinks = displayContent.match(urlRegex) || [];
+                        if(detectedLinks.length > 0) {
                               const firstLink = detectedLinks[0];
                               displayContent = displayContent.replace(firstLink, '').trim();
                               linkHtml = generateLinkHtml(firstLink, false);
+                        }
+                    }
+
+                    let ytId = null;
+                    const possibleUrls = [p.link, p.video, ...detectedLinks];
+                    for(let url of possibleUrls) {
+                        if(url) {
+                            const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+                            if(match && match[1]) {
+                                ytId = match[1];
+                                break;
+                            }
                         }
                     }
 
@@ -1819,12 +1832,15 @@ function togglePostMenu(postId, event) {
                             ${(p.images && p.images.length > 0) ?
                                 `<img src="${p.images[0]}" class="w-full h-full object-cover block">
                                  ${p.images.length > 1 ? `<div class="absolute top-2 right-2 bg-black/50 text-white p-1 rounded"><i class="fa-solid fa-clone text-xs"></i></div>` : ''}`
+                            : (ytId ? 
+                                    `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" class="w-full h-full object-cover block">
+                                     <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><i class="fa-brands fa-youtube text-red-600 text-3xl drop-shadow-md bg-white/80 rounded-full w-8 h-8 flex items-center justify-center"></i></div>`
                             : (mediaUrl ? 
                                 (isVideo ? 
                                     `<video src="${mediaUrl}" class="w-full h-full object-cover block" preload="metadata" muted playsinline></video>
                                      <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><i class="fa-solid fa-play text-white/80 text-xl shadow-sm"></i></div>` : 
                                     `<img src="${mediaUrl}" class="w-full h-full object-cover block">`) 
-                                : `<div class="w-full h-full flex items-center justify-center p-2 bg-purple-100 text-[10px] text-gray-700 font-bold text-center break-words">${displayContent.substring(0, 50)}</div>`)
+                                : `<div class="w-full h-full flex items-center justify-center p-2 bg-purple-100 text-[10px] text-gray-700 font-bold text-center break-words">${displayContent.substring(0, 50)}</div>`))
                             }
                             <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3 text-white font-bold text-xs pointer-events-none">
                                 <span><i class="fa-solid fa-heart"></i> ${p.likes.length}</span>

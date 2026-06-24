@@ -2764,6 +2764,12 @@ async function renderReels(container) {
 
                     // 🔥 PLAY CURRENT VIDEO
                     if (v) {
+                        let sourceTag = v.querySelector('source');
+                        if (sourceTag && !sourceTag.getAttribute('src')) {
+                            sourceTag.setAttribute('src', sourceTag.getAttribute('data-src'));
+                            v.load();
+                        }
+                        
                         v.muted = false; 
                         v.play().catch(() => { v.muted = true; v.play(); }); 
                         if(typeof updateMuteUI === 'function') updateMuteUI(v.id.split('-')[1], v.muted);

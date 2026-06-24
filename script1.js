@@ -215,7 +215,7 @@ window.toggleCustomFullscreen = function(id) {
         
         const closeBtn = document.createElement('button');
         closeBtn.className = 'fs-close-btn absolute top-6 right-6 bg-black/70 text-white w-12 h-12 rounded-full flex items-center justify-center z-[9999] shadow-lg text-xl';
-        closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        closeBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
         closeBtn.onclick = (e) => {
             e.stopPropagation();
             window.toggleCustomFullscreen(id);

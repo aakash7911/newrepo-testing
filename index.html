@@ -276,20 +276,20 @@
 .reels-mode {
     overflow-y: scroll;
     scroll-snap-type: y mandatory; 
-    height: 100vh !important;
-    height: 100svh !important;
+    height: calc(100vh - 64px) !important;
+    height: calc(100svh - 64px) !important;
     background: #000; 
 }
 .reels-wrapper {
-    height: 100vh; 
-    height: 100svh;
+    height: calc(100vh - 64px); 
+    height: calc(100svh - 64px);
     width: 100%;
 }
 
 
 .reel-card {
-    height: 100vh; 
-    height: 100svh;
+    height: calc(100vh - 64px); 
+    height: calc(100svh - 64px);
     width: 100%;
     scroll-snap-align: start; 
     scroll-snap-stop: always; 
@@ -896,7 +896,7 @@ body.theme-red .profile-banner {
     </div>
 </div>
 
-<script src="script1.js?v=70"></script>
+<script src="script1.js?v=71"></script>
 
 </body>
 </html>

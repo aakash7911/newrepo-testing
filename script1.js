@@ -2007,7 +2007,7 @@ function togglePostMenu(postId, event) {
 
                     return `
                     <div id="post-wrapper-${p._id}" class="contents profile-post-item" data-search="${encodeURIComponent((p.content || '').toLowerCase())}">
-                        <div class="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer group" onclick="toggleComment('${p._id}')">
+                        <div class="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer group post-thumb-item" onclick="toggleComment('${p._id}')">
                             
                              ${isMe ? `<button onclick="event.stopPropagation(); deletePost('${p._id}')" class="absolute top-2 right-2 z-20 bg-black/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition shadow-md backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
                             ${(p.images && p.images.length > 0) ?

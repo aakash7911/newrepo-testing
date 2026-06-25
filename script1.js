@@ -286,6 +286,40 @@ window.toggleCustomFullscreen = function(id) {
     }
 };
 
+window.filterProfileActivity = function() {
+    const searchInput = document.getElementById('profileActivitySearch');
+    if (!searchInput) return;
+    
+    const q = searchInput.value.toLowerCase();
+    const items = document.querySelectorAll('.profile-post-item');
+    let hasVisible = false;
+    
+    items.forEach(item => {
+        const text = decodeURIComponent(item.getAttribute('data-search') || '');
+        if (text.includes(q)) {
+            item.style.display = 'contents';
+            hasVisible = true;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    let emptyMsg = document.getElementById('profile-activity-empty');
+    if (!hasVisible && items.length > 0) {
+        if (!emptyMsg) {
+            emptyMsg = document.createElement('p');
+            emptyMsg.id = 'profile-activity-empty';
+            emptyMsg.className = 'col-span-3 text-center text-gray-400 text-sm py-10';
+            emptyMsg.innerText = 'No matching posts found.';
+            document.getElementById('profile-activity-grid').appendChild(emptyMsg);
+        } else {
+            emptyMsg.style.display = 'block';
+        }
+    } else if (emptyMsg) {
+        emptyMsg.style.display = 'none';
+    }
+};
+
 window.onload = function() {
     checkLoginStatus();
     switchTheme(localStorage.getItem('theme') || 'default');
@@ -1922,9 +1956,15 @@ function togglePostMenu(postId, event) {
         </div>
 
         <div class="glass-card p-4">
-            <h2 class="text-md font-bold mb-3 text-gray-800 border-b border-gray-200/50 pb-2">${txt('activity')}</h2>
+            <div class="flex justify-between items-center mb-3 border-b border-gray-200/50 pb-2">
+                <h2 class="text-md font-bold text-gray-800">${txt('activity')}</h2>
+                <div class="relative w-1/2 max-w-[150px]">
+                    <input type="text" id="profileActivitySearch" onkeyup="if(window.filterProfileActivity) window.filterProfileActivity()" placeholder="${txt('search')}..." class="w-full text-xs px-2 py-1.5 bg-gray-100 border-none rounded-full outline-none focus:ring-1 focus:ring-purple-400 pl-8 text-gray-800">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2 text-gray-400 text-[10px] pointer-events-none"></i>
+                </div>
+            </div>
             
-            <div class="grid grid-cols-3 gap-1">
+            <div class="grid grid-cols-3 gap-1" id="profile-activity-grid">
                ${posts.length === 0 ? '<p class="col-span-3 text-center text-gray-400 text-sm py-10">No posts yet.</p>' : posts.map(p => {
                     const mediaUrl = p.video || p.image;
                     const isVideo = (p.video) || (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext)));
@@ -1957,7 +1997,7 @@ function togglePostMenu(postId, event) {
                     }
 
                     return `
-                    <div id="post-wrapper-${p._id}" class="contents">
+                    <div id="post-wrapper-${p._id}" class="contents profile-post-item" data-search="${encodeURIComponent((p.content || '').toLowerCase())}">
                         <div class="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer group" onclick="toggleComment('${p._id}')">
                             
                              ${isMe ? `<button onclick="event.stopPropagation(); deletePost('${p._id}')" class="absolute top-2 right-2 z-20 bg-black/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition shadow-md backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}

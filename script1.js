@@ -302,9 +302,13 @@ window.filterProfileActivity = function() {
             const comments = document.getElementById(`comments-${postId}`);
             
             if (q === '' || text.includes(q)) {
+                item.classList.add('contents');
+                item.style.display = '';
                 if(thumb) thumb.style.display = '';
                 hasVisible = true;
             } else {
+                item.classList.remove('contents');
+                item.style.display = 'none';
                 if(thumb) thumb.style.display = 'none';
                 if(comments) comments.classList.add('hidden');
             }
@@ -931,15 +935,16 @@ function renderView(view) {
 
         
         const container = document.getElementById('fc-messages');
-        container.style.background = currentTheme.bg;
-        container.style.backgroundSize = "cover";
+        if(container) {
+            container.style.setProperty('background', currentTheme.bg, 'important');
+            container.style.setProperty('background-size', 'cover', 'important');
+        }
 
-        
         const header = document.getElementById('fc-header');
         const footer = document.getElementById('fc-footer');
         if(header && footer && currentTheme.barColor) {
-            header.style.backgroundColor = currentTheme.barColor;
-            footer.style.backgroundColor = currentTheme.barColor;
+            header.style.setProperty('background-color', currentTheme.barColor, 'important');
+            footer.style.setProperty('background-color', currentTheme.barColor, 'important');
         }
 
         loadMsgs(); 
@@ -1968,7 +1973,7 @@ function togglePostMenu(postId, event) {
             <div class="flex justify-between items-center mb-3 border-b border-gray-200/50 pb-2">
                 <h2 class="text-md font-bold text-gray-800">${txt('activity')}</h2>
                 <div class="relative w-1/2 max-w-[150px]">
-                    <input type="text" id="profileActivitySearch" onkeyup="if(window.filterProfileActivity) window.filterProfileActivity()" placeholder="${txt('search')}..." class="w-full text-xs px-2 py-1.5 bg-gray-100 border-none rounded-full outline-none focus:ring-1 focus:ring-purple-400 pl-8 text-gray-800">
+                    <input type="text" id="profileActivitySearch" oninput="if(window.filterProfileActivity) window.filterProfileActivity()" placeholder="${txt('search')}..." class="w-full text-xs px-2 py-1.5 bg-gray-100 border-none rounded-full outline-none focus:ring-1 focus:ring-purple-400 pl-8 text-gray-800">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2 text-gray-400 text-[10px] pointer-events-none"></i>
                 </div>
             </div>
@@ -3371,6 +3376,10 @@ function toggleThemeMenu() {
     }
 }
 
+
+window.badalDoUI = function() {
+    openAlertModal("Coming Soon", "3D UI Magic is under development!");
+};
 
 function changeTheme(themeName) {
     const body = document.body;

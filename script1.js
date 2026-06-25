@@ -287,36 +287,45 @@ window.toggleCustomFullscreen = function(id) {
 };
 
 window.filterProfileActivity = function() {
-    const searchInput = document.getElementById('profileActivitySearch');
-    if (!searchInput) return;
-    
-    const q = searchInput.value.toLowerCase();
-    const items = document.querySelectorAll('.profile-post-item');
-    let hasVisible = false;
-    
-    items.forEach(item => {
-        const text = decodeURIComponent(item.getAttribute('data-search') || '');
-        if (text.includes(q)) {
-            item.style.display = 'contents';
-            hasVisible = true;
-        } else {
-            item.style.display = 'none';
+    try {
+        const searchInput = document.getElementById('profileActivitySearch');
+        if (!searchInput) return;
+        
+        const q = searchInput.value.toLowerCase().trim();
+        const items = document.querySelectorAll('.profile-post-item');
+        let hasVisible = false;
+        
+        items.forEach(item => {
+            const text = decodeURIComponent(item.getAttribute('data-search') || '');
+            const thumb = item.querySelector('.post-thumb-item');
+            const postId = item.id.replace('post-wrapper-', '');
+            const comments = document.getElementById(`comments-${postId}`);
+            
+            if (q === '' || text.includes(q)) {
+                if(thumb) thumb.style.display = '';
+                hasVisible = true;
+            } else {
+                if(thumb) thumb.style.display = 'none';
+                if(comments) comments.classList.add('hidden');
+            }
+        });
+        
+        let emptyMsg = document.getElementById('profile-activity-empty');
+        if (!hasVisible && items.length > 0) {
+            if (!emptyMsg) {
+                emptyMsg = document.createElement('p');
+                emptyMsg.id = 'profile-activity-empty';
+                emptyMsg.className = 'col-span-3 text-center text-gray-400 text-sm py-10';
+                emptyMsg.innerText = 'No matching posts found.';
+                document.getElementById('profile-activity-grid').appendChild(emptyMsg);
+            } else {
+                emptyMsg.style.display = 'block';
+            }
+        } else if (emptyMsg) {
+            emptyMsg.style.display = 'none';
         }
-    });
-    
-    let emptyMsg = document.getElementById('profile-activity-empty');
-    if (!hasVisible && items.length > 0) {
-        if (!emptyMsg) {
-            emptyMsg = document.createElement('p');
-            emptyMsg.id = 'profile-activity-empty';
-            emptyMsg.className = 'col-span-3 text-center text-gray-400 text-sm py-10';
-            emptyMsg.innerText = 'No matching posts found.';
-            document.getElementById('profile-activity-grid').appendChild(emptyMsg);
-        } else {
-            emptyMsg.style.display = 'block';
-        }
-    } else if (emptyMsg) {
-        emptyMsg.style.display = 'none';
+    } catch(e) {
+        console.error("Search error:", e);
     }
 };
 

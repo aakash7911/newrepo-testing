@@ -1965,8 +1965,7 @@ function togglePostMenu(postId, event) {
                                 `<img src="${p.images[0]}" class="w-full h-full object-cover block">
                                  ${p.images.length > 1 ? `<div class="absolute top-2 right-2 bg-black/50 text-white p-1 rounded"><i class="fa-solid fa-clone text-xs"></i></div>` : ''}`
                             : (ytId ? 
-                                    `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" class="w-full h-full object-cover block">
-                                     <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><i class="fa-brands fa-youtube text-red-600 text-3xl drop-shadow-md bg-white/80 rounded-full w-8 h-8 flex items-center justify-center"></i></div>`
+                                    `<img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" class="w-full h-full object-cover block">`
                             : (mediaUrl ? 
                                 (isVideo ? 
                                     `<video src="${mediaUrl}" class="w-full h-full object-cover block" preload="metadata" muted playsinline></video>

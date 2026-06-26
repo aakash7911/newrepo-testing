@@ -1885,6 +1885,12 @@ function closeAllActiveElements() {
             video.pause();
             video.currentTime = 0;
         }
+        const iframes = section.querySelectorAll('iframe');
+        iframes.forEach(ifr => {
+            if (ifr.getAttribute('src')) {
+                ifr.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+            }
+        });
     });
 
    document.querySelectorAll('[id^="repost-panel-"]').forEach(panel => {
@@ -2102,7 +2108,12 @@ function togglePostMenu(postId, event) {
     async function submitExp() { const d = { company: document.getElementById('expCompany').value, role: document.getElementById('expRole').value, year: document.getElementById('expYear').value }; if(currentExpId) await APIService.user.editExperience(currentExpId, d); else await APIService.user.addExperience(d); closeModal(); viewUserProfile(localStorage.getItem("userId")); }
 
     async function deleteExp(id) { openConfirmModal("Delete Experience?", "Are you sure you want to remove this experience?", async () => { await APIService.user.deleteExperience(id); viewUserProfile(localStorage.getItem("userId")); }); }
-    function closeModal() { document.getElementById('genericModal').classList.add('hidden'); }
+    function closeModal() { 
+        const modal = document.getElementById('genericModal');
+        modal.classList.add('hidden'); 
+        const iframes = modal.querySelectorAll('iframe');
+        iframes.forEach(ifr => ifr.src = ifr.src);
+    }
     async function saveProfile() { const selectedLang = document.getElementById('editLang').value; localStorage.setItem('appLang', selectedLang); await APIService.user.update(document.getElementById('editName').value, document.getElementById('editHeadline').value); localStorage.setItem("userName", document.getElementById('editName').value); location.reload(); }
     async function backupData() { await APIService.user.backup(); }
     async function deleteAccount() { openConfirmModal("Delete Account?", "Warning: This will permanently delete your account and all data. This cannot be undone.", async () => { await APIService.user.delete(); APIService.auth.logout(); }); }

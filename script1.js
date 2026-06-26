@@ -297,12 +297,13 @@ window.filterProfileActivity = function() {
         
         items.forEach(item => {
             const text = decodeURIComponent(item.getAttribute('data-search') || '');
+            const thumb = item.querySelector('.post-thumb-item');
             
             if (q === '' || text.includes(q)) {
-                item.style.display = '';
+                if (thumb) thumb.style.display = '';
                 hasVisible = true;
             } else {
-                item.style.display = 'none';
+                if (thumb) thumb.style.display = 'none';
             }
         });
         

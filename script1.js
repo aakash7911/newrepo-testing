@@ -2041,12 +2041,14 @@ function togglePostMenu(postId, event) {
                                 </div>
                             </div>
 
+                            ${mediaUrl ? `
                             <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative">
                                 ${isVideo ? 
                                     `<video src="${mediaUrl}" id="vid-prof-${p._id}" controls loop class="w-full max-h-[500px] block" playsinline></video>` : 
-                                    (mediaUrl ? `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block">` : '')
+                                    `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block">`
                                 }
                             </div>
+                            ` : ''}
 
                             <div class="p-4 bg-white">
                                 <p class="text-sm text-gray-700 mb-2 whitespace-pre-line">${displayContent}</p>

@@ -297,20 +297,12 @@ window.filterProfileActivity = function() {
         
         items.forEach(item => {
             const text = decodeURIComponent(item.getAttribute('data-search') || '');
-            const thumb = item.querySelector('.post-thumb-item');
-            const postId = item.id.replace('post-wrapper-', '');
-            const comments = document.getElementById(`comments-${postId}`);
             
             if (q === '' || text.includes(q)) {
-                item.classList.add('contents');
                 item.style.display = '';
-                if(thumb) thumb.style.display = '';
                 hasVisible = true;
             } else {
-                item.classList.remove('contents');
                 item.style.display = 'none';
-                if(thumb) thumb.style.display = 'none';
-                if(comments) comments.classList.add('hidden');
             }
         });
         
@@ -2011,7 +2003,7 @@ function togglePostMenu(postId, event) {
                     }
 
                     return `
-                    <div id="post-wrapper-${p._id}" class="contents profile-post-item" data-search="${encodeURIComponent((p.content || '').toLowerCase())}">
+                    <div id="post-wrapper-${p._id}" class="profile-post-item" data-search="${encodeURIComponent((p.content || '').toLowerCase())}">
                         <div class="relative aspect-square bg-gray-200 overflow-hidden cursor-pointer group post-thumb-item" onclick="toggleComment('${p._id}')">
                             
                              ${isMe ? `<button onclick="event.stopPropagation(); deletePost('${p._id}')" class="absolute top-2 right-2 z-20 bg-black/60 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition shadow-md backdrop-blur-sm"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}

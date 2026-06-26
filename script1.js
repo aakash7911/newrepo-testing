@@ -1960,7 +1960,7 @@ function togglePostMenu(postId, event) {
             <div class="flex justify-between items-center mb-3 border-b border-gray-200/50 pb-2">
                 <h2 class="text-md font-bold text-gray-800">${txt('activity')}</h2>
                 <div class="relative w-1/2 max-w-[150px]">
-                    <input type="text" id="profileActivitySearch" oninput="if(window.filterProfileActivity) window.filterProfileActivity()" placeholder="${txt('search')}..." class="w-full text-xs px-2 py-1.5 bg-gray-100 border-none rounded-full outline-none focus:ring-1 focus:ring-purple-400 pl-8 text-gray-800">
+                    <input type="text" id="profileActivitySearch" onkeyup="if(window.filterProfileActivity) window.filterProfileActivity()" placeholder="${txt('search')}..." class="w-full text-xs px-2 py-1.5 bg-gray-100 border-none rounded-full outline-none focus:ring-1 focus:ring-purple-400 pl-8 text-gray-800">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2 text-gray-400 text-[10px] pointer-events-none"></i>
                 </div>
             </div>

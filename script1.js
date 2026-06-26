@@ -298,12 +298,15 @@ window.filterProfileActivity = function() {
         items.forEach(item => {
             const text = decodeURIComponent(item.getAttribute('data-search') || '');
             const thumb = item.querySelector('.post-thumb-item');
+            const postId = item.id.replace('post-wrapper-', '');
+            const comments = document.getElementById(`comments-${postId}`);
             
             if (q === '' || text.includes(q)) {
                 if (thumb) thumb.style.display = '';
                 hasVisible = true;
             } else {
                 if (thumb) thumb.style.display = 'none';
+                if (comments) comments.classList.add('hidden');
             }
         });
         

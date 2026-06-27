@@ -174,128 +174,29 @@ window.toggleCustomFullscreen = function(id) {
     const el = document.getElementById(id);
     if (!el) return;
     
-    const isFs = el.classList.contains('custom-fullscreen');
-    const mediaObj = el.querySelector('iframe') || el.querySelector('video');
-    const postContainer = el.closest('.post-container');
-
-    if (!isFs) {
-        document.querySelectorAll('.custom-fullscreen').forEach(otherEl => {
-            if (otherEl.id !== id) {
-                window.toggleCustomFullscreen(otherEl.id);
-            }
-        });
-    }
+    let fsTarget = el;
+    const vid = el.querySelector('video');
+    const iframe = el.querySelector('iframe');
     
-    if (isFs) {
-        el.classList.remove('custom-fullscreen');
-        document.body.style.overflow = '';
-        const appScreen = document.getElementById('app-screen');
-        if (appScreen) appScreen.style.overflow = '';
-        
-        if (postContainer) {
-            postContainer.style.zIndex = '';
-            postContainer.style.position = '';
-        }
+    if (vid) {
+        fsTarget = vid;
+    } else if (iframe) {
+        fsTarget = iframe;
+    }
 
-        const expandBtn = el.querySelector('.fa-expand');
-        if (expandBtn && expandBtn.parentElement) {
-            expandBtn.parentElement.style.display = '';
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (fsTarget.requestFullscreen) {
+            fsTarget.requestFullscreen().catch(e => console.log("Fullscreen error:", e));
+        } else if (fsTarget.webkitRequestFullscreen) {
+            fsTarget.webkitRequestFullscreen();
+        } else if (fsTarget.webkitEnterFullscreen) {
+            fsTarget.webkitEnterFullscreen(); // Native iOS video fullscreen
         }
-
-        const closeBtn = el.querySelector('.fs-close-btn');
-        if(closeBtn) closeBtn.remove();
-        const rotateBtn = el.querySelector('.fs-rotate-btn');
-        if(rotateBtn) rotateBtn.remove();
-        
-        if (id.startsWith('yt-wrap-')) {
-            el.classList.add('aspect-video', 'rounded-xl', 'mt-2', 'mb-3');
-        } else {
-            el.classList.add('rounded-xl', 'mb-3', 'mt-2');
-            const vid = el.querySelector('video');
-            if(vid) vid.classList.add('max-h-80');
-        }
-
-        if(mediaObj) {
-            mediaObj.style.position = '';
-            mediaObj.style.top = '';
-            mediaObj.style.left = '';
-            mediaObj.style.width = '';
-            mediaObj.style.height = '';
-            mediaObj.style.transform = '';
-            mediaObj.style.margin = '';
-            mediaObj.setAttribute('data-rot', '0');
-        }
-
     } else {
-        el.classList.add('custom-fullscreen');
-        document.body.style.overflow = 'hidden';
-        const appScreen = document.getElementById('app-screen');
-        if (appScreen) appScreen.style.overflow = 'hidden';
-        
-        if (postContainer) {
-            postContainer.style.zIndex = '999999';
-            postContainer.style.position = 'relative';
-        }
-
-        const expandBtn = el.querySelector('.fa-expand');
-        if (expandBtn && expandBtn.parentElement) {
-            expandBtn.parentElement.style.display = 'none';
-        }
-
-        if (id.startsWith('yt-wrap-')) {
-            el.classList.remove('aspect-video', 'rounded-xl', 'mt-2', 'mb-3');
-        } else {
-            el.classList.remove('rounded-xl', 'mb-3', 'mt-2');
-            const vid = el.querySelector('video');
-            if(vid) vid.classList.remove('max-h-80');
-        }
-        
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'fs-close-btn absolute top-4 left-4 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center z-[9999] shadow-lg text-lg transition';
-        closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-        closeBtn.onclick = (e) => {
-            e.stopPropagation();
-            window.toggleCustomFullscreen(id);
-        };
-        el.appendChild(closeBtn);
-
-        const newRotateBtn = document.createElement('button');
-        newRotateBtn.className = 'fs-rotate-btn absolute top-4 right-4 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center z-[9999] shadow-lg text-lg transition';
-        newRotateBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
-        newRotateBtn.onclick = (e) => {
-            e.stopPropagation();
-            if(mediaObj) {
-                let currentRot = parseInt(mediaObj.getAttribute('data-rot') || '0');
-                currentRot = (currentRot + 90) % 360;
-                mediaObj.setAttribute('data-rot', currentRot);
-                
-                mediaObj.style.position = 'absolute';
-                mediaObj.style.top = '50%';
-                mediaObj.style.left = '50%';
-                mediaObj.style.margin = '0';
-
-                if (currentRot === 90 || currentRot === 270) {
-                    mediaObj.style.width = '100vh';
-                    mediaObj.style.height = '100vw';
-                    mediaObj.style.transform = `translate(-50%, -50%) rotate(${currentRot}deg)`;
-                } else {
-                    mediaObj.style.width = '100vw';
-                    mediaObj.style.height = '100vh';
-                    mediaObj.style.transform = `translate(-50%, -50%) rotate(${currentRot}deg)`;
-                }
-            }
-        };
-        el.appendChild(newRotateBtn);
-        
-        // Ensure media is positioned correctly when entering fullscreen
-        if(mediaObj) {
-            mediaObj.style.position = 'absolute';
-            mediaObj.style.top = '50%';
-            mediaObj.style.left = '50%';
-            mediaObj.style.margin = '0';
-            mediaObj.style.width = '100vw';
-            mediaObj.style.height = '100vh';
-            mediaObj.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
         }
     }
 };

@@ -188,17 +188,22 @@ window.toggleCustomFullscreen = function(id) {
     
     if (isFs) {
         el.classList.remove('custom-fullscreen');
-        document.body.style.overflow = 'auto';
+        document.body.style.overflow = '';
+        const appScreen = document.getElementById('app-screen');
+        if (appScreen) appScreen.style.overflow = '';
         
         if (postContainer) {
             postContainer.style.zIndex = '';
             postContainer.style.position = '';
         }
 
+        const expandBtn = el.querySelector('.fa-expand');
+        if (expandBtn && expandBtn.parentElement) {
+            expandBtn.parentElement.style.display = '';
+        }
+
         const closeBtn = el.querySelector('.fs-close-btn');
         if(closeBtn) closeBtn.remove();
-        const rotateBtn = el.querySelector('.fs-rotate-btn');
-        if(rotateBtn) rotateBtn.remove();
         
         if (id.startsWith('yt-wrap-')) {
             el.classList.add('aspect-video', 'rounded-xl', 'mt-2', 'mb-3');
@@ -222,10 +227,17 @@ window.toggleCustomFullscreen = function(id) {
     } else {
         el.classList.add('custom-fullscreen');
         document.body.style.overflow = 'hidden';
+        const appScreen = document.getElementById('app-screen');
+        if (appScreen) appScreen.style.overflow = 'hidden';
         
         if (postContainer) {
             postContainer.style.zIndex = '999999';
             postContainer.style.position = 'relative';
+        }
+
+        const expandBtn = el.querySelector('.fa-expand');
+        if (expandBtn && expandBtn.parentElement) {
+            expandBtn.parentElement.style.display = 'none';
         }
 
         if (id.startsWith('yt-wrap-')) {
@@ -237,41 +249,13 @@ window.toggleCustomFullscreen = function(id) {
         }
         
         const closeBtn = document.createElement('button');
-        closeBtn.className = 'fs-close-btn absolute top-6 right-6 bg-black/70 text-white w-12 h-12 rounded-full flex items-center justify-center z-[9999] shadow-lg text-xl';
-        closeBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+        closeBtn.className = 'fs-close-btn absolute top-4 left-4 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center z-[9999] shadow-lg text-lg transition';
+        closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
         closeBtn.onclick = (e) => {
             e.stopPropagation();
             window.toggleCustomFullscreen(id);
         };
         el.appendChild(closeBtn);
-
-        const rotateBtn = document.createElement('button');
-        rotateBtn.className = 'fs-rotate-btn absolute top-6 left-6 bg-black/70 text-white w-12 h-12 rounded-full flex items-center justify-center z-[9999] shadow-lg text-xl';
-        rotateBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
-        rotateBtn.onclick = (e) => {
-            e.stopPropagation();
-            if(mediaObj) {
-                let currentRot = parseInt(mediaObj.getAttribute('data-rot') || '0');
-                currentRot = (currentRot + 90) % 360;
-                mediaObj.setAttribute('data-rot', currentRot);
-                
-                mediaObj.style.position = 'absolute';
-                mediaObj.style.top = '50%';
-                mediaObj.style.left = '50%';
-                mediaObj.style.margin = '0';
-
-                if (currentRot === 90 || currentRot === 270) {
-                    mediaObj.style.width = '100vh';
-                    mediaObj.style.height = '100vw';
-                    mediaObj.style.transform = `translate(-50%, -50%) rotate(${currentRot}deg)`;
-                } else {
-                    mediaObj.style.width = '100vw';
-                    mediaObj.style.height = '100vh';
-                    mediaObj.style.transform = `translate(-50%, -50%) rotate(${currentRot}deg)`;
-                }
-            }
-        };
-        el.appendChild(rotateBtn);
         
         // Ensure media is positioned correctly when entering fullscreen
         if(mediaObj) {

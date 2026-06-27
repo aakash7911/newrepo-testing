@@ -204,6 +204,8 @@ window.toggleCustomFullscreen = function(id) {
 
         const closeBtn = el.querySelector('.fs-close-btn');
         if(closeBtn) closeBtn.remove();
+        const rotateBtn = el.querySelector('.fs-rotate-btn');
+        if(rotateBtn) rotateBtn.remove();
         
         if (id.startsWith('yt-wrap-')) {
             el.classList.add('aspect-video', 'rounded-xl', 'mt-2', 'mb-3');
@@ -256,6 +258,34 @@ window.toggleCustomFullscreen = function(id) {
             window.toggleCustomFullscreen(id);
         };
         el.appendChild(closeBtn);
+
+        const newRotateBtn = document.createElement('button');
+        newRotateBtn.className = 'fs-rotate-btn absolute top-4 right-4 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center z-[9999] shadow-lg text-lg transition';
+        newRotateBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
+        newRotateBtn.onclick = (e) => {
+            e.stopPropagation();
+            if(mediaObj) {
+                let currentRot = parseInt(mediaObj.getAttribute('data-rot') || '0');
+                currentRot = (currentRot + 90) % 360;
+                mediaObj.setAttribute('data-rot', currentRot);
+                
+                mediaObj.style.position = 'absolute';
+                mediaObj.style.top = '50%';
+                mediaObj.style.left = '50%';
+                mediaObj.style.margin = '0';
+
+                if (currentRot === 90 || currentRot === 270) {
+                    mediaObj.style.width = '100vh';
+                    mediaObj.style.height = '100vw';
+                    mediaObj.style.transform = `translate(-50%, -50%) rotate(${currentRot}deg)`;
+                } else {
+                    mediaObj.style.width = '100vw';
+                    mediaObj.style.height = '100vh';
+                    mediaObj.style.transform = `translate(-50%, -50%) rotate(${currentRot}deg)`;
+                }
+            }
+        };
+        el.appendChild(newRotateBtn);
         
         // Ensure media is positioned correctly when entering fullscreen
         if(mediaObj) {

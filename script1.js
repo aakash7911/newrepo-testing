@@ -182,20 +182,18 @@ document.addEventListener('fullscreenchange', () => {
     }
 });
 
-window.toggleCustomFullscreen = async function(id) {
+window.toggleCustomFullscreen = function(id) {
     const el = document.getElementById(id);
     if (!el) return;
     
-    // Check if it's currently in our zoomed state
     const isFs = el.querySelector('.fs-close-btn') !== null || el.classList.contains('custom-fullscreen');
     const vid = el.querySelector('video');
     const iframe = el.querySelector('iframe');
     const postContainer = el.closest('.post-container');
 
     if (isFs) {
-        // EXIT FULLSCREEN
         if (document.exitFullscreen && document.fullscreenElement) {
-            await document.exitFullscreen().catch(e => console.log(e));
+            document.exitFullscreen().catch(e => console.log(e));
             if (screen.orientation && screen.orientation.unlock) {
                 screen.orientation.unlock();
             }
@@ -228,8 +226,6 @@ window.toggleCustomFullscreen = async function(id) {
             if(vid) vid.classList.add('max-h-80');
         }
     } else {
-        // ENTER FULLSCREEN
-        
         let useNativeIosVideo = false;
         if (!el.requestFullscreen && !el.webkitRequestFullscreen && vid && vid.webkitEnterFullscreen) {
             useNativeIosVideo = true;
@@ -240,7 +236,6 @@ window.toggleCustomFullscreen = async function(id) {
             return; 
         }
         
-        // Remove aspect ratio classes so wrapper can stretch
         if (id.startsWith('yt-wrap-')) {
             el.classList.remove('aspect-video', 'rounded-xl', 'mt-2', 'mb-3');
         } else {
@@ -248,7 +243,6 @@ window.toggleCustomFullscreen = async function(id) {
             if(vid) vid.classList.remove('max-h-80');
         }
 
-        // Add zoom out button
         const closeBtn = document.createElement('button');
         closeBtn.className = 'fs-close-btn absolute top-4 left-4 bg-black/50 hover:bg-black/80 text-white w-10 h-10 rounded-full flex items-center justify-center z-[9999] shadow-lg text-lg transition';
         closeBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
@@ -263,24 +257,7 @@ window.toggleCustomFullscreen = async function(id) {
             expandBtn.parentElement.style.display = 'none';
         }
 
-        let nativeSuccess = false;
-        if (el.requestFullscreen) {
-            try {
-                await el.requestFullscreen();
-                nativeSuccess = true;
-                if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(e => console.log(e));
-                }
-            } catch(e) {
-                console.log("Native fullscreen error", e);
-            }
-        } else if (el.webkitRequestFullscreen) {
-            el.webkitRequestFullscreen();
-            nativeSuccess = true;
-        }
-
-        if (!nativeSuccess) {
-            // CSS Fallback for iOS YouTube
+        const applyCSSFallback = () => {
             el.classList.add('custom-fullscreen');
             document.body.style.overflow = 'hidden';
             const appScreen = document.getElementById('app-screen');
@@ -289,10 +266,31 @@ window.toggleCustomFullscreen = async function(id) {
             if (postContainer) {
                 postContainer.style.zIndex = '999999';
                 postContainer.style.position = 'relative';
-                // Fix CSS transform trap
                 postContainer.style.transform = 'none';
                 postContainer.style.animation = 'none';
             }
+        };
+
+        if (el.requestFullscreen) {
+            const fsPromise = el.requestFullscreen();
+            if (fsPromise !== undefined) {
+                fsPromise.then(() => {
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').catch(e => console.log(e));
+                    }
+                }).catch(e => {
+                    console.log("Native fullscreen error", e);
+                    applyCSSFallback();
+                });
+            } else {
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(e => console.log(e));
+                }
+            }
+        } else if (el.webkitRequestFullscreen) {
+            el.webkitRequestFullscreen();
+        } else {
+            applyCSSFallback();
         }
     }
 };

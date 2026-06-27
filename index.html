@@ -268,18 +268,51 @@
          
          .custom-fullscreen {
              position: fixed !important;
-             top: 0 !important;
-             left: 0 !important;
+             top: 50% !important;
+             left: 50% !important;
              width: 100vw !important;
              height: 100vh !important;
              height: 100dvh !important;
-             z-index: 99999 !important;
+             transform: translate(-50%, -50%) !important;
+             z-index: 999999 !important;
              background-color: black !important;
              border-radius: 0 !important;
              margin: 0 !important;
              display: flex !important;
              align-items: center !important;
              justify-content: center !important;
+             touch-action: none !important;
+         }
+
+         @media screen and (orientation: portrait) {
+             .custom-fullscreen {
+                 width: 100vh !important;
+                 width: 100dvh !important;
+                 height: 100vw !important;
+                 transform: translate(-50%, -50%) rotate(90deg) !important;
+             }
+         }
+
+         .fs-parent-override {
+             position: static !important;
+             transform: none !important;
+             animation: none !important;
+             z-index: auto !important;
+             filter: none !important;
+             backdrop-filter: none !important;
+             overflow: visible !important;
+             contain: none !important;
+         }
+
+         #fs-backdrop {
+             position: fixed !important;
+             top: 0 !important;
+             left: 0 !important;
+             width: 100vw !important;
+             height: 100vh !important;
+             background: black !important;
+             z-index: 999998 !important;
+             display: none;
              touch-action: none !important;
          }
 
@@ -914,7 +947,7 @@ body.theme-red .profile-banner {
     </div>
 </div>
 
-<script src="script1.js?v=99"></script>
+<script src="script1.js?v=100"></script>
 
 </body>
 </html>

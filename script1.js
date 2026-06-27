@@ -201,15 +201,14 @@ window.toggleCustomFullscreen = function(id) {
 
         el.classList.remove('custom-fullscreen');
         document.body.style.overflow = '';
-        const appScreen = document.getElementById('app-screen');
-        if (appScreen) appScreen.style.overflow = '';
+        document.documentElement.style.overflow = '';
         
-        if (postContainer) {
-            postContainer.style.zIndex = '';
-            postContainer.style.position = '';
-            postContainer.style.transform = '';
-            postContainer.style.animation = '';
-        }
+        const backdrop = document.getElementById('fs-backdrop');
+        if (backdrop) backdrop.style.display = 'none';
+
+        document.querySelectorAll('.fs-parent-override').forEach(overrideEl => {
+            overrideEl.classList.remove('fs-parent-override');
+        });
 
         const expandBtn = el.querySelector('.fa-expand');
         if (expandBtn && expandBtn.parentElement) {
@@ -260,14 +259,20 @@ window.toggleCustomFullscreen = function(id) {
         const applyCSSFallback = () => {
             el.classList.add('custom-fullscreen');
             document.body.style.overflow = 'hidden';
-            const appScreen = document.getElementById('app-screen');
-            if (appScreen) appScreen.style.overflow = 'hidden';
-            
-            if (postContainer) {
-                postContainer.style.zIndex = '999999';
-                postContainer.style.position = 'relative';
-                postContainer.style.transform = 'none';
-                postContainer.style.animation = 'none';
+            document.documentElement.style.overflow = 'hidden';
+
+            let backdrop = document.getElementById('fs-backdrop');
+            if (!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.id = 'fs-backdrop';
+                document.body.appendChild(backdrop);
+            }
+            backdrop.style.display = 'block';
+
+            let currentEl = el.parentElement;
+            while (currentEl && currentEl !== document.body && currentEl !== document.documentElement) {
+                currentEl.classList.add('fs-parent-override');
+                currentEl = currentEl.parentElement;
             }
         };
 

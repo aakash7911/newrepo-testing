@@ -2778,14 +2778,9 @@ async function renderReels(container) {
                         const action = window.ytMuteState[id] ? 'mute' : 'unMute';
                         iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
                         
-                        // Mute/Unmute ka Icon screen par dikhane ke liye
+                        // Mute/Unmute UI removed from center
                         const statDiv = document.getElementById('yt-mute-stat-' + id);
-                        const icon = document.getElementById('yt-mute-icon-' + id);
-                        if (statDiv && icon) {
-                            icon.className = window.ytMuteState[id] ? "fa-solid fa-volume-xmark text-2xl" : "fa-solid fa-volume-high text-2xl";
-                            statDiv.classList.remove('opacity-0');
-                            setTimeout(() => statDiv.classList.add('opacity-0'), 1000);
-                        }
+                        if (statDiv) statDiv.remove();
                     }, 250); // 250ms ka timer taaki pata chale single click hai ya double
                 }
             };
@@ -2889,10 +2884,7 @@ async function renderReels(container) {
                             </div>
                         </div>
 
-                        <div id="yt-mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
-                            <i class="fa-solid fa-volume-high text-2xl" id="yt-mute-icon-${p._id}"></i>
-                        </div>
-
+                        <!-- yt mute stat removed -->
                         <div class="absolute inset-0 z-10 bg-transparent cursor-pointer" onclick="handleYtAction(event, '${p._id}')"></div>
                     ` : `
                         <div class="absolute inset-0 flex items-center justify-center z-0 bg-black">
@@ -2907,10 +2899,7 @@ async function renderReels(container) {
                             </div>
                         </div>
 
-                        <div id="mute-stat-${p._id}" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/50 text-white w-16 h-16 rounded-full flex items-center justify-center opacity-0 transition-opacity z-30 pointer-events-none">
-                            <i class="fa-solid fa-volume-high text-2xl" id="mute-icon-center-${p._id}"></i>
-                        </div>
-
+                        <!-- native mute stat removed -->
                         <div class="absolute bottom-24 right-4 z-30 bg-black/20 p-2 rounded-full text-white pointer-events-none" id="mini-mute-${p._id}">
                             <i class="fa-solid fa-volume-high text-xs"></i>
                         </div>
@@ -3201,13 +3190,10 @@ function handleReelClick(e, postId) {
 }
 
 function updateMuteUI(postId, isMuted) {
-    const statusBox = document.getElementById(`mute-stat-${postId}`);
-    const statusIcon = document.getElementById(`mute-icon-center-${postId}`);
     const miniMute = document.getElementById(`mini-mute-${postId}`);
-    statusIcon.className = isMuted ? "fa-solid fa-volume-xmark text-2xl" : "fa-solid fa-volume-high text-2xl";
-    miniMute.innerHTML = isMuted ? '<i class="fa-solid fa-volume-xmark text-xs"></i>' : '<i class="fa-solid fa-volume-high text-xs"></i>';
-    statusBox.classList.remove('opacity-0');
-    setTimeout(() => statusBox.classList.add('opacity-0'), 800);
+    if (miniMute) {
+        miniMute.innerHTML = isMuted ? '<i class="fa-solid fa-volume-xmark text-xs"></i>' : '<i class="fa-solid fa-volume-high text-xs"></i>';
+    }
 }
 
 function updateReelProgress(postId) {

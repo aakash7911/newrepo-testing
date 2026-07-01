@@ -158,7 +158,21 @@
             background: #f3f4f6;
             color: #1f2937;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-         }
+        }
+        body.theme-dark .chat-bubble-other {
+            background-color: #1f2937 !important;
+            color: #f9fafb !important;
+        }
+        
+        video::-webkit-media-controls,
+        video::-webkit-media-controls-enclosure,
+        video::-webkit-media-controls-play-button,
+        video::-webkit-media-controls-start-playback-button,
+        video::-webkit-media-controls-overlay-play-button {
+            display: none !important;
+            opacity: 0 !important;
+            appearance: none !important;
+        }
         #chat-theme-menu {
             position: absolute;
             top: 60px;
@@ -947,7 +961,7 @@ body.theme-red .profile-banner {
     </div>
 </div>
 
-<script src="script1.js?v=100"></script>
+<script src="script1.js?v=101"></script>
 
 </body>
 </html>

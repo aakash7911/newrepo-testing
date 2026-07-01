@@ -974,7 +974,7 @@ function renderView(view) {
             const isMe = m.senderId === myId;
             const bubbleClass = isMe
                 ? `chat-bubble-user ${currentTheme.btn || 'bg-purple-600'} text-white self-end`
-                : 'chat-bubble-other self-start bg-white/90 backdrop-blur-sm';
+                : 'chat-bubble-other self-start';
             const alignClass = isMe ? 'justify-end' : 'justify-start';
             const date = m.createdAt ? new Date(m.createdAt) : new Date();
             const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -2631,7 +2631,7 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
         }
         
         const isMe = m.senderId === myId;
-        const bubbleClass = isMe ? `chat-bubble-user ${themeBtn} text-white self-end` : 'chat-bubble-other self-start bg-white/90 backdrop-blur-sm';
+        const bubbleClass = isMe ? `chat-bubble-user ${themeBtn} text-white self-end` : 'chat-bubble-other self-start';
         
         let statusHtml = new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         let opacityClass = '';

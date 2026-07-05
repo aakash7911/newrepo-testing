@@ -165,6 +165,14 @@
             color: #ffffff !important;
         }
         
+        /* Force dark text on chat header/footer since their background is always light */
+        #fc-header .text-gray-800,
+        #fc-header .text-gray-600,
+        #fc-header .text-gray-500,
+        #fc-footer .text-gray-400 {
+            color: #374151 !important;
+        }
+        
         video::-webkit-media-controls,
         video::-webkit-media-controls-enclosure,
         video::-webkit-media-controls-play-button,
@@ -548,8 +556,13 @@ body.theme-red .profile-banner {
 </div>
 
     <div class="flex items-center gap-2">
-        <button onclick="toggleChatThemeMenu()" class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-100 to-pink-100 flex items-center justify-center text-purple-600 shadow-sm hover:shadow hover:scale-105 transition-all"><i class="fa-solid fa-palette text-[17px]"></i></button>
-        <button onclick="clearChat()" class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500 shadow-sm hover:shadow hover:bg-red-100 hover:scale-105 transition-all"><i class="fa-solid fa-trash text-[17px]"></i></button>
+        <button onclick="toggleChatThemeMenu()" class="relative w-10 h-10 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 flex items-center justify-center text-white shadow-md hover:shadow-lg hover:scale-110 transition-transform group" title="Change Theme">
+            <div class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 bg-white/20 transition-opacity"></div>
+            <i class="fa-solid fa-wand-magic-sparkles text-[16px] drop-shadow-sm"></i>
+        </button>
+        <button onclick="clearChat()" class="relative w-10 h-10 rounded-full bg-white flex items-center justify-center text-red-500 shadow-md border border-red-100 hover:bg-red-500 hover:text-white hover:scale-110 transition-all" title="Clear Chat">
+            <i class="fa-solid fa-trash-can text-[16px]"></i>
+        </button>
     </div>
         <div id="chat-theme-menu" class="scrollbar-hide"></div>
 </div>
@@ -962,7 +975,7 @@ body.theme-red .profile-banner {
     </div>
 </div>
 
-<script src="script1.js?v=102"></script>
+<script src="script1.js?v=103"></script>
 
 </body>
 </html>

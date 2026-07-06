@@ -649,7 +649,6 @@ appScreen.addEventListener('touchstart', (e) => {
     });
     async function checkLoginStatus() {
         const token = localStorage.getItem("token");
-        const splash = document.getElementById('splash-screen');
         if(token) {
             document.getElementById('auth-screen').classList.add('hidden-screen');
             document.getElementById('app-screen').classList.remove('hidden-screen');
@@ -657,11 +656,9 @@ appScreen.addEventListener('touchstart', (e) => {
             await updateMyStats();
             renderView('feed');
             setInterval(checkNotifs, 10000);
-            setTimeout(() => { if(splash) splash.classList.add('hidden-screen'); }, 1500);
         } else {
             document.getElementById('auth-screen').classList.remove('hidden-screen');
             document.getElementById('app-screen').classList.add('hidden-screen');
-            if(splash) splash.classList.add('hidden-screen');
         }
     }
     async function updateMyStats() {

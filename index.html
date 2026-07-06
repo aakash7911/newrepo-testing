@@ -616,7 +616,11 @@ body.theme-red .profile-banner {
                     </select>
             </div>
         </div>
-   <button class="btn-auth btn-signup-style" id="regOtpBtn" onclick="APIService.auth.initiateRegister()">Get Verification Code</button>
+    <div class="flex items-center gap-2 mb-3 px-1 justify-center">
+        <input type="checkbox" id="privacyCheck" class="w-4 h-4 cursor-pointer accent-purple-600" onchange="document.getElementById('regOtpBtn').disabled = !this.checked; document.getElementById('regOtpBtn').style.opacity = this.checked ? '1' : '0.5';">
+        <label for="privacyCheck" class="text-xs text-gray-600 cursor-pointer">I agree to the <a href="https://aakash7911.github.io/license2/" target="_blank" class="text-purple-600 font-bold hover:underline">Privacy Policy</a></label>
+    </div>
+   <button class="btn-auth btn-signup-style" id="regOtpBtn" onclick="APIService.auth.initiateRegister()" disabled style="opacity: 0.5;">Get Verification Code</button>
  </div>
 
         <div id="reg-step-2" class="hidden">
@@ -959,7 +963,7 @@ body.theme-red .profile-banner {
     </div>
 </div>
 
-<script src="script1.js?v=104"></script>
+<script src="script1.js?v=105"></script>
 
 </body>
 </html>

@@ -2194,36 +2194,46 @@ async function retryMsg(tempId) {
 }
 async function uploadChatFile(file) {
     if (!file || !activeChatUser) return;
-    const chatMsgs = document.getElementById('fc-messages');
+    
+    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+        showToast("Unsupported file type. Please send a photo or video.");
+        return;
+    }
+
     const tempId = 'temp-img-' + Date.now();
-    const themeBtn = (typeof currentTheme !== 'undefined' && currentTheme.btn) ? currentTheme.btn : 'bg-purple-600';
     const reader = new FileReader();
     reader.onload = function(e) {
-        const html = `
-            <div class="flex justify-end mb-2" id="${tempId}">
-                <div class="chat-bubble-user ${themeBtn} p-1 rounded-lg max-w-[80%] shadow-md relative overflow-hidden">
-                    <img src="${e.target.result}" class="max-w-[200px] rounded-lg opacity-50 grayscale">
-                    <div class="absolute inset-0 flex flex-col items-center justify-center bg-black/10">
-                        <i class="fa-solid fa-spinner fa-spin text-white text-2xl"></i>
-                    </div>
-                </div>
-            </div>`;
-        chatMsgs.insertAdjacentHTML('beforeend', html);
-        chatMsgs.scrollTop = chatMsgs.scrollHeight;
+        if (!window.pendingMessages) window.pendingMessages = [];
+        window.pendingMessages.push({
+            _id: tempId,
+            type: file.type.startsWith('video/') ? 'video' : 'image',
+            fileUrl: e.target.result,
+            content: '',
+            senderId: localStorage.getItem("userId"),
+            createdAt: new Date().toISOString(),
+            isPending: true,
+            status: 'sending'
+        });
+        renderMsgsFromCacheAndPending(true);
     };
     reader.readAsDataURL(file);
+    
     const fd = new FormData();
     fd.append("chatFile", file);
     fd.append("receiverId", activeChatUser);
     try {
         await APIService.chat.upload(fd);
-        const tempMsg = document.getElementById(tempId);
-        if(tempMsg) tempMsg.remove(); 
+        if (window.pendingMessages) {
+            window.pendingMessages = window.pendingMessages.filter(m => m._id !== tempId);
+        }
         loadMsgs();
     } catch(e) {
-        const tempMsg = document.getElementById(tempId);
-        if(tempMsg) tempMsg.remove();
-        showToast("Photo bhenjne mein dikat aayi");
+        if (window.pendingMessages) {
+            const pm = window.pendingMessages.find(m => m._id === tempId);
+            if (pm) pm.status = 'failed';
+        }
+        renderMsgsFromCacheAndPending(true);
+        showToast("Failed to send file. Please try again.");
     }
 }
 async function loadMsgs() {
@@ -2261,6 +2271,8 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
         let content = m.content;
         if(m.type==='image') { 
             content = `<div class="relative inline-block"><img src="${m.fileUrl}" class="max-w-[200px] rounded-lg border shadow-sm"><button onclick="downloadImage('${m.fileUrl}')" class="absolute bottom-1 right-1 bg-black/50 text-white text-[10px] p-1.5 rounded-full hover:bg-black/70"><i class="fa-solid fa-download"></i></button></div>`; 
+        } else if(m.type==='video') {
+            content = `<video src="${m.fileUrl}" controls class="max-w-[200px] rounded-lg shadow-sm"></video>`;
         } else if(content && content.startsWith('ZOBBLY_REEL_SHARE||')) {
             const parts = content.split('||');
             const rId = parts[1];

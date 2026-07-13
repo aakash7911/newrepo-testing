@@ -1630,7 +1630,22 @@ function trackCategoryFromPost(postId) {
     }
     function reportUser(id, username) {
         if (username && username.toLowerCase() === 'zobbly.com') { openAlertModal("⚠️ Action Restricted", "You cannot report the official zobbly.com account."); return; }
-        openConfirmModal("Report User?", "Do you want to report this user for violating community guidelines?", async () => { showToast("User Reported Successfully!"); });
+        openConfirmModal("Report User?", "Do you want to report this user for violating community guidelines?", async () => { 
+            try {
+                const res = await fetch(`${API_BASE}/api/user/report/${id}`, {
+                    method: 'POST',
+                    headers: { 'x-auth-token': localStorage.getItem('token') }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || "Reported Successfully!");
+                } else {
+                    openAlertModal("Report Failed", data.error || "An error occurred while reporting.");
+                }
+            } catch (err) {
+                showToast("Network error. Could not report.");
+            }
+        });
     }
     async function blockUser(id, username) {
         if (username && username.toLowerCase() === 'zobbly.com') { openAlertModal("⚠️ Action Restricted", "You cannot block the official zobbly.com account."); return; }

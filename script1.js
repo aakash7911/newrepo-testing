@@ -2484,8 +2484,10 @@ async function renderReels(container) {
                         let iframes = document.querySelectorAll('.youtube-iframe');
                         iframes.forEach(ifr => {
                             if (ifr.contentWindow === e.source) {
-                                ifr.classList.remove('opacity-0');
-                                ifr.classList.add('opacity-100');
+                                setTimeout(() => {
+                                    ifr.classList.remove('opacity-0');
+                                    ifr.classList.add('opacity-100');
+                                }, 400);
                             }
                         });
                     }

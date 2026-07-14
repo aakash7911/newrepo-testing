@@ -2273,21 +2273,27 @@ async function uploadChatFile(file) {
     fd.append("chatFile", file);
     fd.append("receiverId", activeChatUser);
     try {
-        const beforeMediaCount = (window.lastServerMsgs || []).filter(m => m.type === 'image' || m.type === 'video').length;
-        await APIService.chat.upload(fd);
+        const res = await APIService.chat.upload(fd);
+        let serverMsg = null;
+        try {
+            const data = await res.json();
+            serverMsg = data.message || data.data || data;
+        } catch(e) {}
         
-        let maxRetries = 5;
-        while (maxRetries > 0) {
-            const newMsgs = await APIService.chat.getHistory(activeChatUser);
-            window.lastServerMsgs = newMsgs;
-            const afterMediaCount = newMsgs.filter(m => m.type === 'image' || m.type === 'video').length;
-            if (afterMediaCount > beforeMediaCount) break;
-            await new Promise(r => setTimeout(r, 1000));
-            maxRetries--;
-        }
-        
-        if (window.pendingMessages) {
-            window.pendingMessages = window.pendingMessages.filter(m => m._id !== tempId);
+        if (serverMsg && serverMsg._id) {
+            if (!window.lastServerMsgs) window.lastServerMsgs = [];
+            if (!window.lastServerMsgs.some(m => m._id === serverMsg._id)) {
+                window.lastServerMsgs.push(serverMsg);
+            }
+            if (window.pendingMessages) {
+                window.pendingMessages = window.pendingMessages.filter(m => m._id !== tempId);
+            }
+        } else {
+            // Keep it stuck to prevent disappearing
+            if (window.pendingMessages) {
+                const pm = window.pendingMessages.find(m => m._id === tempId);
+                if (pm) pm.status = 'sent';
+            }
         }
         renderMsgsFromCacheAndPending(true);
     } catch(e) {

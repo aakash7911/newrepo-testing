@@ -2221,7 +2221,7 @@ async function uploadChatFile(file) {
     if (!file || !activeChatUser) return;
     
     if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-        showToast("Unsupported file type. Please send a photo or video.");
+        openAlertModal("Unsupported File", "Sorry, you can only send photos and videos in the chat. This file type is not supported.");
         return;
     }
 
@@ -2278,6 +2278,7 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
     let serverMsgs = window.lastServerMsgs || [];
     if (window.pendingMessages) {
         window.pendingMessages = window.pendingMessages.filter(pending => {
+            if (pending.type === 'image' || pending.type === 'video') return true;
             const existsOnServer = serverMsgs.some(m => 
                 m.content === pending.content && 
                 m.senderId === myId && 

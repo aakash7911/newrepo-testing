@@ -924,7 +924,7 @@ function renderView(view) {
                       linkHtml = generateLinkHtml(firstLink, false);
                 }
             }
-            const isLongText = displayContent.length > 200 || (displayContent.match(/\n/g) || []).length > 4;
+            const isLongText = displayContent.length > 120 || (displayContent.match(/\n/g) || []).length > 2;
             const contentId = `post-content-${p._id}`;
             const mediaUrl = p.video || p.image;
             const isVideo = p.video || (p.image && p.image.match(/\.(mp4|mov|webm)$/i));
@@ -1124,7 +1124,7 @@ async function renderFeed(c) {
                               linkHtml = generateLinkHtml(firstLink);
                         }
                     }
-                    const isLongText = displayContent.length > 200 || (displayContent.match(/\n/g) || []).length > 4;
+                    const isLongText = displayContent.length > 120 || (displayContent.match(/\n/g) || []).length > 2;
                     const contentId = `post-content-${p._id}`;
                     const userHandle = p.userId.username ? `@${p.userId.username}` : '';
                     const userCountry = p.userId.country ? `<span class="ml-1 text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-500"><i class="fa-solid fa-earth-americas"></i> ${p.userId.country}</span>` : '';
@@ -2491,6 +2491,8 @@ async function renderReels(container) {
                 if (isYouTube && ytId) {
                     videoUrl = `https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&autoplay=0&playsinline=1&iv_load_policy=3&disablekb=1`;
                 }
+                const displayContent = p.content || '';
+                const isLongText = displayContent.length > 120 || (displayContent.match(/\n/g) || []).length > 2;
                 return `
                 <div class="reel-card" id="reel-${p._id}">
                     ${isYouTube ? `
@@ -2563,7 +2565,8 @@ async function renderReels(container) {
                                 </button>` : ''}
                             </div>
                         </div>
-                        <p class="text-sm text-white shadow-sm line-clamp-2">${p.content || ''}</p>
+                        <p id="reel-text-${p._id}" class="text-sm text-white shadow-sm ${isLongText ? 'line-clamp-custom' : ''}">${displayContent}</p>
+                        ${isLongText ? `<button onclick="toggleSeeMore('reel-text-${p._id}', this)" class="text-white/80 text-[10px] font-bold mt-1 hover:underline">See more...</button>` : ''}
                     </div>
                     ${!isYouTube ? `
                     <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-800/50 z-40 cursor-pointer group" onclick="seekReel(event, '${p._id}')">

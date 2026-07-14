@@ -20,6 +20,31 @@ const API_BASE = "https://zobbly.onrender.com";
             });
         }
     };
+    let globalSocket = null;
+    function initSocketConnection() {
+        if (globalSocket) return;
+        const userId = localStorage.getItem("userId");
+        if (!userId) return;
+        
+        try {
+            globalSocket = io("https://zobbly.onrender.com");
+            globalSocket.emit("register", userId);
+            
+            globalSocket.on("receiveMessage", async (newMessage) => {
+                console.log("Got a new message instantly!", newMessage);
+                if (activeChatUser && (newMessage.senderId === activeChatUser || newMessage.receiverId === activeChatUser)) {
+                    if (!window.lastServerMsgs) window.lastServerMsgs = [];
+                    const exists = window.lastServerMsgs.some(m => m._id === newMessage._id);
+                    if (!exists) {
+                        window.lastServerMsgs.push(newMessage);
+                        await renderMsgsFromCacheAndPending(true);
+                    }
+                }
+            });
+        } catch(e) {
+            console.error("Socket IO failed to initialize", e);
+        }
+    }
     let activeChatUser = null;
     let myFollowers = [];
     let myFollowing = [];
@@ -652,6 +677,7 @@ appScreen.addEventListener('touchstart', (e) => {
         if(token) {
             document.getElementById('auth-screen').classList.add('hidden-screen');
             document.getElementById('app-screen').classList.remove('hidden-screen');
+            initSocketConnection();
             applyTranslations(); 
             await updateMyStats();
             renderView('feed');
@@ -807,7 +833,7 @@ function renderView(view) {
         document.getElementById('full-chat-view').classList.add('active');
         isChatOpen = true; 
         if(window.chatInterval) clearInterval(window.chatInterval);
-        window.chatInterval = setInterval(loadMsgs, 3000);
+        // window.chatInterval = setInterval(loadMsgs, 3000); // Replaced by Socket.io
     }
     function closeFullChat() {
         document.getElementById('full-chat-view').classList.remove('active');
@@ -2167,7 +2193,7 @@ async function startChat(id, name, photo) {
     document.getElementById('full-chat-view').classList.add('active');
     isChatOpen = true;
     if(window.chatInterval) clearInterval(window.chatInterval);
-    window.chatInterval = setInterval(loadMsgs, 3000);
+    // window.chatInterval = setInterval(loadMsgs, 3000); // Replaced by Socket.io
 }
 function closeFullChat() { 
     document.getElementById('full-chat-view').classList.remove('active'); 

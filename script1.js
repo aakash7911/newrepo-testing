@@ -651,6 +651,9 @@ appScreen.addEventListener('touchstart', (e) => {
             ptrContainer.style.transform = `translateY(20px)`;
             ptrIcon.classList.add('doll-anim');
             try {
+                if (window.AndroidBridge && window.AndroidBridge.clearAppCache) {
+                    window.AndroidBridge.clearAppCache();
+                }
                 if (document.getElementById('nav-feed').classList.contains('nav-active')) {
                     await renderFeed(document.getElementById('main-content'));
                 } else if (document.getElementById('nav-jobs').classList.contains('nav-active')) {

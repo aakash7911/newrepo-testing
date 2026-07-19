@@ -2101,7 +2101,7 @@ async function renderChat(c) {
 window.unreadChatUsers = window.unreadChatUsers || new Set();
 window.readChatTimestamps = window.readChatTimestamps || {};
 async function loadConversations(isPolling = false) { 
-    if(isPolling && (currentView !== 'chat' || isChatOpen)) return;
+    if(isPolling && (window.currentActiveView !== 'chat' || isChatOpen)) return;
     let users = await APIService.chat.getConversations(); 
     const myId = localStorage.getItem("userId");
     users = users.filter(u => u._id !== myId);

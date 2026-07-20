@@ -1907,7 +1907,11 @@ function togglePostMenu(postId, event) {
     async function backupData() { await APIService.user.backup(); }
     async function deleteAccount() { openConfirmModal("Delete Account?", "Warning: This will permanently delete your account and all data. This cannot be undone.", async () => { await APIService.user.delete(); APIService.auth.logout(); }); }
     function showToast(msg) { const t = document.getElementById('toast'); document.getElementById('toast-msg').innerText = msg; t.classList.remove('opacity-0', 'pointer-events-none'); t.classList.add('opacity-100', '-translate-y-10'); setTimeout(()=>{ t.classList.remove('opacity-100', '-translate-y-10'); t.classList.add('opacity-0', 'pointer-events-none'); }, 3000); }
-    window.onload = checkLoginStatus;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkLoginStatus);
+    } else {
+        checkLoginStatus();
+    }
     async function openFollowList(userId, type) {
         const modal = document.getElementById('genericModal');
         const content = document.getElementById('modalContent');

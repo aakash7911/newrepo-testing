@@ -682,7 +682,7 @@ appScreen.addEventListener('touchstart', (e) => {
             document.getElementById('app-screen').classList.remove('hidden-screen');
             initSocketConnection();
             applyTranslations(); 
-            await updateMyStats();
+            updateMyStats(); // Non-blocking
             renderView('feed');
             setInterval(checkNotifs, 10000);
         } else {

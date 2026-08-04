@@ -1847,12 +1847,32 @@ function togglePostMenu(postId, event) {
                                 </div>
                             </div>
                             ${mediaUrl ? `
-                            <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative">
+                            <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative overflow-hidden">
                                 ${(mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) ? 
-                                    `<iframe src="https://www.youtube-nocookie.com/embed/${mediaUrl.match(/(?:embed\\/|v=|youtu\\.be\\/|shorts\\/)([^?&]+)/)?.[1]}?autoplay=0&modestbranding=1&rel=0&controls=1&playsinline=1&enablejsapi=1" class="w-full max-h-[500px] h-[300px] block" allowfullscreen></iframe>` :
+                                    (function(){
+                                        const ytid = mediaUrl.match(/(?:embed\\/|v=|youtu\\.be\\/|shorts\\/)([^?&]+)/)?.[1];
+                                        return \`<div id="yt-container-\${p._id}" class="w-full relative aspect-[9/16] max-h-[500px] mx-auto bg-black">
+                                                    <div class="absolute inset-0 z-10 cursor-pointer flex items-center justify-center" id="yt-overlay-\${p._id}" onclick="
+                                                        const cont = document.getElementById('yt-container-\${p._id}');
+                                                        cont.innerHTML = '<iframe src=\\'https://www.youtube-nocookie.com/embed/\${ytid}?autoplay=1&modestbranding=1&rel=0&controls=0&playsinline=1&enablejsapi=1\\' class=\\'w-full h-full block border-none pointer-events-none\\' allow=\\'autoplay; encrypted-media\\' allowfullscreen></iframe>';
+                                                        window.ytProfPlayState = window.ytProfPlayState || {};
+                                                        window.ytProfPlayState['\${p._id}'] = true;
+                                                        cont.parentElement.onclick = function() {
+                                                            const frame = cont.querySelector('iframe');
+                                                            if(frame && frame.contentWindow) {
+                                                                window.ytProfPlayState['\${p._id}'] = !window.ytProfPlayState['\${p._id}'];
+                                                                frame.contentWindow.postMessage(JSON.stringify({event: 'command', func: window.ytProfPlayState['\${p._id}'] ? 'playVideo' : 'pauseVideo', args: []}), '*');
+                                                            }
+                                                        };
+                                                    ">
+                                                        <img src="https://img.youtube.com/vi/\${ytid}/hqdefault.jpg" class="absolute inset-0 w-full h-full object-cover opacity-80 z-0">
+                                                        <div class="relative z-10 bg-black/60 w-16 h-16 rounded-full flex items-center justify-center backdrop-blur-sm shadow-xl hover:scale-110 transition"><i class="fa-solid fa-play text-white text-2xl ml-1"></i></div>
+                                                    </div>
+                                                </div>\`;
+                                    })() :
                                     (isVideo ? 
-                                        `<video src="${mediaUrl}" id="vid-prof-${p._id}" controls loop class="w-full max-h-[500px] block" playsinline></video>` : 
-                                        `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block">`
+                                        `<video src="${mediaUrl}" id="vid-prof-${p._id}" controls loop class="w-full max-h-[500px] block aspect-[9/16] object-cover mx-auto bg-black" playsinline></video>` : 
+                                        `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block mx-auto">`
                                     )
                                 }
                             </div>

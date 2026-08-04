@@ -3034,12 +3034,43 @@ async function renderClasses() {
     drawClassesUI();
 }
 
+window.myPlaylists = JSON.parse(localStorage.getItem('mockPlaylists') || '[{"_id":"pl_default", "name":"Uncategorized", "posts":[]}]');
+window.currentPlaylistFilter = window.currentPlaylistFilter || null;
+
 function drawClassesUI() {
     const c = document.getElementById('main-content');
     
-    let sortedClasses = [...mySavedClasses].sort((a, b) => {
-        let titleA = a.content ? a.content.toLowerCase() : '';
-        let titleB = b.content ? b.content.toLowerCase() : '';
+    // Ensure legacy saved classes are in the default playlist
+    let defaultPl = window.myPlaylists.find(x => x._id === 'pl_default');
+    if(defaultPl) {
+        mySavedClasses.forEach(p => {
+            if(!defaultPl.posts.includes(p._id) && !window.myPlaylists.some(pl => pl._id !== 'pl_default' && pl.posts.includes(p._id))) {
+                defaultPl.posts.push(p._id);
+            }
+        });
+        localStorage.setItem('mockPlaylists', JSON.stringify(window.myPlaylists));
+    }
+    
+    // Determine which classes to show based on filter
+    let classesToShow = [];
+    if(window.currentPlaylistFilter) {
+        const pl = window.myPlaylists.find(x => x._id === window.currentPlaylistFilter);
+        if(pl) {
+            classesToShow = mySavedClasses.filter(p => pl.posts.includes(p._id));
+        }
+    } else {
+        classesToShow = mySavedClasses; // Show all
+    }
+    
+    let sortedClasses = [...classesToShow].sort((a, b) => {
+        let titleA = getDecryptedPostContent(a).toLowerCase();
+        let titleB = getDecryptedPostContent(b).toLowerCase();
+        let numA = titleA.match(/(\d+)/);
+        let numB = titleB.match(/(\d+)/);
+        if(numA && numB) {
+            let nA = parseInt(numA[1]), nB = parseInt(numB[1]);
+            if(nA !== nB) return nA - nB;
+        }
         return titleA.localeCompare(titleB);
     });
 
@@ -3054,12 +3085,12 @@ function drawClassesUI() {
         <div style="height: 70px;"></div>
         
         <div class="p-4">
-            <div class="relative w-full mb-6">
+            <div class="relative w-full mb-4">
                 <input type="text" id="classSearchInput" oninput="handleClassSearch()" placeholder="Search courses or videos to add..." class="w-full text-sm px-4 py-3 bg-gray-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-purple-400 pl-10 text-gray-800">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400 text-[14px] pointer-events-none"></i>
             </div>
             
-            <div id="classSearchResultsContainer" class="hidden mb-8 bg-purple-50 p-3 rounded-xl border border-purple-100">
+            <div id="classSearchResultsContainer" class="hidden mb-6 bg-purple-50 p-3 rounded-xl border border-purple-100">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-sm font-bold text-purple-800"><i class="fa-solid fa-magnifying-glass mr-1"></i> Search Results</h2>
                     <button id="saveAllBtn" onclick="saveAllClassResults()" class="hidden text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg shadow-md font-bold transition">Save All Series</button>
@@ -3067,9 +3098,21 @@ function drawClassesUI() {
                 <div id="classSearchResultsList" class="flex flex-col gap-3"></div>
             </div>
 
-            <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">My Saved Classes</h2>
+            <!-- Playlists Filter -->
+            <div class="flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar">
+                <button onclick="window.currentPlaylistFilter=null; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${!window.currentPlaylistFilter ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}">All Saved</button>
+                ${window.myPlaylists.map(pl => `
+                    <button onclick="window.currentPlaylistFilter='${pl._id}'; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${window.currentPlaylistFilter === pl._id ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50'}">${pl.name}</button>
+                `).join('')}
+            </div>
+
+            <div class="flex justify-between items-end mb-4 border-b pb-2">
+                <h2 class="text-md font-bold text-gray-800">${window.currentPlaylistFilter ? window.myPlaylists.find(x => x._id === window.currentPlaylistFilter)?.name : 'All Saved Classes'}</h2>
+                <span class="text-xs font-bold text-gray-400">${sortedClasses.length} Videos</span>
+            </div>
+            
             <div id="savedClassesList" class="flex flex-col gap-3 pb-24">
-                ${sortedClasses.length === 0 ? '<div class="text-center py-10"><i class="fa-solid fa-box-open text-4xl text-gray-200 mb-3"></i><p class="text-gray-400 text-sm">No classes saved yet. Search above to add.</p></div>' : 
+                ${sortedClasses.length === 0 ? '<div class="text-center py-10"><i class="fa-solid fa-box-open text-4xl text-gray-200 mb-3"></i><p class="text-gray-400 text-sm">No classes found in this playlist.</p></div>' : 
                   sortedClasses.map((p, index) => renderClassItem(p, true, index)).join('')
                 }
             </div>
@@ -3078,13 +3121,134 @@ function drawClassesUI() {
     c.innerHTML = html;
 }
 
+window.openPlaylistModal = function(postId) {
+    let html = `
+        <h2 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">Save to Playlist</h2>
+        
+        <div class="mb-5">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Create New Playlist</h3>
+            <div class="flex gap-2">
+                <input type="text" id="newPlaylistName" placeholder="E.g. React Course" class="flex-1 p-3 bg-gray-50 rounded-xl border border-gray-200 text-sm outline-none focus:border-purple-400">
+                <button onclick="createNewPlaylist('${postId}')" class="bg-purple-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-purple-700 transition shadow-md">Create</button>
+            </div>
+        </div>
+        
+        ${window.myPlaylists && window.myPlaylists.length > 0 ? `
+            <div>
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Existing Playlists</h3>
+                <div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1 pb-4">
+                    ${window.myPlaylists.map(pl => {
+                        const inPlaylist = pl.posts.includes(postId);
+                        return `
+                            <button onclick="toggleInPlaylist('${pl._id}', '${postId}')" class="w-full flex items-center justify-between p-3 rounded-xl border ${inPlaylist ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white hover:bg-gray-50'} transition">
+                                <span class="font-bold text-sm ${inPlaylist ? 'text-purple-700' : 'text-gray-700'}">${pl.name}</span>
+                                ${inPlaylist ? '<i class="fa-solid fa-check text-purple-600 text-lg"></i>' : '<i class="fa-solid fa-plus text-gray-400 text-lg"></i>'}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
+    
+    document.getElementById('modalContent').innerHTML = html;
+    document.getElementById('genericModal').classList.remove('hidden');
+};
+
+window.createNewPlaylist = function(postId) {
+    const name = document.getElementById('newPlaylistName').value.trim();
+    if(!name) return;
+    const newPl = { _id: 'pl_' + Date.now(), name: name, posts: [postId] };
+    if(!window.myPlaylists) window.myPlaylists = [];
+    window.myPlaylists.push(newPl);
+    localStorage.setItem('mockPlaylists', JSON.stringify(window.myPlaylists));
+    // Also save class to mySavedClasses globally if not there
+    addClass(postId, true);
+    openPlaylistModal(postId);
+    drawClassesUI();
+};
+
+window.toggleInPlaylist = function(plId, postId) {
+    const pl = window.myPlaylists.find(x => x._id === plId);
+    if(pl) {
+        if(pl.posts.includes(postId)) {
+            pl.posts = pl.posts.filter(id => id !== postId);
+        } else {
+            pl.posts.push(postId);
+            addClass(postId, true); // Ensure global save
+        }
+        localStorage.setItem('mockPlaylists', JSON.stringify(window.myPlaylists));
+        openPlaylistModal(postId);
+        drawClassesUI();
+    }
+};
+
+function getDecryptedPostContent(p) {
+    let rawContent = p.content || '';
+    if (rawContent.startsWith('U2FsdGVkX1')) {
+        try {
+            const bytes = CryptoJS.AES.decrypt(rawContent, SECRET_KEY);
+            let dec = bytes.toString(CryptoJS.enc.Utf8);
+            try { rawContent = JSON.parse(dec); } catch { rawContent = dec; }
+        } catch(e) {}
+    }
+    return rawContent;
+}
+
+window.expandVideo = function(id) {
+    const p = window.allPosts.find(x => x._id === id);
+    if(!p) return;
+    
+    const itemContainer = document.getElementById(`class-item-${id}`);
+    if(!itemContainer) return;
+    
+    if(document.getElementById(`expanded-video-${id}`)) {
+        document.getElementById(`expanded-video-${id}`).remove();
+        return;
+    }
+    
+    const decContent = getDecryptedPostContent(p);
+    const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
+    
+    let videoHtml = '';
+    
+    if(urlStr.includes('youtube.com') || urlStr.includes('youtu.be')) {
+        let vidUrl = [p.video, p.link, p.image, decContent].filter(Boolean).find(s => s.toLowerCase().includes('youtube.com') || s.toLowerCase().includes('youtu.be'));
+        if(vidUrl) {
+            let match = vidUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&"'\s]+)/);
+            if(match) {
+                videoHtml = `<div class="w-full relative aspect-video bg-black mt-3 rounded-lg overflow-hidden shadow-inner">
+                                <iframe class="w-full h-full absolute top-0 left-0" src="https://www.youtube.com/embed/${match[1]}?autoplay=1" frameborder="0" allowfullscreen allow="autoplay"></iframe>
+                             </div>`;
+            }
+        }
+    } else if (p.video) {
+        videoHtml = `<div class="w-full relative aspect-video bg-black mt-3 rounded-lg overflow-hidden shadow-inner">
+                        <video src="${p.video}" class="w-full h-full" controls autoplay playsinline></video>
+                     </div>`;
+    } else if (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext))) {
+        videoHtml = `<div class="w-full relative aspect-video bg-black mt-3 rounded-lg overflow-hidden shadow-inner">
+                        <video src="${p.image}" class="w-full h-full" controls autoplay playsinline></video>
+                     </div>`;
+    }
+    
+    if(videoHtml) {
+        const div = document.createElement('div');
+        div.id = `expanded-video-${id}`;
+        div.className = "w-full";
+        div.innerHTML = videoHtml;
+        itemContainer.appendChild(div);
+    }
+};
+
 function renderClassItem(p, isSaved, index = -1) {
-    const urlStr = [p.video, p.image, p.link, p.content].filter(Boolean).join(" ").toLowerCase();
+    const decContent = getDecryptedPostContent(p);
+    const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
     const isVideo = (p.video) || 
                     (p.category === 'youtube_reel' || p.category === 'reel') || 
                     ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
                     
-    let title = p.content ? p.content.substring(0, 60) + (p.content.length > 60 ? '...' : '') : 'Untitled Video';
+    let title = decContent ? decContent.substring(0, 60) + (decContent.length > 60 ? '...' : '') : 'Untitled Video';
     
     let thumbUrl = 'https://via.placeholder.com/150/f3f4f6/9ca3af/?text=Video';
     if(urlStr.includes('youtube.com') || urlStr.includes('youtu.be')) {
@@ -3094,27 +3258,33 @@ function renderClassItem(p, isSaved, index = -1) {
             if(match) thumbUrl = `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
         }
     } else if (p.image && !['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext))) {
-        // If it's a real image URL and not a video URL incorrectly saved in p.image
         thumbUrl = p.image;
     }
 
     return `
-    <div class="bg-white rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-gray-100 p-2.5 flex gap-3 items-center cursor-pointer hover:shadow-md transition" onclick="openPostModal('${p._id}')">
-        <div class="w-24 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative border border-gray-100">
-            <img src="${thumbUrl}" class="w-full h-full object-cover">
-            ${isVideo ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><i class="fa-solid fa-play text-white text-xs opacity-90"></i></div>' : ''}
-        </div>
+    <div id="class-item-${p._id}" class="bg-white rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-gray-100 p-2.5 flex flex-col gap-1 cursor-pointer hover:shadow-md transition" onclick="expandVideo('${p._id}')">
+        <div class="flex gap-3 items-center w-full">
+            <div class="w-24 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative border border-gray-100">
+                <img src="${thumbUrl}" class="w-full h-full object-cover">
+                ${isVideo ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><i class="fa-solid fa-play text-white text-xs opacity-90"></i></div>' : ''}
+            </div>
         <div class="flex-1 min-w-0">
             ${isSaved && index >= 0 ? `<p class="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-0.5"><i class="fa-solid fa-graduation-cap mr-1"></i>Lecture ${index + 1}</p>` : ''}
             <h3 class="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">${title}</h3>
             <p class="text-[10px] text-gray-500 mt-1 truncate">By ${p.user ? p.user.name : 'Unknown'}</p>
         </div>
-        <div onclick="event.stopPropagation(); ${isSaved ? `removeClass('${p._id}')` : `addClass('${p._id}')`}">
+        <div onclick="event.stopPropagation(); openPlaylistModal('${p._id}')">
             ${isSaved ? 
-                `<button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>` :
+                `<button class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center hover:bg-purple-200 transition"><i class="fa-solid fa-folder-open text-xs"></i></button>` :
                 `<button class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-md hover:bg-purple-700 transition"><i class="fa-solid fa-plus text-sm"></i></button>`
             }
         </div>
+        ${isSaved ? `
+        <div onclick="event.stopPropagation(); removeClass('${p._id}')" class="ml-1">
+             <button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+        </div>
+        ` : ''}
+    </div>
     </div>`;
 }
 
@@ -3141,13 +3311,14 @@ async function handleClassSearch() {
     
     let allP = window.allPosts || [];
     classSearchResults = allP.filter(p => {
-        const urlStr = [p.video, p.image, p.link, p.content].filter(Boolean).join(" ").toLowerCase();
+        const decContent = getDecryptedPostContent(p);
+        const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
         const isVideo = (p.video) || 
                         (p.category === 'youtube_reel' || p.category === 'reel') || 
                         ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
         if(!isVideo) return false;
         
-        const contentMatch = p.content && p.content.toLowerCase().includes(q);
+        const contentMatch = decContent && decContent.toLowerCase().includes(q);
         const nameMatch = p.user && p.user.name && p.user.name.toLowerCase().includes(q);
         return contentMatch || nameMatch;
     });
@@ -3208,6 +3379,14 @@ async function saveAllClassResults() {
 
 async function removeClass(postId) {
     if(!confirm("Are you sure you want to remove this class from your saved list?")) return;
+    
+    if(window.myPlaylists) {
+        window.myPlaylists.forEach(pl => {
+            pl.posts = pl.posts.filter(id => id !== postId);
+        });
+        localStorage.setItem('mockPlaylists', JSON.stringify(window.myPlaylists));
+    }
+    
     try {
         const res = await APIService.classes.remove(postId);
         if(res && res.success) {

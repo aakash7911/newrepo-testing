@@ -3079,18 +3079,23 @@ function drawClassesUI() {
 }
 
 function renderClassItem(p, isSaved, index = -1) {
-    const isVideo = (p.video) || (p.category === 'youtube_reel') || (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext)));
+    const urlStr = [p.video, p.image, p.link, p.content].filter(Boolean).join(" ").toLowerCase();
+    const isVideo = (p.video) || 
+                    (p.category === 'youtube_reel' || p.category === 'reel') || 
+                    ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
+                    
     let title = p.content ? p.content.substring(0, 60) + (p.content.length > 60 ? '...' : '') : 'Untitled Video';
     
-    let thumbUrl = p.image || 'https://via.placeholder.com/150/f3f4f6/9ca3af/?text=Video';
-    if(p.category === 'youtube_reel' || (p.video && (p.video.includes('youtube.com') || p.video.includes('youtu.be')))) {
-        let vidUrl = p.video || p.link || p.image;
+    let thumbUrl = 'https://via.placeholder.com/150/f3f4f6/9ca3af/?text=Video';
+    if(urlStr.includes('youtube.com') || urlStr.includes('youtu.be')) {
+        let vidUrl = [p.video, p.link, p.image, p.content].filter(Boolean).find(s => s.toLowerCase().includes('youtube.com') || s.toLowerCase().includes('youtu.be'));
         if(vidUrl) {
-            let match = vidUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&]+)/);
+            let match = vidUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&"'\s]+)/);
             if(match) thumbUrl = `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
         }
-    } else if (p.video) {
-        thumbUrl = 'https://via.placeholder.com/150/f3f4f6/9ca3af/?text=Video';
+    } else if (p.image && !['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext))) {
+        // If it's a real image URL and not a video URL incorrectly saved in p.image
+        thumbUrl = p.image;
     }
 
     return `

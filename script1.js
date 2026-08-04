@@ -3136,9 +3136,10 @@ async function handleClassSearch() {
     
     let allP = window.allPosts || [];
     classSearchResults = allP.filter(p => {
+        const urlStr = [p.video, p.image, p.link, p.content].filter(Boolean).join(" ").toLowerCase();
         const isVideo = (p.video) || 
                         (p.category === 'youtube_reel' || p.category === 'reel') || 
-                        (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext)));
+                        ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
         if(!isVideo) return false;
         
         const contentMatch = p.content && p.content.toLowerCase().includes(q);
@@ -3164,7 +3165,7 @@ async function handleClassSearch() {
         }
     } else {
         container.classList.remove('hidden');
-        list.innerHTML = '<p class="text-xs text-center text-gray-500 italic py-2">No videos found for this search.</p>';
+        list.innerHTML = `<p class="text-xs text-center text-gray-500 italic py-2">No videos found matching '${q}' (searched ${allP.length} total posts).</p>`;
         saveAllBtn.classList.add('hidden');
     }
 }

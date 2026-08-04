@@ -3185,11 +3185,14 @@ window.toggleInPlaylist = function(plId, postId) {
 
 function getDecryptedPostContent(p) {
     let rawContent = p.content || '';
-    if (rawContent.startsWith('U2FsdGVkX1')) {
+    let cleaned = rawContent.replace(/[-_]/g, '');
+    if (cleaned.startsWith('U2FsdGVkX1')) {
         try {
-            const bytes = CryptoJS.AES.decrypt(rawContent, SECRET_KEY);
+            const bytes = CryptoJS.AES.decrypt(cleaned, SECRET_KEY);
             let dec = bytes.toString(CryptoJS.enc.Utf8);
-            try { rawContent = JSON.parse(dec); } catch { rawContent = dec; }
+            if (dec) {
+                try { return JSON.parse(dec); } catch { return dec; }
+            }
         } catch(e) {}
     }
     return rawContent;

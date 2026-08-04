@@ -1848,7 +1848,7 @@ function togglePostMenu(postId, event) {
                             </div>
                             ${mediaUrl ? `
                             <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative overflow-hidden">
-                                ${(mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) ? 
+                                ${(p.category === 'youtube_reel' && (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be'))) ? 
                                     (function(){
                                         const ytid = mediaUrl.match(/(?:embed\\/|v=|youtu\\.be\\/|shorts\\/)([^?&]+)/)?.[1];
                                         return \`<div id="yt-container-\${p._id}" class="w-full relative aspect-[9/16] max-h-[500px] mx-auto bg-black">

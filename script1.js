@@ -3125,9 +3125,20 @@ async function handleClassSearch() {
         return;
     }
     
+    // Ensure we have posts to search through
+    if(!window.allPosts || window.allPosts.length === 0) {
+        list.innerHTML = '<p class="text-xs text-center text-gray-500 py-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading videos...</p>';
+        container.classList.remove('hidden');
+        try {
+            window.allPosts = await APIService.feed.getAll() || [];
+        } catch(e) { console.error("Error fetching posts for search", e); }
+    }
+    
     let allP = window.allPosts || [];
     classSearchResults = allP.filter(p => {
-        const isVideo = (p.video) || (p.category === 'youtube_reel') || (p.image && ['.mp4'].some(ext => p.image.toLowerCase().endsWith(ext)));
+        const isVideo = (p.video) || 
+                        (p.category === 'youtube_reel' || p.category === 'reel') || 
+                        (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext)));
         if(!isVideo) return false;
         
         const contentMatch = p.content && p.content.toLowerCase().includes(q);

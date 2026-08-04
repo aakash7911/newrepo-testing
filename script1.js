@@ -1846,18 +1846,17 @@ function togglePostMenu(postId, event) {
                                     <button onclick="toggleComment('${p._id}')" class="text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-xl"></i></button>
                                 </div>
                             </div>
-                            ${ytId ? `
+                            ${mediaUrl ? `
                             <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative">
-                                <iframe src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&controls=1&playsinline=1&enablejsapi=1" class="w-full max-h-[500px] h-[300px] block" allowfullscreen></iframe>
-                            </div>
-                            ` : (mediaUrl ? `
-                            <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative">
-                                ${isVideo ? 
-                                    `<video src="${mediaUrl}" id="vid-prof-${p._id}" controls loop class="w-full max-h-[500px] block" playsinline></video>` : 
-                                    `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block">`
+                                ${(mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be')) ? 
+                                    `<iframe src="https://www.youtube-nocookie.com/embed/${mediaUrl.match(/(?:embed\\/|v=|youtu\\.be\\/|shorts\\/)([^?&]+)/)?.[1]}?autoplay=0&modestbranding=1&rel=0&controls=1&playsinline=1&enablejsapi=1" class="w-full max-h-[500px] h-[300px] block" allowfullscreen></iframe>` :
+                                    (isVideo ? 
+                                        `<video src="${mediaUrl}" id="vid-prof-${p._id}" controls loop class="w-full max-h-[500px] block" playsinline></video>` : 
+                                        `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block">`
+                                    )
                                 }
                             </div>
-                            ` : '')}
+                            ` : ''}
                             <div class="p-4 bg-white">
                                 <p class="text-sm text-gray-700 mb-2 whitespace-pre-line">${displayContent}</p>
                                 ${linkHtml}

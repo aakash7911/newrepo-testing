@@ -545,6 +545,12 @@ window.onload = function() {
             editExperience: async (id, expData) => { await fetch(`${API_BASE}/api/user/experience/${id}`, { method: "PUT", headers: getHeaders(), body: JSON.stringify(expData) }); },
             deleteExperience: async (id) => { await fetch(`${API_BASE}/api/user/experience/${id}`, { method: "DELETE", headers: getHeaders() }); },
         },
+        classes: {
+            getSaved: async () => { const res = await fetch(`${API_BASE}/api/user/saved-classes`, { headers: getHeaders() }); return await res.json(); },
+            save: async (postId) => { const res = await fetch(`${API_BASE}/api/user/save-class`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ postIds: [postId] }) }); return await res.json(); },
+            saveMultiple: async (postIds) => { const res = await fetch(`${API_BASE}/api/user/save-class`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ postIds }) }); return await res.json(); },
+            remove: async (postId) => { const res = await fetch(`${API_BASE}/api/user/remove-class`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ postId }) }); return await res.json(); }
+        },
         feed: {
             create: async(fd) => fetch(`${API_BASE}/api/posts/create`, {method:"POST", headers: { "x-auth-token": localStorage.getItem("token") }, body:fd}),
             getAll: async() => {
@@ -3000,6 +3006,201 @@ function toggleThemeMenu() {
         console.error("Error: 'theme-options' ID वाला एलिमेंट नहीं मिला!");
     }
 }
+let mySavedClasses = [];
+let classSearchResults = [];
+
+async function renderClasses() {
+    const c = document.getElementById('main-content');
+    c.innerHTML = '<div class="text-center mt-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-purple-600"></i><p class="mt-2 text-sm text-gray-500">Loading Classes...</p></div>';
+    
+    try {
+        const res = await APIService.classes.getSaved();
+        if(res && res.success) {
+            mySavedClasses = res.data || [];
+            if(!window.allPosts) window.allPosts = [];
+            mySavedClasses.forEach(sp => {
+                if(!window.allPosts.find(p => p._id === sp._id)) {
+                    window.allPosts.push(sp);
+                }
+            });
+        } else {
+            mySavedClasses = [];
+        }
+    } catch(e) {
+        console.error("Failed to load saved classes", e);
+        mySavedClasses = [];
+    }
+
+    drawClassesUI();
+}
+
+function drawClassesUI() {
+    const c = document.getElementById('main-content');
+    
+    let sortedClasses = [...mySavedClasses].sort((a, b) => {
+        let titleA = a.content ? a.content.toLowerCase() : '';
+        let titleB = b.content ? b.content.toLowerCase() : '';
+        return titleA.localeCompare(titleB);
+    });
+
+    const html = `
+        <div class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between">
+            <button onclick="renderView('feed')" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-200 transition">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </button>
+            <h1 class="text-lg font-bold text-gray-800 tracking-wide">My Classes 📚</h1>
+            <div class="w-10"></div>
+        </div>
+        <div style="height: 70px;"></div>
+        
+        <div class="p-4">
+            <div class="relative w-full mb-6">
+                <input type="text" id="classSearchInput" oninput="handleClassSearch()" placeholder="Search courses or videos to add..." class="w-full text-sm px-4 py-3 bg-gray-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-purple-400 pl-10 text-gray-800">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400 text-[14px] pointer-events-none"></i>
+            </div>
+            
+            <div id="classSearchResultsContainer" class="hidden mb-8 bg-purple-50 p-3 rounded-xl border border-purple-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold text-purple-800"><i class="fa-solid fa-magnifying-glass mr-1"></i> Search Results</h2>
+                    <button id="saveAllBtn" onclick="saveAllClassResults()" class="hidden text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg shadow-md font-bold transition">Save All Series</button>
+                </div>
+                <div id="classSearchResultsList" class="flex flex-col gap-3"></div>
+            </div>
+
+            <h2 class="text-md font-bold text-gray-800 mb-4 border-b pb-2">My Saved Classes</h2>
+            <div id="savedClassesList" class="flex flex-col gap-3 pb-24">
+                ${sortedClasses.length === 0 ? '<div class="text-center py-10"><i class="fa-solid fa-box-open text-4xl text-gray-200 mb-3"></i><p class="text-gray-400 text-sm">No classes saved yet. Search above to add.</p></div>' : 
+                  sortedClasses.map((p, index) => renderClassItem(p, true, index)).join('')
+                }
+            </div>
+        </div>
+    `;
+    c.innerHTML = html;
+}
+
+function renderClassItem(p, isSaved, index = -1) {
+    const isVideo = (p.video) || (p.category === 'youtube_reel') || (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext)));
+    let title = p.content ? p.content.substring(0, 60) + (p.content.length > 60 ? '...' : '') : 'Untitled Video';
+    
+    let thumbUrl = p.image || 'https://via.placeholder.com/150/f3f4f6/9ca3af/?text=Video';
+    if(p.category === 'youtube_reel' || (p.video && (p.video.includes('youtube.com') || p.video.includes('youtu.be')))) {
+        let vidUrl = p.video || p.link || p.image;
+        if(vidUrl) {
+            let match = vidUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&]+)/);
+            if(match) thumbUrl = `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+        }
+    } else if (p.video) {
+        thumbUrl = 'https://via.placeholder.com/150/f3f4f6/9ca3af/?text=Video';
+    }
+
+    return `
+    <div class="bg-white rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-gray-100 p-2.5 flex gap-3 items-center cursor-pointer hover:shadow-md transition" onclick="openPostModal('${p._id}')">
+        <div class="w-24 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative border border-gray-100">
+            <img src="${thumbUrl}" class="w-full h-full object-cover">
+            ${isVideo ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><i class="fa-solid fa-play text-white text-xs opacity-90"></i></div>' : ''}
+        </div>
+        <div class="flex-1 min-w-0">
+            ${isSaved && index >= 0 ? `<p class="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-0.5"><i class="fa-solid fa-graduation-cap mr-1"></i>Lecture ${index + 1}</p>` : ''}
+            <h3 class="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">${title}</h3>
+            <p class="text-[10px] text-gray-500 mt-1 truncate">By ${p.user ? p.user.name : 'Unknown'}</p>
+        </div>
+        <div onclick="event.stopPropagation(); ${isSaved ? `removeClass('${p._id}')` : `addClass('${p._id}')`}">
+            ${isSaved ? 
+                `<button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>` :
+                `<button class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-md hover:bg-purple-700 transition"><i class="fa-solid fa-plus text-sm"></i></button>`
+            }
+        </div>
+    </div>`;
+}
+
+async function handleClassSearch() {
+    const q = document.getElementById('classSearchInput').value.toLowerCase().trim();
+    const container = document.getElementById('classSearchResultsContainer');
+    const list = document.getElementById('classSearchResultsList');
+    const saveAllBtn = document.getElementById('saveAllBtn');
+    
+    if(q.length < 2) {
+        container.classList.add('hidden');
+        classSearchResults = [];
+        return;
+    }
+    
+    let allP = window.allPosts || [];
+    classSearchResults = allP.filter(p => {
+        const isVideo = (p.video) || (p.category === 'youtube_reel') || (p.image && ['.mp4'].some(ext => p.image.toLowerCase().endsWith(ext)));
+        if(!isVideo) return false;
+        
+        const contentMatch = p.content && p.content.toLowerCase().includes(q);
+        const nameMatch = p.user && p.user.name && p.user.name.toLowerCase().includes(q);
+        return contentMatch || nameMatch;
+    });
+
+    if(classSearchResults.length > 0) {
+        container.classList.remove('hidden');
+        const savedIds = mySavedClasses.map(sc => sc._id);
+        const toShow = classSearchResults.filter(r => !savedIds.includes(r._id));
+        
+        if(toShow.length === 0) {
+            list.innerHTML = '<p class="text-xs text-center text-purple-600 italic py-2">All matching videos are already saved.</p>';
+            saveAllBtn.classList.add('hidden');
+        } else {
+            list.innerHTML = toShow.map(p => renderClassItem(p, false)).join('');
+            if(toShow.length > 1) {
+                saveAllBtn.classList.remove('hidden');
+            } else {
+                saveAllBtn.classList.add('hidden');
+            }
+        }
+    } else {
+        container.classList.remove('hidden');
+        list.innerHTML = '<p class="text-xs text-center text-gray-500 italic py-2">No videos found for this search.</p>';
+        saveAllBtn.classList.add('hidden');
+    }
+}
+
+async function addClass(postId) {
+    showToast("Adding class...");
+    try {
+        const res = await APIService.classes.save(postId);
+        if(res && res.success) {
+            showToast("Added to My Classes!");
+            await renderClasses();
+        } else {
+            showToast("Failed to add class (Check Backend)");
+        }
+    } catch(e) { showToast("Error connecting to server"); }
+}
+
+async function saveAllClassResults() {
+    showToast("Saving all matching classes...");
+    try {
+        const savedIds = mySavedClasses.map(sc => sc._id);
+        const toAdd = classSearchResults.filter(r => !savedIds.includes(r._id)).map(r => r._id);
+        if(toAdd.length === 0) return;
+        
+        const res = await APIService.classes.saveMultiple(toAdd);
+        if(res && res.success) {
+            showToast(`${toAdd.length} classes saved!`);
+            document.getElementById('classSearchInput').value = '';
+            await renderClasses();
+        } else {
+            showToast("Failed to save all (Check Backend)");
+        }
+    } catch(e) { showToast("Error connecting to server"); }
+}
+
+async function removeClass(postId) {
+    if(!confirm("Are you sure you want to remove this class from your saved list?")) return;
+    try {
+        const res = await APIService.classes.remove(postId);
+        if(res && res.success) {
+            showToast("Class removed!");
+            await renderClasses();
+        } else {
+            showToast("Failed to remove (Check Backend)");
+        }
+    } catch(e) { showToast("Error connecting to server"); }
+}
 window.badalDoUI = function() {
     openAlertModal("Coming Soon", "3D UI Magic is under development!");
 };
@@ -3073,170 +3274,7 @@ async function getLocalVaultData(email) {
         return {};
     }
 }
-async function renderDocuments() {
-    const c = document.getElementById('main-content');
-    c.innerHTML = '<div class="text-center mt-20"><i class="fa-solid fa-spinner fa-spin text-4xl text-purple-600"></i><p class="mt-2 text-sm text-gray-500">Unlocking Local Vault...</p></div>';
-    try {
-        const loggedInEmail = localStorage.getItem('userEmail'); 
-        if (!loggedInEmail) {
-            c.innerHTML = '<div class="text-center mt-20 text-red-500 font-bold">Please Login First!</div>';
-            return;
-        }
-        const savedData = await getLocalVaultData(loggedInEmail);
-        const html = `
-        <div class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between">
-            <button onclick="renderView('feed')" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-700">
-                <i class="fa-solid fa-arrow-left text-lg"></i>
-            </button>
-            <h1 class="text-lg font-bold text-gray-800 tracking-wide">My Secure Vault 🔒</h1>
-            <div class="w-10"></div>
-        </div>
-        <div style="height: 70px;"></div>
-        <div class="p-4 pb-24">
-            <p class="text-xs text-center text-green-600 mb-4 font-bold"><i class="fa-solid fa-shield-halved"></i> Data is stored offline on this device.</p>
-            <div class="glass-card p-5 mb-6 shadow-sm border border-gray-100 rounded-2xl bg-white">
-                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-user-gear text-purple-600"></i> Identity Details
-                </h3>
-                <div class="space-y-4">
-                    <input type="text" id="vault-name" value="${savedData.fullName || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none focus:ring-2 ring-purple-500/20" placeholder="Full Name">
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="date" id="vault-dob" value="${savedData.dob || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none">
-                        <select id="vault-gender" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none">
-                            <option value="">Gender</option>
-                            <option value="Male" ${savedData.gender === 'Male' ? 'selected' : ''}>Male</option>
-                            <option value="Female" ${savedData.gender === 'Female' ? 'selected' : ''}>Female</option>
-                        </select>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <input type="text" id="vault-pan" value="${savedData.panNo || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none uppercase" placeholder="PAN Number">
-                        <input type="number" id="vault-aadhar" value="${savedData.aadharNo || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none" placeholder="Aadhar No">
-                    </div>
-                    <input type="text" id="vault-mark" value="${savedData.birthMark || ''}" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none" placeholder="Visible Birth Mark">
-                    <textarea id="vault-address" class="w-full bg-gray-50 border rounded-xl p-3 text-sm outline-none h-20" placeholder="Full Permanent Address">${savedData.address || ''}</textarea>
-                </div>
-            </div>
-            <div class="glass-card p-5 mb-6 shadow-sm border border-gray-100 rounded-2xl bg-white">
-                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                    <i class="fa-solid fa-file-invoice text-purple-600"></i> My Documents
-                </h3>
-                <div class="space-y-8">
-                    ${renderDocumentItem('Passport Photo', 'doc-photo', savedData.photoImg)}
-                    ${renderDocumentItem('Aadhar Card', 'doc-aadhar', savedData.aadharImg)}
-                    ${renderDocumentItem('PAN Card', 'doc-pan', savedData.panImg)}
-                    ${renderDocumentItem('10th Marksheet', 'doc-10th', savedData.mark10Img)}
-                    ${renderDocumentItem('12th Marksheet', 'doc-12th', savedData.mark12Img)}
-                    ${renderDocumentItem('Caste Certificate', 'doc-caste', savedData.casteImg)}
-                </div>
-            </div>
-            <button onclick="saveVaultLocally()" id="save-btn" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition flex justify-center items-center gap-2">
-                <i class="fa-solid fa-hard-drive"></i> Save Securely to Phone
-            </button>
-        </div>`;
-        c.innerHTML = html;
-    } catch(e) { 
-        console.error(e); 
-        c.innerHTML = '<div class="text-center mt-20 text-red-500 font-bold">Error loading vault data.</div>';
-    }
-}
-function renderDocumentItem(label, id, base64) {
-    return `
-    <div class="relative">
-        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">${label}</label>
-        <div class="mt-2 p-3 border rounded-2xl bg-gray-50 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-white rounded-lg border flex items-center justify-center overflow-hidden">
-                    ${base64 ? `<img src="${base64}" class="w-full h-full object-cover">` : '<i class="fa-solid fa-image text-gray-300"></i>'}
-                </div>
-                <div>
-                    <input type="file" id="${id}" accept="image/*" class="hidden" onchange="previewLocalFile(this, '${id}-preview')">
-                    <button onclick="document.getElementById('${id}').click()" class="text-xs font-bold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg">
-                        ${base64 ? 'Change File' : 'Choose File'}
-                    </button>
-                </div>
-            </div>
-            <div class="flex gap-2">
-                ${base64 ? `
-                    <button onclick="downloadVaultFile('${base64}', '${label}')" class="w-8 h-8 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full">
-                        <i class="fa-solid fa-download text-sm"></i>
-                    </button>
-                    <button onclick="deleteVaultFile('${id}')" class="w-8 h-8 flex items-center justify-center bg-red-50 text-red-600 rounded-full">
-                        <i class="fa-solid fa-trash-can text-sm"></i>
-                    </button>
-                ` : ''}
-            </div>
-        </div>
-        <div id="${id}-preview" class="hidden mt-2 text-center text-[10px] text-green-600">File Selected (Click Save) ✅</div>
-    </div>`;
-}
-function previewLocalFile(input, previewId) {
-    if (input.files && input.files[0]) {
-        document.getElementById(previewId).classList.remove('hidden');
-    }
-}
-function downloadVaultFile(base64, name) {
-    const link = document.createElement('a');
-    link.href = base64;
-    link.download = `Zobbly_${name.replace(/\s+/g, '_')}.png`;
-    link.click();
-}
-function deleteVaultFile(keyId) {
-    if(confirm("Delete this document from phone memory? Remember to click 'Save' below.")) {
-        alert("File flagged for removal. Click 'Save' to finalize.");
-        document.getElementById(keyId).value = "";
-    }
-}
-    async function saveVaultLocally() {
-    const loggedInEmail = localStorage.getItem('userEmail');
-    if(!loggedInEmail) return;
-    const btn = document.getElementById('save-btn');
-    const originalBtnText = btn.innerHTML; 
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Securing to Device...';
-    try {
-        if (typeof localforage === 'undefined') {
-            throw new Error("localforage library load nahi hui! Kripya <head> mein script tag check karein.");
-        }
-        const oldData = await getLocalVaultData(loggedInEmail);
-        const getImg = async (id, oldImg) => {
-            const el = document.getElementById(id);
-            if(el && el.files && el.files[0]) {
-                return await fileToBase64(el.files[0]);
-            }
-            return oldImg;
-        };
-        const dataToSave = {
-            fullName: document.getElementById('vault-name')?.value || "",
-            dob: document.getElementById('vault-dob')?.value || "",
-            gender: document.getElementById('vault-gender')?.value || "",
-            panNo: document.getElementById('vault-pan')?.value || "",
-            aadharNo: document.getElementById('vault-aadhar')?.value || "",
-            birthMark: document.getElementById('vault-mark')?.value || "",
-            address: document.getElementById('vault-address')?.value || "",
-            photoImg: await getImg('doc-photo', oldData.photoImg || ''),
-            aadharImg: await getImg('doc-aadhar', oldData.aadharImg || ''),
-            panImg: await getImg('doc-pan', oldData.panImg || ''),
-            mark10Img: await getImg('doc-10th', oldData.mark10Img || ''),
-            mark12Img: await getImg('doc-12th', oldData.mark12Img || ''),
-            casteImg: await getImg('doc-caste', oldData.casteImg || ''),
-            lastUpdated: new Date().toLocaleString()
-        };
-        const encryptedData = encrypt(dataToSave);
-        await localforage.setItem(`vault_data_${loggedInEmail}`, encryptedData);
-        if(window.AndroidBridge && typeof window.AndroidBridge.saveToAndroid === 'function') {
-            try {
-                window.AndroidBridge.saveToAndroid(encryptedData);
-            } catch (bridgeErr) {
-                console.log("Android Bridge Error (Ignore if testing in browser):", bridgeErr);
-            }
-        }
-        alert("✅ Vault Saved 100% Offline to your Phone!");
-        renderDocuments(); 
-    } catch (error) {
-        console.error("Save Error:", error);
-        alert("❌ Data save karne mein error aayi: " + error.message);
-        btn.innerHTML = originalBtnText; 
-    }
-}
+
 let lastScrollY = 0;
 document.getElementById('app-screen').addEventListener('scroll', (e) => {
     if (!document.body.classList.contains('feed-mode')) return;

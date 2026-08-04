@@ -549,7 +549,10 @@ window.onload = function() {
             getSaved: async () => { const res = await fetch(`${API_BASE}/api/user/saved-classes`, { headers: getHeaders() }); return await res.json(); },
             save: async (postId) => { const res = await fetch(`${API_BASE}/api/user/save-class`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ postIds: [postId] }) }); return await res.json(); },
             saveMultiple: async (postIds) => { const res = await fetch(`${API_BASE}/api/user/save-class`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ postIds }) }); return await res.json(); },
-            remove: async (postId) => { const res = await fetch(`${API_BASE}/api/user/remove-class`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ postId }) }); return await res.json(); }
+            remove: async (postId) => { const res = await fetch(`${API_BASE}/api/user/remove-class`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ postId }) }); return await res.json(); },
+            getPlaylists: async () => { const res = await fetch(`${API_BASE}/api/user/playlists`, { headers: getHeaders() }); return await res.json(); },
+            createPlaylist: async (name, postId) => { const res = await fetch(`${API_BASE}/api/user/playlists/create`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ name, postId }) }); return await res.json(); },
+            togglePlaylist: async (playlistId, postId) => { const res = await fetch(`${API_BASE}/api/user/playlists/toggle`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ playlistId, postId }) }); return await res.json(); }
         },
         feed: {
             create: async(fd) => fetch(`${API_BASE}/api/posts/create`, {method:"POST", headers: { "x-auth-token": localStorage.getItem("token") }, body:fd}),
@@ -3031,10 +3034,21 @@ async function renderClasses() {
         mySavedClasses = [];
     }
 
+    try {
+        const plRes = await APIService.classes.getPlaylists();
+        if(plRes && plRes.success) {
+            window.myPlaylists = plRes.data || [];
+        } else {
+            window.myPlaylists = [];
+        }
+    } catch(e) {
+        console.error("Failed to load playlists", e);
+        window.myPlaylists = [];
+    }
+
     drawClassesUI();
 }
 
-window.myPlaylists = JSON.parse(localStorage.getItem('mockPlaylists') || '[{"_id":"pl_default", "name":"Uncategorized", "posts":[]}]');
 window.currentPlaylistFilter = window.currentPlaylistFilter || null;
 
 function drawClassesUI() {
@@ -3155,31 +3169,60 @@ window.openPlaylistModal = function(postId) {
     document.getElementById('genericModal').classList.remove('hidden');
 };
 
-window.createNewPlaylist = function(postId) {
+window.createNewPlaylist = async function(postId) {
     const name = document.getElementById('newPlaylistName').value.trim();
     if(!name) return;
-    const newPl = { _id: 'pl_' + Date.now(), name: name, posts: [postId] };
+    
+    // Optimistic UI update
+    const tempId = 'pl_temp_' + Date.now();
+    const newPl = { _id: tempId, name: name, posts: [postId] };
     if(!window.myPlaylists) window.myPlaylists = [];
     window.myPlaylists.push(newPl);
-    localStorage.setItem('mockPlaylists', JSON.stringify(window.myPlaylists));
-    // Also save class to mySavedClasses globally if not there
     addClass(postId, true);
     openPlaylistModal(postId);
     drawClassesUI();
+
+    try {
+        const res = await APIService.classes.createPlaylist(name, postId);
+        if(res && res.success && res.data) {
+            // Replace optimistic UI with real data
+            const index = window.myPlaylists.findIndex(p => p._id === tempId);
+            if(index !== -1) window.myPlaylists[index] = res.data;
+            openPlaylistModal(postId);
+            drawClassesUI();
+        } else {
+            showToast("Failed to create playlist on server");
+        }
+    } catch(e) { showToast("Error connecting to server"); }
 };
 
-window.toggleInPlaylist = function(plId, postId) {
+window.toggleInPlaylist = async function(plId, postId) {
     const pl = window.myPlaylists.find(x => x._id === plId);
     if(pl) {
-        if(pl.posts.includes(postId)) {
-            pl.posts = pl.posts.filter(id => id !== postId);
-        } else {
+        // Optimistic UI update
+        const adding = !pl.posts.includes(postId);
+        if(adding) {
             pl.posts.push(postId);
-            addClass(postId, true); // Ensure global save
+            addClass(postId, true);
+        } else {
+            pl.posts = pl.posts.filter(id => id !== postId);
         }
-        localStorage.setItem('mockPlaylists', JSON.stringify(window.myPlaylists));
         openPlaylistModal(postId);
         drawClassesUI();
+
+        try {
+            const res = await APIService.classes.togglePlaylist(plId, postId);
+            if(res && res.success) {
+                // Keep UI as is
+            } else {
+                // Revert optimistic UI
+                if(adding) pl.posts = pl.posts.filter(id => id !== postId);
+                else pl.posts.push(postId);
+                openPlaylistModal(postId);
+                drawClassesUI();
+                showToast("Failed to update playlist on server");
+            }
+        } catch(e) { showToast("Error connecting to server"); }
     }
 };
 

@@ -1846,14 +1846,18 @@ function togglePostMenu(postId, event) {
                                     <button onclick="toggleComment('${p._id}')" class="text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-xl"></i></button>
                                 </div>
                             </div>
-                            ${mediaUrl ? `
+                            ${ytId ? `
+                            <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative">
+                                <iframe src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&controls=1&playsinline=1&enablejsapi=1" class="w-full max-h-[500px] h-[300px] block" allowfullscreen></iframe>
+                            </div>
+                            ` : (mediaUrl ? `
                             <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative">
                                 ${isVideo ? 
                                     `<video src="${mediaUrl}" id="vid-prof-${p._id}" controls loop class="w-full max-h-[500px] block" playsinline></video>` : 
                                     `<img src="${mediaUrl}" class="w-full max-h-[500px] object-contain block">`
                                 }
                             </div>
-                            ` : ''}
+                            ` : '')}
                             <div class="p-4 bg-white">
                                 <p class="text-sm text-gray-700 mb-2 whitespace-pre-line">${displayContent}</p>
                                 ${linkHtml}
@@ -2553,8 +2557,8 @@ async function renderReels(container) {
                                     class="youtube-iframe absolute left-0 w-full border-none pointer-events-none opacity-0 transition-opacity duration-500" 
                                     style="height: calc(100% + 140px); top: -70px; transform: scale(1.35);"
                                     onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
-                                    data-src="${videoUrl}" 
-                                    src="${index === 0 ? videoUrl.replace('autoplay=0', 'autoplay=1') : (index === 1 ? videoUrl.replace('autoplay=1', 'autoplay=0') : '')}" 
+                                    data-src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&loop=1&playlist=${ytId}" 
+                                    src="${index === 0 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&loop=1&playlist=${ytId}` : (index === 1 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&loop=1&playlist=${ytId}` : '')}" 
                                     allow="autoplay; encrypted-media"
                                     loading="eager"
                                     allowfullscreen>

@@ -898,7 +898,8 @@ function renderView(view) {
     }
     async function loadMsgs() {
         if(!activeChatUser) return;
-        const msgs = await APIService.chat.getHistory(activeChatUser);
+        let msgs = await APIService.chat.getHistory(activeChatUser);
+        msgs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         const myId = localStorage.getItem("userId");
         document.getElementById('fc-messages').innerHTML = msgs.map(m => {
             let content = m.content;
@@ -2393,7 +2394,8 @@ async function renderMsgsFromCacheAndPending(isNearBottomArg) {
             return !existsOnServer;
         });
     }
-    const allMsgs = [...serverMsgs, ...(window.pendingMessages || [])];
+    let allMsgs = [...serverMsgs, ...(window.pendingMessages || [])];
+    allMsgs.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     const stateString = JSON.stringify(allMsgs) + themeBtn;
     if (window.lastRenderedChatState === stateString) {
         return; 

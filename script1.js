@@ -3208,7 +3208,7 @@ window.createNewPlaylist = async function(postId) {
     } catch(e) { showToast("Error connecting to server"); }
 };
 
-window.toggleInPlaylist = async function(plId, postId) {
+window.toggleInPlaylist = async function(plId, postId, fromModal = true) {
     const pl = window.myPlaylists.find(x => x._id === plId);
     if(pl) {
         // Optimistic UI update
@@ -3219,7 +3219,12 @@ window.toggleInPlaylist = async function(plId, postId) {
         } else {
             pl.posts = pl.posts.filter(id => id !== postId);
         }
-        openPlaylistModal(postId);
+        
+        if (window.currentPlaylistFilter === plId && pl.posts.length === 0) {
+            window.currentPlaylistFilter = null;
+        }
+
+        if(fromModal) openPlaylistModal(postId);
         drawClassesUI();
 
         try {
@@ -3233,13 +3238,20 @@ window.toggleInPlaylist = async function(plId, postId) {
                         posts: (pl.posts || []).map(p => p._id || p)
                     }));
                 }
-                openPlaylistModal(postId);
+                
+                const syncedPl = window.myPlaylists.find(x => x._id === plId);
+                if ((!syncedPl || syncedPl.posts.length === 0) && window.currentPlaylistFilter === plId) {
+                    window.currentPlaylistFilter = null;
+                }
+
+                if(fromModal) openPlaylistModal(postId);
                 drawClassesUI();
             } else {
                 // Revert optimistic UI
                 if(adding) pl.posts = pl.posts.filter(id => id !== postId);
                 else pl.posts.push(postId);
-                openPlaylistModal(postId);
+                
+                if(fromModal) openPlaylistModal(postId);
                 drawClassesUI();
                 showToast("Failed to update playlist on server");
             }
@@ -3344,7 +3356,6 @@ function renderClassItem(p, isSaved, index = -1) {
                 ${isVideo ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><i class="fa-solid fa-play text-white text-xs opacity-90"></i></div>' : ''}
             </div>
         <div class="flex-1 min-w-0">
-            ${isSaved && index >= 0 ? `<p class="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-0.5"><i class="fa-solid fa-graduation-cap mr-1"></i>Lecture ${index + 1}</p>` : ''}
             <h3 class="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">${title}</h3>
             <p class="text-[10px] text-gray-500 mt-1 truncate">By ${p.user ? p.user.name : 'Unknown'}</p>
         </div>
@@ -3354,8 +3365,9 @@ function renderClassItem(p, isSaved, index = -1) {
                 `<button class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-md hover:bg-purple-700 transition"><i class="fa-solid fa-plus text-sm"></i></button>`
             }
         </div>
+        </div>
         ${isSaved ? `
-        <div onclick="event.stopPropagation(); removeClass('${p._id}')" class="ml-1">
+        <div onclick="event.stopPropagation(); window.currentPlaylistFilter ? toggleInPlaylist(window.currentPlaylistFilter, '${p._id}', false) : removeClass('${p._id}')" class="ml-1">
              <button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
         </div>
         ` : ''}
@@ -3453,12 +3465,17 @@ async function saveAllClassResults() {
 }
 
 async function removeClass(postId) {
-    if(!confirm("Are you sure you want to remove this class from your saved list?")) return;
+    if(!confirm("Are you sure you want to remove this class from ALL saved lists?")) return;
     
     if(window.myPlaylists) {
         window.myPlaylists.forEach(pl => {
             pl.posts = pl.posts.filter(id => id !== postId);
         });
+        if (window.currentPlaylistFilter) {
+            const pl = window.myPlaylists.find(x => x._id === window.currentPlaylistFilter);
+            if (!pl || pl.posts.length === 0) window.currentPlaylistFilter = null;
+        }
+    }
         localStorage.setItem('mockPlaylists', JSON.stringify(window.myPlaylists));
     }
     

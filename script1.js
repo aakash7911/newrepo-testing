@@ -3037,7 +3037,10 @@ async function renderClasses() {
     try {
         const plRes = await APIService.classes.getPlaylists();
         if(plRes && plRes.success) {
-            window.myPlaylists = plRes.data || [];
+            window.myPlaylists = (plRes.data || []).map(pl => ({
+                ...pl,
+                posts: (pl.posts || []).map(p => p._id || p)
+            }));
         } else {
             window.myPlaylists = [];
         }
@@ -3115,7 +3118,7 @@ function drawClassesUI() {
             <!-- Playlists Filter -->
             <div class="flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar">
                 <button onclick="window.currentPlaylistFilter=null; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${!window.currentPlaylistFilter ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}">All Saved</button>
-                ${window.myPlaylists.map(pl => `
+                ${window.myPlaylists.filter(pl => pl._id === 'pl_default' || (pl.posts && pl.posts.length > 0)).map(pl => `
                     <button onclick="window.currentPlaylistFilter='${pl._id}'; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${window.currentPlaylistFilter === pl._id ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50'}">${pl.name}</button>
                 `).join('')}
             </div>
@@ -3147,11 +3150,11 @@ window.openPlaylistModal = function(postId) {
             </div>
         </div>
         
-        ${window.myPlaylists && window.myPlaylists.length > 0 ? `
+        ${window.myPlaylists && window.myPlaylists.filter(pl => pl._id === 'pl_default' || (pl.posts && pl.posts.length > 0)).length > 0 ? `
             <div>
                 <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Existing Playlists</h3>
                 <div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1 pb-4">
-                    ${window.myPlaylists.map(pl => {
+                    ${window.myPlaylists.filter(pl => pl._id === 'pl_default' || (pl.posts && pl.posts.length > 0)).map(pl => {
                         const inPlaylist = pl.posts.includes(postId);
                         return `
                             <button onclick="toggleInPlaylist('${pl._id}', '${postId}')" class="w-full flex items-center justify-between p-3 rounded-xl border ${inPlaylist ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white hover:bg-gray-50'} transition">
@@ -3186,7 +3189,10 @@ window.createNewPlaylist = async function(postId) {
         const res = await APIService.classes.createPlaylist(name, postId);
         if(res && res.success && res.data) {
             // Backend returns the full updated array of playlists in res.data
-            window.myPlaylists = res.data;
+            window.myPlaylists = (res.data || []).map(pl => ({
+                ...pl,
+                posts: (pl.posts || []).map(p => p._id || p)
+            }));
             openPlaylistModal(postId);
             drawClassesUI();
         } else {
@@ -3212,8 +3218,16 @@ window.toggleInPlaylist = async function(plId, postId) {
         try {
             const res = await APIService.classes.togglePlaylist(plId, postId);
             if(res && res.success) {
-                // Keep UI as is, maybe update playlists from backend if we want to ensure sync,
-                // but for toggle it's fine.
+                // Fetch updated playlists to ensure everything is perfectly synced (including auto-deletion)
+                const plRes = await APIService.classes.getPlaylists();
+                if(plRes && plRes.success) {
+                    window.myPlaylists = (plRes.data || []).map(pl => ({
+                        ...pl,
+                        posts: (pl.posts || []).map(p => p._id || p)
+                    }));
+                }
+                openPlaylistModal(postId);
+                drawClassesUI();
             } else {
                 // Revert optimistic UI
                 if(adding) pl.posts = pl.posts.filter(id => id !== postId);

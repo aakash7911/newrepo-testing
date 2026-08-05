@@ -3145,15 +3145,16 @@ function drawClassesUI() {
     c.innerHTML = html;
 }
 
-window.openPlaylistModal = function(postId) {
+window.openPlaylistModal = function(postIdsStr) {
+    const ids = postIdsStr.split(',');
     let html = `
-        <h2 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">Save to Playlist</h2>
+        <h2 class="text-lg font-bold mb-4 text-gray-800 border-b pb-2">Save to Playlist ${ids.length > 1 ? `(${ids.length} videos)` : ''}</h2>
         
         <div class="mb-5">
             <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Create New Playlist</h3>
             <div class="flex gap-2">
                 <input type="text" id="newPlaylistName" placeholder="E.g. React Course" class="flex-1 p-3 bg-gray-50 rounded-xl border border-gray-200 text-sm outline-none focus:border-purple-400">
-                <button onclick="createNewPlaylist('${postId}')" class="bg-purple-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-purple-700 transition shadow-md">Create</button>
+                <button onclick="createNewPlaylist('${postIdsStr}')" class="bg-purple-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-purple-700 transition shadow-md">Create</button>
             </div>
         </div>
         
@@ -3162,11 +3163,12 @@ window.openPlaylistModal = function(postId) {
                 <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Existing Playlists</h3>
                 <div class="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1 pb-4">
                     ${window.myPlaylists.filter(pl => pl._id === 'pl_default' || (pl.posts && pl.posts.length > 0)).map(pl => {
-                        const inPlaylist = pl.posts.includes(postId);
+                        const inPlaylist = ids.every(id => pl.posts.includes(id));
+                        const partial = !inPlaylist && ids.some(id => pl.posts.includes(id));
                         return `
-                            <button onclick="toggleInPlaylist('${pl._id}', '${postId}')" class="w-full flex items-center justify-between p-3 rounded-xl border ${inPlaylist ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-white hover:bg-gray-50'} transition">
-                                <span class="font-bold text-sm ${inPlaylist ? 'text-purple-700' : 'text-gray-700'}">${pl.name}</span>
-                                ${inPlaylist ? '<i class="fa-solid fa-check text-purple-600 text-lg"></i>' : '<i class="fa-solid fa-plus text-gray-400 text-lg"></i>'}
+                            <button onclick="toggleInPlaylist('${pl._id}', '${postIdsStr}')" class="w-full flex items-center justify-between p-3 rounded-xl border ${inPlaylist ? 'border-purple-500 bg-purple-50' : partial ? 'border-purple-300 bg-purple-50' : 'border-gray-200 bg-white hover:bg-gray-50'} transition">
+                                <span class="font-bold text-sm ${inPlaylist || partial ? 'text-purple-700' : 'text-gray-700'}">${pl.name}</span>
+                                ${inPlaylist ? '<i class="fa-solid fa-check text-purple-600 text-lg"></i>' : partial ? '<i class="fa-solid fa-minus text-purple-400 text-lg"></i>' : '<i class="fa-solid fa-plus text-gray-400 text-lg"></i>'}
                             </button>
                         `;
                     }).join('')}
@@ -3179,83 +3181,106 @@ window.openPlaylistModal = function(postId) {
     document.getElementById('genericModal').classList.remove('hidden');
 };
 
-window.createNewPlaylist = async function(postId) {
+window.createNewPlaylist = async function(postIdsStr) {
+    const ids = postIdsStr.split(',');
     const name = document.getElementById('newPlaylistName').value.trim();
     if(!name) return;
     
     // Optimistic UI update
     const tempId = 'pl_temp_' + Date.now();
-    const newPl = { _id: tempId, name: name, posts: [postId] };
+    const newPl = { _id: tempId, name: name, posts: [...ids] };
     if(!window.myPlaylists) window.myPlaylists = [];
     window.myPlaylists.push(newPl);
-    addClass(postId, true);
-    openPlaylistModal(postId);
+    
+    ids.forEach(id => addClass(id, true));
+    
+    openPlaylistModal(postIdsStr);
     drawClassesUI();
 
     try {
-        const res = await APIService.classes.createPlaylist(name, postId);
+        const res = await APIService.classes.createPlaylist(name, ids[0]);
         if(res && res.success && res.data) {
-            // Backend returns the full updated array of playlists in res.data
-            window.myPlaylists = (res.data || []).map(pl => ({
-                ...pl,
-                posts: (pl.posts || []).map(p => p._id || p)
-            }));
-            openPlaylistModal(postId);
+            const createdPl = res.data.find(pl => pl.name === name);
+            if(createdPl && ids.length > 1) {
+                const restIds = ids.slice(1);
+                const promises = restIds.map(id => APIService.classes.togglePlaylist(createdPl._id, id));
+                await Promise.all(promises);
+                
+                const finalRes = await APIService.classes.getPlaylists();
+                if(finalRes && finalRes.success) {
+                    window.myPlaylists = (finalRes.data || []).map(pl => ({
+                        ...pl,
+                        posts: (pl.posts || []).map(p => p._id || p)
+                    }));
+                }
+            } else {
+                window.myPlaylists = (res.data || []).map(pl => ({
+                    ...pl,
+                    posts: (pl.posts || []).map(p => p._id || p)
+                }));
+            }
+            openPlaylistModal(postIdsStr);
             drawClassesUI();
+            
+            if (ids.length > 1) {
+                await APIService.classes.saveMultiple(ids);
+            }
         } else {
             showToast("Failed to create playlist on server");
         }
     } catch(e) { showToast("Error connecting to server"); }
 };
 
-window.toggleInPlaylist = async function(plId, postId, fromModal = true) {
+window.toggleInPlaylist = async function(plId, postIdsStr, fromModal = true) {
     const pl = window.myPlaylists.find(x => x._id === plId);
     if(pl) {
+        const ids = postIdsStr.split(',');
+        const adding = ids.some(id => !pl.posts.includes(id));
+        const idsToToggle = adding ? ids.filter(id => !pl.posts.includes(id)) : ids;
+        
         // Optimistic UI update
-        const adding = !pl.posts.includes(postId);
         if(adding) {
-            pl.posts.push(postId);
-            addClass(postId, true);
+            pl.posts.push(...idsToToggle);
+            idsToToggle.forEach(id => addClass(id, true));
         } else {
-            pl.posts = pl.posts.filter(id => id !== postId);
+            pl.posts = pl.posts.filter(id => !ids.includes(id));
         }
         
         if (window.currentPlaylistFilter === plId && pl.posts.length === 0) {
             window.currentPlaylistFilter = null;
         }
 
-        if(fromModal) openPlaylistModal(postId);
+        if(fromModal) openPlaylistModal(postIdsStr);
         drawClassesUI();
 
         try {
-            const res = await APIService.classes.togglePlaylist(plId, postId);
-            if(res && res.success) {
-                // Fetch updated playlists to ensure everything is perfectly synced (including auto-deletion)
-                const plRes = await APIService.classes.getPlaylists();
-                if(plRes && plRes.success) {
-                    window.myPlaylists = (plRes.data || []).map(pl => ({
-                        ...pl,
-                        posts: (pl.posts || []).map(p => p._id || p)
-                    }));
-                }
-                
-                const syncedPl = window.myPlaylists.find(x => x._id === plId);
-                if ((!syncedPl || syncedPl.posts.length === 0) && window.currentPlaylistFilter === plId) {
-                    window.currentPlaylistFilter = null;
-                }
-
-                if(fromModal) openPlaylistModal(postId);
-                drawClassesUI();
-            } else {
-                // Revert optimistic UI
-                if(adding) pl.posts = pl.posts.filter(id => id !== postId);
-                else pl.posts.push(postId);
-                
-                if(fromModal) openPlaylistModal(postId);
-                drawClassesUI();
-                showToast("Failed to update playlist on server");
+            const promises = idsToToggle.map(id => APIService.classes.togglePlaylist(plId, id));
+            await Promise.all(promises);
+            
+            // Fetch updated playlists to ensure everything is perfectly synced (including auto-deletion)
+            const plRes = await APIService.classes.getPlaylists();
+            if(plRes && plRes.success) {
+                window.myPlaylists = (plRes.data || []).map(pl => ({
+                    ...pl,
+                    posts: (pl.posts || []).map(p => p._id || p)
+                }));
             }
-        } catch(e) { showToast("Error connecting to server"); }
+            
+            const syncedPl = window.myPlaylists.find(x => x._id === plId);
+            if ((!syncedPl || syncedPl.posts.length === 0) && window.currentPlaylistFilter === plId) {
+                window.currentPlaylistFilter = null;
+            }
+
+            if(fromModal) openPlaylistModal(postIdsStr);
+            drawClassesUI();
+            
+            if(adding && idsToToggle.length > 1) {
+                await APIService.classes.saveMultiple(idsToToggle);
+            }
+        } catch(e) { 
+            showToast("Error connecting to server"); 
+            // We omit deep reversion logic for simplicity in bulk ops, next fetch will fix it.
+        }
     }
 };
 
@@ -3457,21 +3482,16 @@ async function addClass(postId) {
 }
 
 async function saveAllClassResults() {
-    showToast("Saving all matching classes...");
     try {
         const savedIds = mySavedClasses.map(sc => sc._id);
         const toAdd = classSearchResults.filter(r => !savedIds.includes(r._id)).map(r => r._id);
-        if(toAdd.length === 0) return;
-        
-        const res = await APIService.classes.saveMultiple(toAdd);
-        if(res && res.success) {
-            showToast(`${toAdd.length} classes saved!`);
-            document.getElementById('classSearchInput').value = '';
-            await renderClasses();
-        } else {
-            showToast("Failed to save all (Check Backend)");
+        if(toAdd.length === 0) {
+            showToast("All matching classes are already saved.");
+            return;
         }
-    } catch(e) { showToast("Error connecting to server"); }
+        
+        openPlaylistModal(toAdd.join(','));
+    } catch(e) { showToast("Error preparing bulk save"); }
 }
 
 async function removeClass(postId) {

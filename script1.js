@@ -2511,7 +2511,9 @@ async function renderReels(container) {
                 if (window.ytClickTimers[id]) {
                     clearTimeout(window.ytClickTimers[id]);
                     window.ytClickTimers[id] = null;
-                    if(typeof toggleReelLike === 'function') toggleReelLike(id);
+                    window.ytPlayState[id] = !window.ytPlayState[id]; 
+                    const action = window.ytPlayState[id] ? 'pauseVideo' : 'playVideo';
+                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
                 } else {
                     window.ytClickTimers[id] = setTimeout(() => {
                         window.ytClickTimers[id] = null;
@@ -2596,8 +2598,8 @@ async function renderReels(container) {
                                     class="youtube-iframe absolute left-0 w-full border-none pointer-events-none opacity-0 transition-opacity duration-500" 
                                     style="height: calc(100% + 140px); top: -70px; transform: scale(1.35);"
                                     onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
-                                    data-src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1" 
-                                    src="${index === 0 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1` : (index === 1 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1` : '')}" 
+                                    data-src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&mute=1" 
+                                    src="${index === 0 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&mute=1` : (index === 1 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&mute=1` : '')}" 
                                     allow="autoplay; encrypted-media"
                                     loading="eager"
                                     allowfullscreen>
@@ -2861,7 +2863,7 @@ function handleReelClick(e, postId) {
     } else {
         clearTimeout(reelClickTimer);
         reelClickTimer = null;
-        if(typeof toggleReelLike === 'function') toggleReelLike(postId);
+        if (v.paused) v.play(); else v.pause();
     }
 }
 function updateMuteUI(postId, isMuted) {

@@ -3304,18 +3304,27 @@ window.expandVideo = function(id) {
         if(vidUrl) {
             let match = vidUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&"'\s]+)/);
             if(match) {
-                videoHtml = `<div class="w-full relative aspect-video bg-black mt-3 rounded-lg overflow-hidden shadow-inner">
+                videoHtml = `<div id="yt-wrap-expanded-${id}" class="w-full relative aspect-video bg-black mt-3 rounded-xl overflow-hidden shadow-inner group">
+                                <button onclick="event.stopPropagation(); if(window.toggleCustomFullscreen) window.toggleCustomFullscreen('yt-wrap-expanded-${id}')" class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded-full flex items-center justify-center z-20 shadow-md transition opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                                    <i class="fa-solid fa-expand text-sm"></i>
+                                </button>
                                 <iframe class="w-full h-full absolute top-0 left-0" src="https://www.youtube.com/embed/${match[1]}?autoplay=1" frameborder="0" allowfullscreen allow="autoplay"></iframe>
                              </div>`;
             }
         }
     } else if (p.video) {
-        videoHtml = `<div class="w-full relative aspect-video bg-black mt-3 rounded-lg overflow-hidden shadow-inner">
-                        <video src="${p.video}" class="w-full h-full" controls autoplay playsinline></video>
+        videoHtml = `<div id="vid-wrap-expanded-${id}" class="w-full relative aspect-video bg-black mt-3 rounded-xl overflow-hidden shadow-inner group flex items-center justify-center">
+                        <button onclick="event.stopPropagation(); if(window.toggleCustomFullscreen) window.toggleCustomFullscreen('vid-wrap-expanded-${id}')" class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded-full flex items-center justify-center z-20 shadow-md transition opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                            <i class="fa-solid fa-expand text-sm"></i>
+                        </button>
+                        <video src="${p.video}" class="w-full max-h-80 object-contain" controls autoplay playsinline></video>
                      </div>`;
     } else if (p.image && ['.mp4', '.webm', '.mov', '.ogg'].some(ext => p.image.toLowerCase().endsWith(ext))) {
-        videoHtml = `<div class="w-full relative aspect-video bg-black mt-3 rounded-lg overflow-hidden shadow-inner">
-                        <video src="${p.image}" class="w-full h-full" controls autoplay playsinline></video>
+        videoHtml = `<div id="vid-wrap-expanded-${id}" class="w-full relative aspect-video bg-black mt-3 rounded-xl overflow-hidden shadow-inner group flex items-center justify-center">
+                        <button onclick="event.stopPropagation(); if(window.toggleCustomFullscreen) window.toggleCustomFullscreen('vid-wrap-expanded-${id}')" class="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded-full flex items-center justify-center z-20 shadow-md transition opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                            <i class="fa-solid fa-expand text-sm"></i>
+                        </button>
+                        <video src="${p.image}" class="w-full max-h-80 object-contain" controls autoplay playsinline></video>
                      </div>`;
     }
     

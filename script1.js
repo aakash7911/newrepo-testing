@@ -3365,13 +3365,12 @@ function renderClassItem(p, isSaved, index = -1) {
                 `<button class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-md hover:bg-purple-700 transition"><i class="fa-solid fa-plus text-sm"></i></button>`
             }
         </div>
-        </div>
         ${isSaved ? `
         <div onclick="event.stopPropagation(); window.currentPlaylistFilter ? toggleInPlaylist(window.currentPlaylistFilter, '${p._id}', false) : removeClass('${p._id}')" class="ml-1">
              <button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
         </div>
         ` : ''}
-    </div>
+        </div>
     </div>`;
 }
 
@@ -3434,6 +3433,8 @@ async function handleClassSearch() {
 }
 
 async function addClass(postId) {
+    if(mySavedClasses && mySavedClasses.some(x => x._id === postId)) return;
+    
     showToast("Adding class...");
     try {
         const res = await APIService.classes.save(postId);

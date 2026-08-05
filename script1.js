@@ -2498,9 +2498,7 @@ async function renderReels(container) {
                 if (window.ytClickTimers[id]) {
                     clearTimeout(window.ytClickTimers[id]);
                     window.ytClickTimers[id] = null;
-                    window.ytPlayState[id] = !window.ytPlayState[id]; 
-                    const action = window.ytPlayState[id] ? 'pauseVideo' : 'playVideo';
-                    iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: action, args: []}), '*');
+                    if(typeof toggleReelLike === 'function') toggleReelLike(id);
                 } else {
                     window.ytClickTimers[id] = setTimeout(() => {
                         window.ytClickTimers[id] = null;
@@ -2850,7 +2848,7 @@ function handleReelClick(e, postId) {
     } else {
         clearTimeout(reelClickTimer);
         reelClickTimer = null;
-        if (v.paused) v.play(); else v.pause();
+        if(typeof toggleReelLike === 'function') toggleReelLike(postId);
     }
 }
 function updateMuteUI(postId, isMuted) {

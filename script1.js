@@ -3185,9 +3185,8 @@ window.createNewPlaylist = async function(postId) {
     try {
         const res = await APIService.classes.createPlaylist(name, postId);
         if(res && res.success && res.data) {
-            // Replace optimistic UI with real data
-            const index = window.myPlaylists.findIndex(p => p._id === tempId);
-            if(index !== -1) window.myPlaylists[index] = res.data;
+            // Backend returns the full updated array of playlists in res.data
+            window.myPlaylists = res.data;
             openPlaylistModal(postId);
             drawClassesUI();
         } else {
@@ -3213,7 +3212,8 @@ window.toggleInPlaylist = async function(plId, postId) {
         try {
             const res = await APIService.classes.togglePlaylist(plId, postId);
             if(res && res.success) {
-                // Keep UI as is
+                // Keep UI as is, maybe update playlists from backend if we want to ensure sync,
+                // but for toggle it's fine.
             } else {
                 // Revert optimistic UI
                 if(adding) pl.posts = pl.posts.filter(id => id !== postId);

@@ -3431,8 +3431,12 @@ async function handleClassSearch() {
     classSearchResults = allP.filter(p => {
         const decContent = getDecryptedPostContent(p);
         const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
+        
+        // Ensure shorts/reels DO NOT show up in classes search
+        const isShort = (p.category === 'youtube_reel' || p.category === 'reel') || urlStr.includes('/shorts/');
+        if(isShort) return false;
+        
         const isVideo = (p.video) || 
-                        (p.category === 'youtube_reel' || p.category === 'reel') || 
                         ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
         if(!isVideo) return false;
         

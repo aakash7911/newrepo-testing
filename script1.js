@@ -262,7 +262,9 @@ window.toggleCustomFullscreen = function(id) {
                 currentEl = currentEl.parentElement;
             }
         };
-        if (el.requestFullscreen) {
+        if (window.AndroidBridge) {
+            applyCSSFallback();
+        } else if (el.requestFullscreen) {
             const fsPromise = el.requestFullscreen();
             if (fsPromise !== undefined) {
                 fsPromise.then(() => {

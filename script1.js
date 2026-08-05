@@ -824,8 +824,8 @@ function renderView(view) {
     else if(view === 'profile') viewUserProfile(localStorage.getItem("userId"));
 }
    async function startChat(id, name, photo) {
-        if (window.AndroidApp) {
-            window.AndroidApp.setActiveUser(id);
+        if (window.AndroidBridge) {
+            window.AndroidBridge.setActiveUser(id);
         }
         activeChatUser = id;
         document.getElementById('fc-user-name').innerText = name;
@@ -864,8 +864,8 @@ function renderView(view) {
         // window.chatInterval = setInterval(loadMsgs, 3000); // Replaced by Socket.io
     }
     function closeFullChat() {
-        if (window.AndroidApp) {
-            window.AndroidApp.setActiveUser("null");
+        if (window.AndroidBridge) {
+            window.AndroidBridge.setActiveUser("null");
         }
         document.getElementById('full-chat-view').classList.remove('active');
         isChatOpen = false; 
@@ -2214,8 +2214,8 @@ async function searchChatUsers(q) {
     ).join(''); 
 }
 async function startChat(id, name, photo) {
-    if (window.AndroidApp) {
-        window.AndroidApp.setActiveUser(id);
+    if (window.AndroidBridge) {
+        window.AndroidBridge.setActiveUser(id);
     }
     if (window.unreadChatUsers) window.unreadChatUsers.delete(id);
     if (window.readChatTimestamps) window.readChatTimestamps[id] = Date.now();
@@ -2253,8 +2253,8 @@ async function startChat(id, name, photo) {
     // window.chatInterval = setInterval(loadMsgs, 3000); // Replaced by Socket.io
 }
 function closeFullChat() { 
-    if (window.AndroidApp) {
-        window.AndroidApp.setActiveUser("null");
+    if (window.AndroidBridge) {
+        window.AndroidBridge.setActiveUser("null");
     }
     document.getElementById('full-chat-view').classList.remove('active'); 
     isChatOpen = false; 

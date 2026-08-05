@@ -3476,8 +3476,6 @@ async function removeClass(postId) {
             if (!pl || pl.posts.length === 0) window.currentPlaylistFilter = null;
         }
     }
-        localStorage.setItem('mockPlaylists', JSON.stringify(window.myPlaylists));
-    }
     
     try {
         const res = await APIService.classes.remove(postId);

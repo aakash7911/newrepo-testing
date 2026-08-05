@@ -3073,7 +3073,14 @@ function drawClassesUI() {
     if(window.currentPlaylistFilter) {
         const pl = window.myPlaylists.find(x => x._id === window.currentPlaylistFilter);
         if(pl) {
-            classesToShow = mySavedClasses.filter(p => pl.posts.includes(p._id));
+            let foundIds = new Set();
+            classesToShow = window.allPosts.filter(p => {
+                if(pl.posts.includes(p._id) && !foundIds.has(p._id)) {
+                    foundIds.add(p._id);
+                    return true;
+                }
+                return false;
+            });
         }
     } else {
         classesToShow = mySavedClasses; // Show all
@@ -3243,6 +3250,7 @@ window.toggleInPlaylist = async function(plId, postId) {
 function getDecryptedPostContent(p) {
     let rawContent = p.content || '';
     let cleaned = rawContent.replace(/[-_]/g, '');
+    
     if (cleaned.startsWith('U2FsdGVkX1')) {
         try {
             const bytes = CryptoJS.AES.decrypt(cleaned, SECRET_KEY);
@@ -3251,7 +3259,14 @@ function getDecryptedPostContent(p) {
                 try { return JSON.parse(dec); } catch { return dec; }
             }
         } catch(e) {}
+        return ''; // Decryption failed, avoid showing garbage
     }
+    
+    // Fallback: If it still looks like an encrypted base64 chunk or is a random string with no spaces
+    if (rawContent.startsWith('U2') && rawContent.length > 20 && !rawContent.includes(' ')) {
+        return ''; 
+    }
+    
     return rawContent;
 }
 

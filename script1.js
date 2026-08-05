@@ -2585,8 +2585,8 @@ async function renderReels(container) {
                                     class="youtube-iframe absolute left-0 w-full border-none pointer-events-none opacity-0 transition-opacity duration-500" 
                                     style="height: calc(100% + 140px); top: -70px; transform: scale(1.35);"
                                     onload="try{this.contentWindow.postMessage(JSON.stringify({event: 'listening'}), '*');}catch(e){}"
-                                    data-src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&loop=1&playlist=${ytId}" 
-                                    src="${index === 0 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&loop=1&playlist=${ytId}` : (index === 1 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1&loop=1&playlist=${ytId}` : '')}" 
+                                    data-src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1" 
+                                    src="${index === 0 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1` : (index === 1 ? `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&modestbranding=1&rel=0&iv_load_policy=3&fs=0&controls=0&disablekb=1&playsinline=1&enablejsapi=1` : '')}" 
                                     allow="autoplay; encrypted-media"
                                     loading="eager"
                                     allowfullscreen>

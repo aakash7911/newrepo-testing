@@ -824,6 +824,9 @@ function renderView(view) {
     else if(view === 'profile') viewUserProfile(localStorage.getItem("userId"));
 }
    async function startChat(id, name, photo) {
+        if (window.AndroidApp) {
+            window.AndroidApp.setActiveUser(id);
+        }
         activeChatUser = id;
         document.getElementById('fc-user-name').innerText = name;
         document.getElementById('fc-user-img').src = photo || 'https://placehold.co/30';
@@ -861,6 +864,9 @@ function renderView(view) {
         // window.chatInterval = setInterval(loadMsgs, 3000); // Replaced by Socket.io
     }
     function closeFullChat() {
+        if (window.AndroidApp) {
+            window.AndroidApp.setActiveUser("null");
+        }
         document.getElementById('full-chat-view').classList.remove('active');
         isChatOpen = false; 
         if(window.chatInterval) clearInterval(window.chatInterval);
@@ -2208,6 +2214,9 @@ async function searchChatUsers(q) {
     ).join(''); 
 }
 async function startChat(id, name, photo) {
+    if (window.AndroidApp) {
+        window.AndroidApp.setActiveUser(id);
+    }
     if (window.unreadChatUsers) window.unreadChatUsers.delete(id);
     if (window.readChatTimestamps) window.readChatTimestamps[id] = Date.now();
     activeChatUser = id;
@@ -2244,6 +2253,9 @@ async function startChat(id, name, photo) {
     // window.chatInterval = setInterval(loadMsgs, 3000); // Replaced by Socket.io
 }
 function closeFullChat() { 
+    if (window.AndroidApp) {
+        window.AndroidApp.setActiveUser("null");
+    }
     document.getElementById('full-chat-view').classList.remove('active'); 
     isChatOpen = false; 
     if(window.chatInterval) clearInterval(window.chatInterval); 

@@ -714,7 +714,20 @@ appScreen.addEventListener('touchstart', (e) => {
         } catch(e){}
     }
     function switchAuth(id) { document.querySelectorAll('.auth-form').forEach(e=>e.classList.add('hidden-screen')); document.getElementById(id).classList.remove('hidden-screen'); }
-    function toggleSidePanel() { document.getElementById('side-panel').classList.toggle('open'); }
+    function toggleSidePanel() { 
+        document.getElementById('side-panel').classList.toggle('open'); 
+    }
+    
+    // Auto-close side panel when clicking outside
+    document.addEventListener('click', function(e) {
+        const sidePanel = document.getElementById('side-panel');
+        if (sidePanel && sidePanel.classList.contains('open')) {
+            // Check if the click is outside the panel AND not on the button that opens it
+            if (!sidePanel.contains(e.target) && !e.target.closest('[onclick*="toggleSidePanel"]')) {
+                sidePanel.classList.remove('open');
+            }
+        }
+    });
     function toggleCustomDropdown(menuId, triggerBtn) {
         const menu = document.getElementById(menuId);
         if (activeDropdownId && activeDropdownId !== menuId) {

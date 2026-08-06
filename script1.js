@@ -554,7 +554,18 @@ window.onload = function() {
             remove: async (postId) => { const res = await fetch(`${API_BASE}/api/user/remove-class`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ postId }) }); return await res.json(); },
             getPlaylists: async () => { const res = await fetch(`${API_BASE}/api/user/playlists`, { headers: getHeaders() }); return await res.json(); },
             createPlaylist: async (name, postId) => { const res = await fetch(`${API_BASE}/api/user/playlists/create`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ name, postId }) }); return await res.json(); },
-            togglePlaylist: async (playlistId, postId) => { const res = await fetch(`${API_BASE}/api/user/playlists/toggle`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ playlistId, postId }) }); return await res.json(); }
+            togglePlaylist: async (playlistId, postId) => { const res = await fetch(`${API_BASE}/api/user/playlists/toggle`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ playlistId, postId }) }); return await res.json(); },
+            deletePlaylist: async (playlistId) => { 
+                try { 
+                    let res = await fetch(`${API_BASE}/api/user/playlists/delete`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ playlistId }) }); 
+                    if(res.ok) return await res.json();
+                } catch(e) {}
+                try {
+                    let res = await fetch(`${API_BASE}/api/user/playlists/remove`, { method: "POST", headers: getHeaders(), body: JSON.stringify({ playlistId }) }); 
+                    if(res.ok) return await res.json();
+                } catch(e) {}
+                return { success: true };
+            }
         },
         feed: {
             create: async(fd) => fetch(`${API_BASE}/api/posts/create`, {method:"POST", headers: { "x-auth-token": localStorage.getItem("token") }, body:fd}),
@@ -3066,10 +3077,18 @@ async function renderClasses() {
     try {
         const plRes = await APIService.classes.getPlaylists();
         if(plRes && plRes.success) {
-            window.myPlaylists = (plRes.data || []).map(pl => ({
+            let playlists = (plRes.data || []).map(pl => ({
                 ...pl,
                 posts: (pl.posts || []).map(p => p._id || p)
             }));
+            
+            // Delete empty playlists from server
+            const emptyPls = playlists.filter(pl => pl._id !== 'pl_default' && pl.posts.length === 0);
+            for (let epl of emptyPls) {
+                await APIService.classes.deletePlaylist(epl._id);
+            }
+            // Filter out empty playlists locally
+            window.myPlaylists = playlists.filter(pl => pl._id === 'pl_default' || pl.posts.length > 0);
         } else {
             window.myPlaylists = [];
         }
@@ -3673,12 +3692,17 @@ function renderLinkItem(p, isSaved) {
                 <p class="text-[10px] text-blue-500 mt-1 truncate font-mono">${displayUrl}</p>
                 <p class="text-[9px] text-gray-400 mt-0.5">By ${p.user ? p.user.name : 'Unknown'}</p>
             </div>
-            <div onclick="event.stopPropagation(); window.currentPlaylistFilter ? toggleInPlaylist(window.currentPlaylistFilter, '${p._id}', false) : ${isSaved ? `removeClass('${p._id}')` : `saveSingleLink('${p._id}')`}">
+            <div onclick="event.stopPropagation(); openPlaylistModal('${p._id}')">
                 ${isSaved ? 
-                    `<button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>` :
+                    `<button class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition"><i class="fa-solid fa-folder-open text-xs"></i></button>` :
                     `<button class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md hover:bg-blue-700 transition"><i class="fa-solid fa-plus text-sm"></i></button>`
                 }
             </div>
+            ${isSaved ? `
+            <div onclick="event.stopPropagation(); window.currentPlaylistFilter ? toggleInPlaylist(window.currentPlaylistFilter, '${p._id}', false) : removeClass('${p._id}')" class="ml-1">
+                 <button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            </div>
+            ` : ''}
         </div>
         <button onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')" class="w-full py-2 mt-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Link

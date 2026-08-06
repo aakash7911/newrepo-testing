@@ -3198,8 +3198,16 @@ function drawClassesUI() {
                 <div id="linkSearchResultsList" class="flex flex-col gap-3"></div>
             </div>
 
+            <!-- Playlists Filter -->
+            <div class="flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar">
+                <button onclick="window.currentPlaylistFilter=null; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${!window.currentPlaylistFilter ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}">All Saved</button>
+                ${window.myPlaylists.filter(pl => pl._id === 'pl_default' || (pl.posts && pl.posts.length > 0)).map(pl => `
+                    <button onclick="window.currentPlaylistFilter='${pl._id}'; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${window.currentPlaylistFilter === pl._id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}">${pl.name}</button>
+                `).join('')}
+            </div>
+
             <div class="flex justify-between items-end mb-4 border-b pb-2">
-                <h2 class="text-md font-bold text-gray-800">Saved Links</h2>
+                <h2 class="text-md font-bold text-gray-800">${window.currentPlaylistFilter ? window.myPlaylists.find(x => x._id === window.currentPlaylistFilter)?.name : 'All Saved Links'}</h2>
                 <span class="text-xs font-bold text-gray-400">${sortedLinks.length} Links</span>
             </div>
             
@@ -3635,8 +3643,8 @@ function renderLinkItem(p, isSaved) {
     return `
     <div id="link-item-${p._id}" class="bg-white rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-gray-100 p-2.5 flex flex-col gap-1 cursor-pointer hover:shadow-md transition" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')">
         <div class="flex gap-3 items-center w-full">
-            <div class="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 relative border border-blue-100 text-blue-500">
-                <i class="fa-solid fa-link text-2xl"></i>
+            <div class="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 relative border border-blue-100 text-blue-500 overflow-hidden">
+                ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-link text-2xl"></i>`}
             </div>
             <div class="flex-1 min-w-0">
                 <h3 class="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">${title}</h3>

@@ -3148,6 +3148,28 @@ function drawClassesUI() {
 
     const isVideosTab = window.currentClassesTab === 'videos';
 
+    const allSavedVideos = mySavedClasses.filter(p => {
+        const urlStr = [p.video, p.image, p.link, getDecryptedPostContent(p)].filter(Boolean).join(" ").toLowerCase();
+        return (p.video) || (p.category === 'youtube_reel' || p.category === 'reel') || ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
+    });
+    
+    const allSavedLinks = mySavedClasses.filter(p => {
+        const urlStr = [p.video, p.image, p.link, getDecryptedPostContent(p)].filter(Boolean).join(" ").toLowerCase();
+        const isVideo = (p.video) || (p.category === 'youtube_reel' || p.category === 'reel') || ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
+        const hasLink = (p.link) || urlStr.includes('http');
+        return !isVideo && hasLink;
+    });
+
+    let applicablePlaylists = window.myPlaylists.filter(pl => {
+        if (pl._id === 'pl_default') return true;
+        if (!pl.posts || pl.posts.length === 0) return true;
+        if (isVideosTab) {
+            return pl.posts.some(id => allSavedVideos.some(v => v._id === id));
+        } else {
+            return pl.posts.some(id => allSavedLinks.some(l => l._id === id));
+        }
+    });
+
     let contentHtml = '';
     if (isVideosTab) {
         contentHtml = `
@@ -3167,7 +3189,7 @@ function drawClassesUI() {
             <!-- Playlists Filter -->
             <div class="flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar">
                 <button onclick="window.currentPlaylistFilter=null; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${!window.currentPlaylistFilter ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}">All Saved</button>
-                ${window.myPlaylists.filter(pl => pl._id === 'pl_default' || (pl.posts && pl.posts.length > 0)).map(pl => `
+                ${applicablePlaylists.map(pl => `
                     <button onclick="window.currentPlaylistFilter='${pl._id}'; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${window.currentPlaylistFilter === pl._id ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200 hover:bg-purple-50'}">${pl.name}</button>
                 `).join('')}
             </div>
@@ -3201,7 +3223,7 @@ function drawClassesUI() {
             <!-- Playlists Filter -->
             <div class="flex overflow-x-auto gap-2 pb-4 mb-2 no-scrollbar">
                 <button onclick="window.currentPlaylistFilter=null; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${!window.currentPlaylistFilter ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}">All Saved</button>
-                ${window.myPlaylists.filter(pl => pl._id === 'pl_default' || (pl.posts && pl.posts.length > 0)).map(pl => `
+                ${applicablePlaylists.map(pl => `
                     <button onclick="window.currentPlaylistFilter='${pl._id}'; drawClassesUI()" class="px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition border ${window.currentPlaylistFilter === pl._id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'}">${pl.name}</button>
                 `).join('')}
             </div>
@@ -3641,12 +3663,12 @@ function renderLinkItem(p, isSaved) {
     const displayUrl = rawUrl.length > 40 ? rawUrl.substring(0, 40) + '...' : rawUrl;
     
     return `
-    <div id="link-item-${p._id}" class="bg-white rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-gray-100 p-2.5 flex flex-col gap-1 cursor-pointer hover:shadow-md transition" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')">
+    <div id="link-item-${p._id}" class="bg-white rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-gray-100 p-3 flex flex-col gap-2 transition hover:shadow-md">
         <div class="flex gap-3 items-center w-full">
-            <div class="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 relative border border-blue-100 text-blue-500 overflow-hidden">
+            <div class="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 relative border border-blue-100 text-blue-500 overflow-hidden cursor-pointer" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')">
                 ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-link text-2xl"></i>`}
             </div>
-            <div class="flex-1 min-w-0">
+            <div class="flex-1 min-w-0 cursor-pointer" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')">
                 <h3 class="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">${title}</h3>
                 <p class="text-[10px] text-blue-500 mt-1 truncate font-mono">${displayUrl}</p>
                 <p class="text-[9px] text-gray-400 mt-0.5">By ${p.user ? p.user.name : 'Unknown'}</p>
@@ -3658,6 +3680,9 @@ function renderLinkItem(p, isSaved) {
                 }
             </div>
         </div>
+        <button onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')" class="w-full py-2 mt-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Link
+        </button>
     </div>`;
 }
 

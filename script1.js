@@ -3083,6 +3083,8 @@ async function renderClasses() {
 
 window.currentPlaylistFilter = window.currentPlaylistFilter || null;
 
+window.currentClassesTab = window.currentClassesTab || 'videos';
+
 function drawClassesUI() {
     const c = document.getElementById('main-content');
     
@@ -3115,7 +3117,14 @@ function drawClassesUI() {
         classesToShow = mySavedClasses; // Show all
     }
     
-    let sortedClasses = [...classesToShow].sort((a, b) => {
+    let sortedClasses = [...classesToShow].filter(p => {
+        const decContent = getDecryptedPostContent(p);
+        const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
+        const isVideo = (p.video) || 
+                        (p.category === 'youtube_reel' || p.category === 'reel') || 
+                        ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
+        return isVideo;
+    }).sort((a, b) => {
         let titleA = getDecryptedPostContent(a).toLowerCase();
         let titleB = getDecryptedPostContent(b).toLowerCase();
         let numA = titleA.match(/(\d+)/);
@@ -3127,17 +3136,21 @@ function drawClassesUI() {
         return titleA.localeCompare(titleB);
     });
 
-    const html = `
-        <div class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between">
-            <button onclick="renderView('feed')" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-200 transition">
-                <i class="fa-solid fa-arrow-left text-lg"></i>
-            </button>
-            <h1 class="text-lg font-bold text-gray-800 tracking-wide">My Classes 📚</h1>
-            <div class="w-10"></div>
-        </div>
-        <div style="height: 70px;"></div>
-        
-        <div class="p-4">
+    let sortedLinks = [...classesToShow].filter(p => {
+        const decContent = getDecryptedPostContent(p);
+        const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
+        const isVideo = (p.video) || 
+                        (p.category === 'youtube_reel' || p.category === 'reel') || 
+                        ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
+        const hasLink = (p.link) || urlStr.includes('http');
+        return !isVideo && hasLink;
+    }).sort((a, b) => getDecryptedPostContent(a).localeCompare(getDecryptedPostContent(b)));
+
+    const isVideosTab = window.currentClassesTab === 'videos';
+
+    let contentHtml = '';
+    if (isVideosTab) {
+        contentHtml = `
             <div class="relative w-full mb-4">
                 <input type="text" id="classSearchInput" oninput="handleClassSearch()" placeholder="Search courses or videos to add..." class="w-full text-sm px-4 py-3 bg-gray-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-purple-400 pl-10 text-gray-800">
                 <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-gray-400 text-[14px] pointer-events-none"></i>
@@ -3169,6 +3182,57 @@ function drawClassesUI() {
                   sortedClasses.map((p, index) => renderClassItem(p, true, index)).join('')
                 }
             </div>
+        `;
+    } else {
+        contentHtml = `
+            <div class="relative w-full mb-4">
+                <input type="text" id="linkSearchInput" oninput="handleLinkSearch()" placeholder="Search links to add..." class="w-full text-sm px-4 py-3 bg-gray-100 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-400 pl-10 text-gray-800">
+                <i class="fa-solid fa-link absolute left-4 top-3.5 text-gray-400 text-[14px] pointer-events-none"></i>
+            </div>
+            
+            <div id="linkSearchResultsContainer" class="hidden mb-6 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold text-blue-800"><i class="fa-solid fa-magnifying-glass mr-1"></i> Search Results</h2>
+                    <button id="saveAllLinksBtn" onclick="saveAllLinkResults()" class="hidden text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg shadow-md font-bold transition">Save All Links</button>
+                </div>
+                <div id="linkSearchResultsList" class="flex flex-col gap-3"></div>
+            </div>
+
+            <div class="flex justify-between items-end mb-4 border-b pb-2">
+                <h2 class="text-md font-bold text-gray-800">Saved Links</h2>
+                <span class="text-xs font-bold text-gray-400">${sortedLinks.length} Links</span>
+            </div>
+            
+            <div id="savedLinksList" class="flex flex-col gap-3 pb-24">
+                ${sortedLinks.length === 0 ? '<div class="text-center py-10"><i class="fa-solid fa-link text-4xl text-gray-200 mb-3"></i><p class="text-gray-400 text-sm">No saved links found.</p></div>' : 
+                  sortedLinks.map((p) => renderLinkItem(p, true)).join('')
+                }
+            </div>
+        `;
+    }
+
+    const html = `
+        <div class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between">
+            <button onclick="renderView('feed')" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-700 hover:bg-gray-200 transition">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </button>
+            <h1 class="text-lg font-bold text-gray-800 tracking-wide">My Classes 📚</h1>
+            <div class="w-10"></div>
+        </div>
+        <div style="height: 70px;"></div>
+        
+        <div class="p-4">
+            <!-- Tabs Toggle -->
+            <div class="flex bg-gray-100 p-1 rounded-xl mb-5 border border-gray-200 shadow-inner">
+                <button onclick="window.currentClassesTab='videos'; drawClassesUI()" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all ${isVideosTab ? 'bg-white shadow text-purple-700' : 'text-gray-500 hover:text-gray-700'}">
+                    <i class="fa-solid fa-video mr-1"></i> Videos
+                </button>
+                <button onclick="window.currentClassesTab='links'; drawClassesUI()" class="flex-1 py-2 text-sm font-bold rounded-lg transition-all ${!isVideosTab ? 'bg-white shadow text-blue-700' : 'text-gray-500 hover:text-gray-700'}">
+                    <i class="fa-solid fa-link mr-1"></i> Links
+                </button>
+            </div>
+
+            ${contentHtml}
         </div>
     `;
     c.innerHTML = html;
@@ -3433,6 +3497,158 @@ function renderClassItem(p, isSaved, index = -1) {
              <button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
         </div>
         ` : ''}
+        </div>
+    </div>`;
+}
+
+window.linkSearchResults = [];
+async function handleLinkSearch() {
+    const q = document.getElementById('linkSearchInput').value.toLowerCase().trim();
+    const container = document.getElementById('linkSearchResultsContainer');
+    const list = document.getElementById('linkSearchResultsList');
+    const saveAllBtn = document.getElementById('saveAllLinksBtn');
+    
+    if(q.length < 2) {
+        container.classList.add('hidden');
+        window.linkSearchResults = [];
+        return;
+    }
+    
+    // Ensure we have posts to search through
+    if(!window.allPosts || window.allPosts.length === 0) {
+        list.innerHTML = '<p class="text-xs text-center text-gray-500 py-2"><i class="fa-solid fa-spinner fa-spin"></i> Loading links...</p>';
+        container.classList.remove('hidden');
+        try {
+            window.allPosts = await APIService.feed.getAll() || [];
+        } catch(e) { console.error("Error fetching posts for search", e); }
+    }
+    
+    let allP = window.allPosts || [];
+    window.linkSearchResults = allP.filter(p => {
+        const decContent = getDecryptedPostContent(p);
+        const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
+        
+        const isVideo = (p.video) || 
+                        (p.category === 'youtube_reel' || p.category === 'reel') || 
+                        ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
+        
+        const hasLink = (p.link) || urlStr.includes('http');
+        if(isVideo || !hasLink) return false;
+        
+        const contentMatch = decContent && decContent.toLowerCase().includes(q);
+        const nameMatch = p.user && p.user.name && p.user.name.toLowerCase().includes(q);
+        const linkMatch = p.link && p.link.toLowerCase().includes(q);
+        return contentMatch || nameMatch || linkMatch;
+    });
+
+    if(window.linkSearchResults.length > 0) {
+        container.classList.remove('hidden');
+        const savedIds = mySavedClasses.map(sc => sc._id);
+        const toShow = window.linkSearchResults.filter(r => !savedIds.includes(r._id));
+        
+        if(toShow.length === 0) {
+            list.innerHTML = '<p class="text-xs text-center text-blue-600 italic py-2">All matching links are already saved.</p>';
+            saveAllBtn.classList.add('hidden');
+        } else {
+            list.innerHTML = toShow.map(p => renderLinkItem(p, false)).join('');
+            if(toShow.length > 1) {
+                saveAllBtn.classList.remove('hidden');
+            } else {
+                saveAllBtn.classList.add('hidden');
+            }
+        }
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+async function saveAllLinkResults() {
+    const savedIds = mySavedClasses.map(sc => sc._id);
+    const toShow = window.linkSearchResults.filter(r => !savedIds.includes(r._id));
+    if(toShow.length === 0) return;
+    
+    const ids = toShow.map(x => x._id);
+    // Optimistically update
+    toShow.forEach(p => {
+        if(!mySavedClasses.find(sc => sc._id === p._id)) {
+            mySavedClasses.push(p);
+        }
+    });
+    
+    document.getElementById('linkSearchInput').value = '';
+    document.getElementById('linkSearchResultsContainer').classList.add('hidden');
+    drawClassesUI();
+    showToast("Saving links...");
+    
+    try {
+        await APIService.classes.saveMultiple(ids);
+        showToast("Links saved successfully");
+    } catch(e) {
+        console.error("Save all links error", e);
+        showToast("Error saving some links");
+    }
+}
+
+async function saveSingleLink(id) {
+    const p = window.linkSearchResults.find(x => x._id === id);
+    if(p && !mySavedClasses.find(sc => sc._id === id)) {
+        mySavedClasses.push(p);
+    }
+    const searchInput = document.getElementById('linkSearchInput');
+    const q = searchInput ? searchInput.value : '';
+    drawClassesUI();
+    
+    if(q) {
+        const newSearchInput = document.getElementById('linkSearchInput');
+        if(newSearchInput) {
+            newSearchInput.value = q;
+            handleLinkSearch();
+        }
+    }
+    
+    try {
+        await APIService.classes.save(id);
+    } catch(e) {}
+}
+
+window.openLink = function(url, content) {
+    let finalUrl = url;
+    if (!finalUrl) {
+        const match = content.match(/https?:\/\/[^\s]+/);
+        if (match) finalUrl = match[0];
+    }
+    if (finalUrl) {
+        window.open(finalUrl, '_blank');
+    }
+};
+
+function renderLinkItem(p, isSaved) {
+    const decContent = getDecryptedPostContent(p);
+    let title = decContent ? decContent.substring(0, 60) + (decContent.length > 60 ? '...' : '') : 'Shared Link';
+    let rawUrl = p.link || '';
+    if (!rawUrl) {
+        const match = decContent.match(/https?:\/\/[^\s]+/);
+        if (match) rawUrl = match[0];
+    }
+    const displayUrl = rawUrl.length > 40 ? rawUrl.substring(0, 40) + '...' : rawUrl;
+    
+    return `
+    <div id="link-item-${p._id}" class="bg-white rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-gray-100 p-2.5 flex flex-col gap-1 cursor-pointer hover:shadow-md transition" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')">
+        <div class="flex gap-3 items-center w-full">
+            <div class="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 relative border border-blue-100 text-blue-500">
+                <i class="fa-solid fa-link text-2xl"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <h3 class="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">${title}</h3>
+                <p class="text-[10px] text-blue-500 mt-1 truncate font-mono">${displayUrl}</p>
+                <p class="text-[9px] text-gray-400 mt-0.5">By ${p.user ? p.user.name : 'Unknown'}</p>
+            </div>
+            <div onclick="event.stopPropagation(); window.currentPlaylistFilter ? toggleInPlaylist(window.currentPlaylistFilter, '${p._id}', false) : ${isSaved ? `removeClass('${p._id}')` : `saveSingleLink('${p._id}')`}">
+                ${isSaved ? 
+                    `<button class="w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-100 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>` :
+                    `<button class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md hover:bg-blue-700 transition"><i class="fa-solid fa-plus text-sm"></i></button>`
+                }
+            </div>
         </div>
     </div>`;
 }

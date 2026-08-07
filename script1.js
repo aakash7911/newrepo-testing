@@ -3660,14 +3660,27 @@ async function saveSingleLink(id) {
     } catch(e) {}
 }
 
-window.openLink = function(url, content) {
+window.openLink = function(url, content, btn) {
     let finalUrl = url;
     if (!finalUrl) {
         const match = content.match(/https?:\/\/[^\s]+/);
         if (match) finalUrl = match[0];
     }
     if (finalUrl) {
-        window.open(finalUrl, '_blank');
+        if (btn) {
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Opening...';
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+            }, 2000);
+        }
+        
+        const a = document.createElement('a');
+        a.href = finalUrl;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 };
 
@@ -3684,10 +3697,10 @@ function renderLinkItem(p, isSaved) {
     return `
     <div id="link-item-${p._id}" class="bg-white rounded-xl shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)] border border-gray-100 p-3 flex flex-col gap-2 transition hover:shadow-md">
         <div class="flex gap-3 items-center w-full">
-            <div class="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 relative border border-blue-100 text-blue-500 overflow-hidden cursor-pointer" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')">
+            <div class="w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0 relative border border-blue-100 text-blue-500 overflow-hidden cursor-pointer" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}', this)">
                 ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-link text-2xl"></i>`}
             </div>
-            <div class="flex-1 min-w-0 cursor-pointer" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')">
+            <div class="flex-1 min-w-0 cursor-pointer" onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}', this)">
                 <h3 class="text-xs font-bold text-gray-800 line-clamp-2 leading-tight">${title}</h3>
                 <p class="text-[10px] text-blue-500 mt-1 truncate font-mono">${displayUrl}</p>
                 <p class="text-[9px] text-gray-400 mt-0.5">By ${p.user ? p.user.name : 'Unknown'}</p>
@@ -3704,7 +3717,7 @@ function renderLinkItem(p, isSaved) {
             </div>
             ` : ''}
         </div>
-        <button onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}')" class="w-full py-2 mt-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-1.5">
+        <button onclick="openLink('${p.link || ''}', '${(decContent || '').replace(/'/g, "\\'")}', this)" class="w-full py-2 mt-1 rounded-lg bg-blue-600 text-white text-[11px] font-bold shadow-md hover:bg-blue-700 transition flex items-center justify-center gap-1.5">
             <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Link
         </button>
     </div>`;

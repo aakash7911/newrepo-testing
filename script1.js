@@ -3133,7 +3133,7 @@ function drawClassesUI() {
             });
         }
     } else {
-        classesToShow = mySavedClasses; // Show all
+        classesToShow = mySavedClasses.map(sc => window.allPosts.find(p => p._id === sc._id)).filter(Boolean); // Show all with rich data
     }
     
     let sortedClasses = [...classesToShow].filter(p => {

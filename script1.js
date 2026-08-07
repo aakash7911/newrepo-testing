@@ -3161,7 +3161,7 @@ function drawClassesUI() {
         const isVideo = (p.video) || 
                         (p.category === 'youtube_reel' || p.category === 'reel') || 
                         ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
-        const hasLink = (p.link) || urlStr.includes('http');
+        const hasLink = (p.link) || (decContent && decContent.toLowerCase().includes('http'));
         return !isVideo && hasLink;
     }).sort((a, b) => getDecryptedPostContent(a).localeCompare(getDecryptedPostContent(b)));
 
@@ -3173,9 +3173,10 @@ function drawClassesUI() {
         return pl.posts.some(id => {
             const p = window.allPosts.find(x => x._id === id);
             if(!p) return false;
-            const urlStr = [p.video, p.image, p.link, getDecryptedPostContent(p)].filter(Boolean).join(" ").toLowerCase();
+            const decContent = getDecryptedPostContent(p);
+            const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
             const isVideo = (p.video) || (p.category === 'youtube_reel' || p.category === 'reel') || ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
-            const hasLink = (p.link) || urlStr.includes('http');
+            const hasLink = (p.link) || (decContent && decContent.toLowerCase().includes('http'));
             if(isVideosTab) return isVideo;
             else return !isVideo && hasLink;
         });

@@ -3658,37 +3658,13 @@ async function saveSingleLink(id) {
     } catch(e) {}
 }
 
-window.openWebViewModal = function(url) {
-    const modal = document.getElementById('webViewModal');
-    const frame = document.getElementById('webViewFrame');
-    const title = document.getElementById('webViewTitle');
-    const loader = document.getElementById('webViewLoader');
-    
-    if(!modal || !frame) return;
-    
-    try { title.innerText = new URL(url).hostname; } catch(e) { title.innerText = "Web View"; }
-    loader.classList.remove('hidden');
-    frame.src = url;
-    modal.classList.remove('hidden');
-    
-    window.currentWebViewUrl = url;
-};
-
-window.closeWebView = function() {
-    const modal = document.getElementById('webViewModal');
-    const frame = document.getElementById('webViewFrame');
-    if(modal) modal.classList.add('hidden');
-    if(frame) frame.src = 'about:blank';
-};
-
-window.openInExternalBrowser = function() {
-    if(window.currentWebViewUrl) {
-        const a = document.createElement('a');
-        a.href = window.currentWebViewUrl;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+window.openInGenericModal = function(url) {
+    if (!url.startsWith('http')) url = 'https://' + url;
+    const modal = document.getElementById('genericModal');
+    const contentDiv = document.getElementById('modalContent');
+    if(modal && contentDiv) {
+        contentDiv.innerHTML = `<div class="flex flex-col h-[80vh]"><div class="flex justify-between items-center mb-2 px-1 border-b pb-2"><div class="flex flex-col w-3/4"><h3 class="font-bold text-sm truncate text-gray-800">Browser View</h3><span class="text-[10px] text-gray-400 truncate">${url}</span></div><a href="${url}" target="_blank" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold transition hover:bg-gray-800">External <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a></div><div class="flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative"><p class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400 text-xs text-center z-0"><i class="fa-solid fa-circle-notch fa-spin mb-2 text-xl"></i><br>Loading...</p><iframe src="${url}" class="w-full h-full relative z-10 bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox allow-top-navigation" onerror="this.style.display='none';"></iframe></div></div>`;
+        modal.classList.remove('hidden');
     }
 };
 
@@ -3707,10 +3683,10 @@ window.openLink = function(url, content, btn) {
             setTimeout(() => {
                 btn.innerHTML = originalHtml;
                 btn.classList.remove('opacity-80', 'pointer-events-none');
-                openWebViewModal(finalUrl);
+                window.openInGenericModal(finalUrl);
             }, 800);
         } else {
-            openWebViewModal(finalUrl);
+            window.openInGenericModal(finalUrl);
         }
     }
 };

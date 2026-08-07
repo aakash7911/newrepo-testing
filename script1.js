@@ -3657,6 +3657,40 @@ async function saveSingleLink(id) {
     } catch(e) {}
 }
 
+window.openWebViewModal = function(url) {
+    const modal = document.getElementById('webViewModal');
+    const frame = document.getElementById('webViewFrame');
+    const title = document.getElementById('webViewTitle');
+    const loader = document.getElementById('webViewLoader');
+    
+    if(!modal || !frame) return;
+    
+    try { title.innerText = new URL(url).hostname; } catch(e) { title.innerText = "Web View"; }
+    loader.classList.remove('hidden');
+    frame.src = url;
+    modal.classList.remove('hidden');
+    
+    window.currentWebViewUrl = url;
+};
+
+window.closeWebView = function() {
+    const modal = document.getElementById('webViewModal');
+    const frame = document.getElementById('webViewFrame');
+    if(modal) modal.classList.add('hidden');
+    if(frame) frame.src = 'about:blank';
+};
+
+window.openInExternalBrowser = function() {
+    if(window.currentWebViewUrl) {
+        const a = document.createElement('a');
+        a.href = window.currentWebViewUrl;
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+};
+
 window.openLink = function(url, content, btn) {
     let finalUrl = url;
     if (!finalUrl) {
@@ -3666,18 +3700,17 @@ window.openLink = function(url, content, btn) {
     if (finalUrl) {
         if (btn) {
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Opening...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Wait...';
+            btn.classList.add('opacity-80', 'pointer-events-none');
+            
             setTimeout(() => {
                 btn.innerHTML = originalHtml;
-            }, 2000);
+                btn.classList.remove('opacity-80', 'pointer-events-none');
+                openWebViewModal(finalUrl);
+            }, 800);
+        } else {
+            openWebViewModal(finalUrl);
         }
-        
-        const a = document.createElement('a');
-        a.href = finalUrl;
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
     }
 };
 

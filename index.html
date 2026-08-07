@@ -967,7 +967,32 @@ body.theme-red .profile-banner {
     </div>
 </div>
 
-    <script src="script1.js?v=152"></script>
+<!-- Web View Modal -->
+<div id="webViewModal" class="fixed inset-0 bg-white z-[120] hidden flex flex-col">
+    <div class="h-14 bg-gray-100 border-b flex items-center justify-between px-4 flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <button onclick="closeWebView()" class="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-gray-700 hover:bg-gray-50 transition">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div class="text-xs font-bold text-gray-800 truncate w-48" id="webViewTitle">Loading...</div>
+        </div>
+        <button onclick="openInExternalBrowser()" class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 shadow-sm transition" title="Open in Browser">
+            <i class="fa-solid fa-earth-americas"></i>
+        </button>
+    </div>
+    <div class="w-full h-1 bg-gray-200 overflow-hidden" id="webViewLoader">
+        <div class="h-full bg-blue-500 w-1/2 animate-[progress_1s_ease-in-out_infinite]"></div>
+    </div>
+    <style>
+        @keyframes progress {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+        }
+    </style>
+    <iframe id="webViewFrame" class="flex-1 w-full border-none bg-gray-50" sandbox="allow-same-origin allow-scripts allow-popups allow-forms" onload="document.getElementById('webViewLoader').classList.add('hidden')"></iframe>
+</div>
+
+    <script src="script1.js?v=154"></script>
     <script>
         window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
     </script>

@@ -3167,26 +3167,18 @@ function drawClassesUI() {
 
     const isVideosTab = window.currentClassesTab === 'videos';
 
-    const allSavedVideos = mySavedClasses.filter(p => {
-        const urlStr = [p.video, p.image, p.link, getDecryptedPostContent(p)].filter(Boolean).join(" ").toLowerCase();
-        return (p.video) || (p.category === 'youtube_reel' || p.category === 'reel') || ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
-    });
-    
-    const allSavedLinks = mySavedClasses.filter(p => {
-        const urlStr = [p.video, p.image, p.link, getDecryptedPostContent(p)].filter(Boolean).join(" ").toLowerCase();
-        const isVideo = (p.video) || (p.category === 'youtube_reel' || p.category === 'reel') || ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
-        const hasLink = (p.link) || urlStr.includes('http');
-        return !isVideo && hasLink;
-    });
-
     let applicablePlaylists = window.myPlaylists.filter(pl => {
         if (pl._id === 'pl_default') return true;
         if (!pl.posts || pl.posts.length === 0) return true;
-        if (isVideosTab) {
-            return pl.posts.some(id => allSavedVideos.some(v => v._id === id));
-        } else {
-            return pl.posts.some(id => allSavedLinks.some(l => l._id === id));
-        }
+        return pl.posts.some(id => {
+            const p = window.allPosts.find(x => x._id === id);
+            if(!p) return false;
+            const urlStr = [p.video, p.image, p.link, getDecryptedPostContent(p)].filter(Boolean).join(" ").toLowerCase();
+            const isVideo = (p.video) || (p.category === 'youtube_reel' || p.category === 'reel') || ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
+            const hasLink = (p.link) || urlStr.includes('http');
+            if(isVideosTab) return isVideo;
+            else return !isVideo && hasLink;
+        });
     });
 
     let contentHtml = '';
@@ -3819,31 +3811,12 @@ async function saveAllClassResults() {
 }
 
 async function removeClass(postId) {
-    if(!confirm("Are you sure you want to remove this class from ALL saved lists?")) return;
-    
-    if(window.myPlaylists) {
-        let emptiedPlaylists = [];
-        window.myPlaylists.forEach(pl => {
-            pl.posts = pl.posts.filter(id => id !== postId);
-            if (pl._id !== 'pl_default' && pl.posts.length === 0) emptiedPlaylists.push(pl._id);
-        });
-        
-        window.myPlaylists = window.myPlaylists.filter(pl => pl._id === 'pl_default' || pl.posts.length > 0);
-        
-        if (window.currentPlaylistFilter) {
-            const pl = window.myPlaylists.find(x => x._id === window.currentPlaylistFilter);
-            if (!pl || pl.posts.length === 0) window.currentPlaylistFilter = null;
-        }
-        
-        for (let plId of emptiedPlaylists) {
-            APIService.classes.deletePlaylist(plId).catch(console.error);
-        }
-    }
+    if(!confirm("Are you sure you want to remove this class from 'All Saved'? (It will remain in your custom playlists if added)")) return;
     
     try {
         const res = await APIService.classes.remove(postId);
         if(res && res.success) {
-            showToast("Class removed!");
+            showToast("Class removed from All Saved!");
             await renderClasses();
         } else {
             showToast("Failed to remove (Check Backend)");

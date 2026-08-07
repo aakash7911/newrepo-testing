@@ -3402,10 +3402,15 @@ window.toggleInPlaylist = async function(plId, postIdsStr, fromModal = true) {
             // Fetch updated playlists to ensure everything is perfectly synced (including auto-deletion)
             const plRes = await APIService.classes.getPlaylists();
             if(plRes && plRes.success) {
-                window.myPlaylists = (plRes.data || []).map(pl => ({
+                let freshPlaylists = (plRes.data || []).map(pl => ({
                     ...pl,
                     posts: (pl.posts || []).map(p => p._id || p)
                 }));
+                const emptyPls = freshPlaylists.filter(pl => pl._id !== 'pl_default' && pl.posts.length === 0);
+                for (let epl of emptyPls) {
+                    await APIService.classes.deletePlaylist(epl._id);
+                }
+                window.myPlaylists = freshPlaylists.filter(pl => pl._id === 'pl_default' || pl.posts.length > 0);
             }
             
             const syncedPl = window.myPlaylists.find(x => x._id === plId);
@@ -3817,12 +3822,21 @@ async function removeClass(postId) {
     if(!confirm("Are you sure you want to remove this class from ALL saved lists?")) return;
     
     if(window.myPlaylists) {
+        let emptiedPlaylists = [];
         window.myPlaylists.forEach(pl => {
             pl.posts = pl.posts.filter(id => id !== postId);
+            if (pl._id !== 'pl_default' && pl.posts.length === 0) emptiedPlaylists.push(pl._id);
         });
+        
+        window.myPlaylists = window.myPlaylists.filter(pl => pl._id === 'pl_default' || pl.posts.length > 0);
+        
         if (window.currentPlaylistFilter) {
             const pl = window.myPlaylists.find(x => x._id === window.currentPlaylistFilter);
             if (!pl || pl.posts.length === 0) window.currentPlaylistFilter = null;
+        }
+        
+        for (let plId of emptiedPlaylists) {
+            APIService.classes.deletePlaylist(plId).catch(console.error);
         }
     }
     

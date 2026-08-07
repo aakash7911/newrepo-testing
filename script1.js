@@ -3161,7 +3161,7 @@ function drawClassesUI() {
         const isVideo = (p.video) || 
                         (p.category === 'youtube_reel' || p.category === 'reel') || 
                         ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
-        const hasLink = (p.link) || (decContent && decContent.toLowerCase().includes('http'));
+        const hasLink = (p.link && p.link !== 'null' && p.link !== 'undefined') || (decContent && decContent.toLowerCase().includes('http'));
         return !isVideo && hasLink;
     }).sort((a, b) => getDecryptedPostContent(a).localeCompare(getDecryptedPostContent(b)));
 
@@ -3176,7 +3176,7 @@ function drawClassesUI() {
             const decContent = getDecryptedPostContent(p);
             const urlStr = [p.video, p.image, p.link, decContent].filter(Boolean).join(" ").toLowerCase();
             const isVideo = (p.video) || (p.category === 'youtube_reel' || p.category === 'reel') || ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
-            const hasLink = (p.link) || (decContent && decContent.toLowerCase().includes('http'));
+            const hasLink = (p.link && p.link !== 'null' && p.link !== 'undefined') || (decContent && decContent.toLowerCase().includes('http'));
             if(isVideosTab) return isVideo;
             else return !isVideo && hasLink;
         });
@@ -3579,7 +3579,7 @@ async function handleLinkSearch() {
                         (p.category === 'youtube_reel' || p.category === 'reel') || 
                         ['.mp4', '.webm', '.mov', '.ogg', 'youtube.com', 'youtu.be'].some(str => urlStr.includes(str));
         
-        const hasLink = (p.link) || urlStr.includes('http');
+        const hasLink = (p.link && p.link !== 'null' && p.link !== 'undefined') || (decContent && decContent.toLowerCase().includes('http'));
         if(isVideo || !hasLink) return false;
         
         const contentMatch = decContent && decContent.toLowerCase().includes(q);

@@ -1418,12 +1418,22 @@ function trackCategoryFromPost(postId) {
     function openLink(url) {
         if (!url.startsWith('http')) url = 'https://' + url;
         document.getElementById('modalContent').innerHTML = `<div class="flex flex-col h-[80vh]"><div class="flex justify-between items-center mb-2 px-1 border-b pb-2"><div class="flex flex-col w-3/4"><h3 class="font-bold text-sm truncate text-gray-800">Browser View</h3><span class="text-[10px] text-gray-400 truncate">${url}</span></div><a href="${url}" target="_blank" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold transition hover:bg-gray-800">External <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a></div><div class="flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative"><p class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400 text-xs text-center z-0"><i class="fa-solid fa-circle-notch fa-spin mb-2 text-xl"></i><br>Loading...</p><iframe src="${url}" class="w-full h-full relative z-10 bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox allow-top-navigation" onerror="this.style.display='none';"></iframe></div></div>`;
-        document.getElementById('genericModal').classList.remove('hidden');
+        const modal = document.getElementById('genericModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            if (modal.children.length > 0) modal.children[0].classList.remove('scale-95');
+        }, 10);
     }
     function openJobLink(url) {
         if (!url.startsWith('http')) url = 'https://' + url;
         document.getElementById('modalContent').innerHTML = `<div class="flex flex-col h-[80vh]"><div class="flex justify-between items-center mb-2 px-1 border-b pb-2"><div class="flex flex-col w-3/4"><h3 class="font-bold text-sm truncate text-gray-800">Browser View</h3><span class="text-[10px] text-gray-400 truncate">${url}</span></div><a href="${url}" target="_blank" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold transition hover:bg-gray-800">External <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a></div><div class="flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative"><iframe src="${url}" class="w-full h-full relative z-10 bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox allow-top-navigation"></iframe></div></div>`;
-        document.getElementById('genericModal').classList.remove('hidden');
+        const modal = document.getElementById('genericModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            if (modal.children.length > 0) modal.children[0].classList.remove('scale-95');
+        }, 10);
     }
     let cropperInstance = null;
     let selectedImages = []; 
@@ -3665,6 +3675,10 @@ window.openInGenericModal = function(url) {
     if(modal && contentDiv) {
         contentDiv.innerHTML = `<div class="flex flex-col h-[80vh]"><div class="flex justify-between items-center mb-2 px-1 border-b pb-2"><div class="flex flex-col w-3/4"><h3 class="font-bold text-sm truncate text-gray-800">Browser View</h3><span class="text-[10px] text-gray-400 truncate">${url}</span></div><a href="${url}" target="_blank" class="bg-black text-white px-3 py-1.5 rounded-full text-[10px] font-bold transition hover:bg-gray-800">External <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i></a></div><div class="flex-1 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 relative"><p class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-400 text-xs text-center z-0"><i class="fa-solid fa-circle-notch fa-spin mb-2 text-xl"></i><br>Loading...</p><iframe src="${url}" class="w-full h-full relative z-10 bg-white" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-popups-to-escape-sandbox allow-top-navigation" onerror="this.style.display='none';"></iframe></div></div>`;
         modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            if (modal.children.length > 0) modal.children[0].classList.remove('scale-95');
+        }, 10);
     }
 };
 

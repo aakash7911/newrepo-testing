@@ -2662,7 +2662,7 @@ async function renderReels(container) {
                             <i class="fa-solid fa-volume-high text-xs"></i>
                         </div>
                     `}
-                    <div class="reel-actions-overlay" style="z-index: 20;">
+                    <div class="reel-actions-overlay" style="z-index: 20; bottom: 68px !important;">
                         <div class="flex flex-col items-center mb-4" onclick="toggleReelLike('${p._id}')">
                             <i class="fa-solid fa-heart text-3xl transition-transform active:scale-150 ${isLiked ? 'text-red-500' : 'text-white'}" id="rlike-icon-${p._id}"></i>
                             <span class="text-xs font-bold shadow-sm" id="rlike-cnt-${p._id}">${p.likes?.length || 0}</span>
@@ -2683,7 +2683,7 @@ async function renderReels(container) {
                             <span class="text-[9px] font-bold hidden" id="dl-perc-${p._id}">0%</span>
                         </div>
                     </div>
-                    <div class="reel-info-overlay" style="z-index: 20;">
+                    <div class="reel-info-overlay" style="z-index: 20; bottom: 68px !important;">
                         <div class="flex items-center gap-2 mb-2">
                             <img src="${p.userId?.photo || 'https://placehold.co/40'}" 
                                 class="w-10 h-10 rounded-full border-2 border-white object-cover cursor-pointer" 
@@ -3955,6 +3955,24 @@ document.getElementById('app-screen').addEventListener('scroll', (e) => {
     }
     lastScrollY = currentScrollY;
 }, { passive: true });
+
+// Inject WebView Back Button if not present
+const webViewTitle = document.getElementById('webViewTitle');
+if (webViewTitle && !document.getElementById('webViewBackButton')) {
+    const backBtn = document.createElement('button');
+    backBtn.id = 'webViewBackButton';
+    backBtn.className = 'w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 shadow-sm transition mr-2';
+    backBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+    backBtn.onclick = function() {
+        try {
+            document.getElementById('webViewFrame').contentWindow.history.back();
+        } catch(e) {
+            console.warn("Cannot go back in iframe:", e);
+        }
+    };
+    webViewTitle.parentNode.insertBefore(backBtn, webViewTitle);
+}
+
 let backPressCount = 0;
 window.history.pushState({ page: 'zobbly-main' }, null, window.location.href);
 window.addEventListener('popstate', function (event) {

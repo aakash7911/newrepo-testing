@@ -2613,6 +2613,7 @@ async function renderReels(container) {
                 const isMe = p.userId?._id === myId;
                 const isYouTube = p.category === 'youtube_reel' || (videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')));
                 let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&]+)/)?.[1] : null;
+                let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
                 let posterUrl = p.image || ""; 
                 if (isYouTube && ytId) {
                     posterUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;

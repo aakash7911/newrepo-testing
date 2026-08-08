@@ -1900,9 +1900,9 @@ function togglePostMenu(postId, event) {
                             </div>
                             ${mediaUrl ? `
                             <div class="w-full bg-black min-h-[300px] flex items-center justify-center relative overflow-hidden">
-                                ${(p.category === 'youtube_reel' && (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be'))) ? 
+                                ${(ytId) ? 
                                     (function(){
-                                        const ytid = mediaUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&]+)/)?.[1];
+                                        const ytid = ytId;
                                         return `<div id="yt-container-${p._id}" class="w-full relative aspect-[9/16] max-h-[500px] mx-auto bg-black">
                                                     <div class="absolute inset-0 z-10 cursor-pointer flex items-center justify-center" id="yt-overlay-${p._id}" onclick="
                                                         const cont = document.getElementById('yt-container-${p._id}');

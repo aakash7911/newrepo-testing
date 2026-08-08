@@ -2613,7 +2613,6 @@ async function renderReels(container) {
                 const isMe = p.userId?._id === myId;
                 const isYouTube = p.category === 'youtube_reel' || (videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')));
                 let ytId = isYouTube ? videoUrl.match(/(?:embed\/|v=|youtu\.be\/|shorts\/)([^?&]+)/)?.[1] : null;
-                let thumbStyle = ytId ? `style="background: url('https://img.youtube.com/vi/${ytId}/hqdefault.jpg') center/cover no-repeat;"` : "";
                 let posterUrl = p.image || ""; 
                 if (isYouTube && ytId) {
                     posterUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
@@ -2629,7 +2628,7 @@ async function renderReels(container) {
                 <div class="reel-card" id="reel-${p._id}">
                     ${isYouTube ? `
                         <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center">
-                            <div class="w-[95%] h-[85%] relative rounded-2xl overflow-hidden shadow-2xl bg-black" ${thumbStyle}>
+                            <div class="w-full h-full relative overflow-hidden bg-black" ${thumbStyle}>
                                 <iframe 
                                     id="yt-iframe-${p._id}"
                                     class="youtube-iframe absolute left-0 w-full border-none pointer-events-none opacity-0 transition-opacity duration-500" 
@@ -2647,7 +2646,7 @@ async function renderReels(container) {
                         <div class="absolute inset-0 z-10 bg-transparent cursor-pointer" onclick="handleYtAction(event, '${p._id}')"></div>
                     ` : `
                         <div class="absolute inset-0 flex items-center justify-center z-0 bg-black">
-                            <div class="w-[95%] h-[85%] relative rounded-2xl overflow-hidden shadow-2xl bg-black">
+                            <div class="w-full h-full relative overflow-hidden bg-black">
                                 <video loop muted playsinline webkit-playsinline preload="auto" poster="${posterUrl}"
                                     class="reel-video absolute inset-0 w-full h-full object-cover z-20" 
                                     id="vid-${p._id}"

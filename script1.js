@@ -2769,6 +2769,13 @@ async function renderReels(container) {
                             iframe.contentWindow.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
                         }
                     }
+                    const textId = entry.target.id.replace('reel-', 'reel-text-');
+                    const textEl = document.getElementById(textId);
+                    if (textEl && !textEl.classList.contains('line-clamp-custom')) {
+                        textEl.classList.add('line-clamp-custom');
+                        const btn = textEl.nextElementSibling;
+                        if (btn && btn.tagName === 'BUTTON') btn.innerText = 'See more...';
+                    }
                 }
             });
         }, { threshold: 0.7 }); 

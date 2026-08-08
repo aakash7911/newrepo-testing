@@ -1389,7 +1389,7 @@ function trackCategoryFromPost(postId) {
 }
     function toggleSeeMore(elementId, btn) {
         const el = document.getElementById(elementId);
-        if(el.classList.contains('line-clamp-custom')) { el.classList.remove('line-clamp-custom'); btn.innerText = "Show less"; } else { el.classList.add('line-clamp-custom'); btn.innerText = "See more..."; }
+        if(el.classList.contains('line-clamp-custom')) { el.classList.remove('line-clamp-custom'); btn.innerText = "See less"; } else { el.classList.add('line-clamp-custom'); btn.innerText = "See more..."; }
     }
     async function searchUsersFromFeed() {
         const query = document.getElementById('feedSearchInput').value;
@@ -2624,7 +2624,7 @@ async function renderReels(container) {
                     videoUrl = `https://www.youtube.com/embed/${ytId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&autoplay=0&playsinline=1&iv_load_policy=3&disablekb=1`;
                 }
                 const displayContent = p.content || '';
-                const isLongText = displayContent.length > 120 || (displayContent.match(/\n/g) || []).length > 2;
+                const isLongText = displayContent.length > 70 || (displayContent.match(/\n/g) || []).length > 1;
                 return `
                 <div class="reel-card" id="reel-${p._id}">
                     ${isYouTube ? `

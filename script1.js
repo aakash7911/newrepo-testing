@@ -2658,7 +2658,7 @@ async function renderReels(container) {
                             </div>
                         </div>
                         <!-- native mute stat removed -->
-                        <div class="absolute bottom-24 right-4 z-30 bg-black/20 p-2 rounded-full text-white pointer-events-none" id="mini-mute-${p._id}">
+                        <div class="absolute top-1/2 right-4 transform -translate-y-1/2 z-30 bg-black/20 p-2 rounded-full text-white pointer-events-none" id="mini-mute-${p._id}">
                             <i class="fa-solid fa-volume-high text-xs"></i>
                         </div>
                     `}

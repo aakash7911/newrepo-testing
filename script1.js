@@ -1172,9 +1172,9 @@ async function renderFeed(c) {
             globalPosts.sort((a,b) => b.matchScore - a.matchScore);
             let mixedPosts = [...localPosts, ...globalPosts];
             if (mixedPosts.length === 0) {
-                 c.innerHTML += `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`;
+                 c.insertAdjacentHTML('beforeend', `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`);
             } else {
-                c.innerHTML += mixedPosts.map(p => {
+                c.insertAdjacentHTML('beforeend', mixedPosts.map(p => {
                     const userName = p.userId.name;
                     const userPhoto = p.userId.photo || "https://placehold.co/50";
                     const userId = p.userId._id;
@@ -1306,14 +1306,14 @@ async function renderFeed(c) {
                             </div>
                         </div>
                     </div>`;
-                }).join('');
-                c.innerHTML += `<div class="h-24 w-full"></div>`;
+                }).join(''));
+                c.insertAdjacentHTML('beforeend', `<div class="h-24 w-full"></div>`);
             }
-        } else { c.innerHTML += `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`; }
+        } else { c.insertAdjacentHTML('beforeend', `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`); }
     } catch(e) { 
         const errLoader = document.getElementById('feed-loader');
         if (errLoader) errLoader.remove();
-        c.innerHTML += '<p class="text-center text-red-500 text-sm mt-4">Error loading feed.</p>'; 
+        c.insertAdjacentHTML('beforeend', '<p class="text-center text-red-500 text-sm mt-4">Error loading feed.</p>'); 
     }
     observeFeedVideos();
     applyTranslations();

@@ -2605,7 +2605,7 @@ async function renderReels(container) {
             window.targetReelToOpen = null; 
         }
         const myId = localStorage.getItem("userId");
-        container.innerHTML = `<div class="reels-wrapper">
+        container.innerHTML = `<div class="reels-wrapper" style="height: calc(100vh - 64px); height: calc(100dvh - 64px);">
             ${videoPosts.map((p, index) => {
                 let videoUrl = p.video || p.image;
                 const isLiked = p.likes?.includes(myId);
@@ -2626,7 +2626,7 @@ async function renderReels(container) {
                 const displayContent = p.content || '';
                 const isLongText = displayContent.length > 70 || (displayContent.match(/\n/g) || []).length > 1;
                 return `
-                <div class="reel-card" id="reel-${p._id}">
+                <div class="reel-card" id="reel-${p._id}" style="height: calc(100vh - 64px); height: calc(100dvh - 64px);">
                     ${isYouTube ? `
                         <div class="absolute inset-0 z-0 bg-black pointer-events-none flex items-center justify-center">
                             <div class="w-full h-full relative overflow-hidden bg-black" ${thumbStyle}>
@@ -2662,7 +2662,7 @@ async function renderReels(container) {
                             <i class="fa-solid fa-volume-high text-xs"></i>
                         </div>
                     `}
-                    <div class="reel-actions-overlay" style="z-index: 20; bottom: 68px !important;">
+                    <div class="reel-actions-overlay" style="z-index: 20; bottom: 15px !important;">
                         <div class="flex flex-col items-center mb-4" onclick="toggleReelLike('${p._id}')">
                             <i class="fa-solid fa-heart text-3xl transition-transform active:scale-150 ${isLiked ? 'text-red-500' : 'text-white'}" id="rlike-icon-${p._id}"></i>
                             <span class="text-xs font-bold shadow-sm" id="rlike-cnt-${p._id}">${p.likes?.length || 0}</span>
@@ -2683,7 +2683,7 @@ async function renderReels(container) {
                             <span class="text-[9px] font-bold hidden" id="dl-perc-${p._id}">0%</span>
                         </div>
                     </div>
-                    <div class="reel-info-overlay" style="z-index: 20; bottom: 68px !important;">
+                    <div class="reel-info-overlay" style="z-index: 20; bottom: 15px !important;">
                         <div class="flex items-center gap-2 mb-2">
                             <img src="${p.userId?.photo || 'https://placehold.co/40'}" 
                                 class="w-10 h-10 rounded-full border-2 border-white object-cover cursor-pointer" 
@@ -2692,7 +2692,7 @@ async function renderReels(container) {
                                 <span class="font-bold text-white shadow-sm cursor-pointer" onclick="viewUserProfile('${p.userId?._id}')">@${p.userId?.username || 'user'}</span>
                                 ${!isMe ? `
                                 <button id="rfollow-${p._id}" onclick="handleReelFollow('${p.userId?._id}', '${p._id}')" 
-                                    class="text-[11px] font-black uppercase text-left transition-all ${isFollowing ? 'text-gray-300' : 'text-purple-400'}">
+                                    class="text-[10px] font-black uppercase transition-all px-3 py-1 mt-1 rounded-full shadow-md active:scale-95 ${isFollowing ? 'bg-gray-200 text-gray-700' : 'bg-purple-600 text-white hover:bg-purple-700'}">
                                     ${isFollowing ? 'Following' : 'Follow'}
                                 </button>` : ''}
                             </div>

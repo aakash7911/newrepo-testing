@@ -1141,8 +1141,7 @@ async function renderFeed(c) {
     try {
         let posts = await APIService.feed.getAll();
         if (window.currentActiveView !== 'feed') return;
-        const loader = document.getElementById('feed-loader');
-        if (loader) loader.remove();
+
         const myId = localStorage.getItem("userId");
         const myCountry = localStorage.getItem("userCountry") || "India";
         const safeBlockedList = (myBlockedUsers || []).map(u => (typeof u === 'object' && u._id) ? u._id : u);
@@ -1171,6 +1170,8 @@ async function renderFeed(c) {
             localPosts.sort((a,b) => b.matchScore - a.matchScore);
             globalPosts.sort((a,b) => b.matchScore - a.matchScore);
             let mixedPosts = [...localPosts, ...globalPosts];
+            const loader = document.getElementById('feed-loader');
+            if (loader) loader.remove();
             if (mixedPosts.length === 0) {
                  c.innerHTML += `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`;
             } else {
@@ -1309,7 +1310,11 @@ async function renderFeed(c) {
                 }).join('');
                 c.innerHTML += `<div class="h-24 w-full"></div>`;
             }
-        } else { c.innerHTML += `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`; }
+        } else { 
+            const loader = document.getElementById('feed-loader');
+            if (loader) loader.remove();
+            c.innerHTML += `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`; 
+        }
     } catch(e) { 
         const errLoader = document.getElementById('feed-loader');
         if (errLoader) errLoader.remove();

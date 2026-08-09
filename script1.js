@@ -1145,6 +1145,8 @@ async function renderFeed(c) {
         const myId = localStorage.getItem("userId");
         const myCountry = localStorage.getItem("userCountry") || "India";
         const safeBlockedList = (myBlockedUsers || []).map(u => (typeof u === 'object' && u._id) ? u._id : u);
+        setTimeout(() => {
+        try {
         if(posts && posts.length > 0) {
             let feedOnlyPosts = posts.filter(p => p.category !== 'reel' && p.category !== 'youtube_reel');
             let preferredCategories = [];
@@ -1315,13 +1317,19 @@ async function renderFeed(c) {
             if (loader) loader.remove();
             c.innerHTML += `<div class="text-center text-gray-500 mt-10"><p>${txt('noPosts')}</p></div>`; 
         }
+        observeFeedVideos();
+        applyTranslations();
+        } catch(err) {
+            const errLoader = document.getElementById('feed-loader');
+            if (errLoader) errLoader.remove();
+            c.innerHTML += '<p class="text-center text-red-500 text-sm mt-4">Error processing feed.</p>'; 
+        }
+        }, 500);
     } catch(e) { 
         const errLoader = document.getElementById('feed-loader');
         if (errLoader) errLoader.remove();
         c.innerHTML += '<p class="text-center text-red-500 text-sm mt-4">Error loading feed.</p>'; 
     }
-    observeFeedVideos();
-    applyTranslations();
 }
 let feedObserver = null;
 function observeFeedVideos() {

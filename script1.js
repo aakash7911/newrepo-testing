@@ -825,6 +825,7 @@ function renderView(view) {
             scrollContainer.style.paddingBottom = "100px";
         }
     }
+    document.body.style.overflow = (view === 'reels' || view === 'chat') ? 'hidden' : '';
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active', 'text-purple-600'));
     let btnId = (view === 'notifications') ? 'nav-notifs' : `nav-${view}`;
     let activeBtn = document.getElementById(btnId);

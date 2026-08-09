@@ -1639,7 +1639,7 @@ function trackCategoryFromPost(postId) {
         input.value = "";
         try { await APIService.feed.comment(id, text); } catch(e) { console.error("Comment failed"); }
     }
-    async function toggleFollow(id, btn) { const res = await APIService.user.follow(id); if(res.status === 'followed') { btn.innerText = txt("unfollow"); btn.className = "btn-follow btn-following"; myFollowing.push(id); showToast("Following!"); } else { btn.innerText = txt("follow"); btn.className = "btn-follow btn-not-following"; myFollowing = myFollowing.filter(uid => uid !== id); showToast("Unfollowed"); } updateMyStats(); }
+    async function toggleFollow(id, btn) { const res = await APIService.user.follow(id); if(res.status === 'followed') { btn.innerText = txt("unfollow"); if(!btn.className.includes('btn-zobbly')) btn.className = "btn-follow btn-following"; myFollowing.push(id); showToast("Following!"); } else { btn.innerText = txt("follow"); if(!btn.className.includes('btn-zobbly')) btn.className = "btn-follow btn-not-following"; myFollowing = myFollowing.filter(uid => uid !== id); showToast("Unfollowed"); } updateMyStats(); }
     function openConfirmModal(title, message, actionCallback) { 
         document.getElementById('modalTitle').innerText = title; 
         document.getElementById('modalMessage').innerText = message; 
@@ -2836,9 +2836,10 @@ async function postReelComment(postId) {
 async function handleReelFollow(userId, postId) {
     const btn = document.getElementById(`rfollow-${postId}`);
     const originalText = btn.innerText;
-    const isFollowingNow = originalText === 'Follow';
+    const isCurrentlyFollowing = originalText.toUpperCase() === 'FOLLOWING';
+    const isFollowingNow = !isCurrentlyFollowing;
     btn.innerText = isFollowingNow ? 'Following' : 'Follow';
-    btn.className = `text-[11px] font-black uppercase text-left transition-all ${isFollowingNow ? 'text-gray-300' : 'text-purple-400'}`;
+    btn.className = `text-[10px] font-black uppercase transition-all px-3 py-1 mt-1 rounded-full shadow-md active:scale-95 ${isFollowingNow ? 'bg-gray-200 text-gray-700' : 'bg-purple-600 text-white hover:bg-purple-700'}`;
     try {
         const res = await APIService.user.follow(userId);
         if (res.status === 'followed') {
@@ -2848,7 +2849,7 @@ async function handleReelFollow(userId, postId) {
         }
     } catch (e) {
         btn.innerText = originalText;
-        btn.className = `text-[11px] font-black uppercase text-left transition-all ${originalText === 'Following' ? 'text-gray-300' : 'text-purple-400'}`;
+        btn.className = `text-[10px] font-black uppercase transition-all px-3 py-1 mt-1 rounded-full shadow-md active:scale-95 ${isCurrentlyFollowing ? 'bg-gray-200 text-gray-700' : 'bg-purple-600 text-white hover:bg-purple-700'}`;
         showToast("Error updating follow");
     }
 }

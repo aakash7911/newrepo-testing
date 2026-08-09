@@ -2177,6 +2177,8 @@ async function renderChat(c) {
 window.unreadChatUsers = window.unreadChatUsers || new Set();
 window.readChatTimestamps = window.readChatTimestamps || {};
 async function loadConversations(isPolling = false) { 
+    const searchInput = document.getElementById('chat-search-input');
+    if(isPolling && searchInput && searchInput.value.trim().length > 0) return;
     if(isPolling && (window.currentActiveView !== 'chat' || isChatOpen)) return;
     let users = await APIService.chat.getConversations(); 
     const myId = localStorage.getItem("userId");
